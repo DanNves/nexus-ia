@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Bell, BookOpen, CheckSquare, ClipboardList, Headset, Home, Layers3, BarChart3, Settings } from "lucide-react";
+import { Bell, BookOpen, CheckSquare, ClipboardList, Headset, Home, Layers3, BarChart3, Settings, ArrowUpRight, Clock3, BrainCircuit, Database, CircleCheck, CircleAlert, Sparkles } from "lucide-react";
 
 import { createFileRoute } from "@tanstack/react-router";
 import "../nexus-app.css";
@@ -23,10 +23,10 @@ const menu: {label: View; icon: React.ComponentType<{size?: number; strokeWidth?
 ];
 
 const recent = [
-  { icon: "+", text: "Nova demanda criada para o módulo de pagamentos.", time: "Há 2 horas", user: "Ana Costa", tone: "blue" },
-  { icon: "✓", text: "Requisito REQ-214 validado com sucesso.", time: "Há 5 horas", user: "Rafael Dias", tone: "green" },
-  { icon: "▤", text: "Chamado #4421 resolvido — erro de login.", time: "Ontem", user: "Suporte N1", tone: "orange" },
-  { icon: "◆", text: "Release v2.4.0 publicado em produção.", time: "Ontem", user: "DevOps", tone: "purple" },
+  { icon: "+", text: "Nova demanda registrada: integração com atendimento.", time: "Hoje, 09:42", user: "Equipe de análise", tone: "blue" },
+  { icon: "✓", text: "Requisito REQ-014 validado e vinculado à versão 1.2.0.", time: "Hoje, 08:17", user: "Analista responsável", tone: "green" },
+  { icon: "!", text: "Chamado CH-028 aguarda validação da sugestão da IA.", time: "Ontem, 16:31", user: "Suporte", tone: "orange" },
+  { icon: "◆", text: "Solução validada adicionada à Base de Conhecimento.", time: "Ontem, 14:05", user: "Equipe de suporte", tone: "purple" },
 ];
 
 const records: Record<Exclude<View, "Dashboard">, { title: string; description: string; action: string; rows: string[] }> = {
@@ -55,11 +55,63 @@ function Header() {
 }
 
 function Dashboard({ onChange }: { onChange: (view: View) => void }) {
-  return <div className="content"><div className="page-heading"><div><h1>Painel de Controle</h1><p>Bem-vindo ao Nexus, aqui está o resumo operacional de hoje.</p></div><button className="primary" onClick={() => onChange("Demandas")}>+ Nova Demanda</button></div><section className="stats"><Stat title="Total de Demandas" value="124" trend="+12% vs mês anterior" icon="⚑" tone="blue"/><Stat title="Chamados Abertos" value="15" trend="-8% vs mês anterior" icon="▤" tone="orange"/><Stat title="Produtos Ativos" value="8" trend="Em 3 ambientes" icon="▰" tone="purple"/><Stat title="Saúde do Sistema" value="98%" trend="Operacional estável" icon="♥" tone="green"/></section><section className="dashboard-grid"><div className="panel trend-panel"><div className="panel-head"><div><h2>Tendência de Demandas</h2><span>Volume de demandas registradas</span></div><small>Últimos 6 meses</small></div><div className="chart"><div className="y-labels"><span>35</span><span>30</span><span>25</span><span>20</span><span>15</span><span>10</span><span>5</span></div><svg viewBox="0 0 600 190" preserveAspectRatio="none"><path d="M0 145 L120 105 L240 125 L360 62 L480 88 L600 30 L600 190 L0 190 Z" fill="rgba(52,112,245,.08)"/><path d="M0 145 L120 105 L240 125 L360 62 L480 88 L600 30" fill="none" stroke="#3470f5" strokeWidth="2.5"/></svg><div className="x-labels"><span>Dez</span><span>Jan</span><span>Fev</span><span>Mar</span><span>Abr</span><span>Mai</span></div></div></div><div className="panel activity"><div className="panel-head"><div><h2>Atividade Recente</h2><span>Últimas atualizações</span></div></div>{recent.map((item, i) => <div className="activity-item" key={i}><span className={"activity-icon " + item.tone}>{item.icon}</span><div><p>{item.text}</p><small>{item.time} • {item.user}</small></div></div>)}</div></section></div>;
+  return <div className="content">
+    <div className="page-heading">
+      <div><h1>Painel de Controle</h1><p>Visão geral do ciclo de vida das soluções e do contexto utilizado pelo suporte.</p></div>
+      <button className="primary" onClick={() => onChange("Demandas")}>+ Nova Demanda</button>
+    </div>
+
+    <section className="stats">
+      <Stat title="Demandas em andamento" value="12" trend="4 aguardando análise" icon="⚑" tone="blue"/>
+      <Stat title="Requisitos em validação" value="7" trend="2 atualizados hoje" icon="✓" tone="green"/>
+      <Stat title="Chamados abertos" value="8" trend="3 com contexto recuperado" icon="▤" tone="orange"/>
+      <Stat title="Sugestões IA pendentes" value="5" trend="Aguardando validação humana" icon="✦" tone="purple"/>
+    </section>
+
+    <section className="context-strip">
+      <div className="context-title"><div className="context-icon"><BrainCircuit size={17}/></div><div><strong>Fluxo de contexto do NEXUS</strong><span>O desenvolvimento alimenta o suporte com informações rastreáveis.</span></div></div>
+      <div className="context-flow">
+        {["Demanda", "Requisitos", "Versão", "Chamado", "Contexto", "IA", "Validação", "Conhecimento"].map((item, i) => <React.Fragment key={item}><span className={i === 5 ? "flow-item highlight" : "flow-item"}>{item}</span>{i < 7 && <ArrowUpRight className="flow-arrow" size={12}/>}</React.Fragment>)}
+      </div>
+    </section>
+
+    <section className="dashboard-grid">
+      <div className="panel trend-panel">
+        <div className="panel-head"><div><h2>Atendimento e contexto</h2><span>Chamados abertos e soluções apoiadas por contexto</span></div><small>Últimos 6 meses</small></div>
+        <div className="chart"><div className="y-labels"><span>30</span><span>25</span><span>20</span><span>15</span><span>10</span><span>5</span><span>0</span></div><svg viewBox="0 0 600 190" preserveAspectRatio="none"><path d="M0 140 L120 120 L240 132 L360 82 L480 96 L600 55 L600 190 L0 190 Z" fill="rgba(52,112,245,.08)"/><path d="M0 140 L120 120 L240 132 L360 82 L480 96 L600 55" fill="none" stroke="#3470f5" strokeWidth="2.5"/></svg><div className="x-labels"><span>Mar</span><span>Abr</span><span>Mai</span><span>Jun</span><span>Jul</span><span>Ago</span></div></div>
+      </div>
+
+      <div className="panel activity"><div className="panel-head"><div><h2>Atividade Recente</h2><span>Registros relevantes do fluxo</span></div></div>{recent.map((item, i) => <div className="activity-item" key={i}><span className={"activity-icon " + item.tone}>{item.icon}</span><div><p>{item.text}</p><small>{item.time} • {item.user}</small></div></div>)}</div>
+    </section>
+
+    <section className="dashboard-bottom">
+      <div className="panel support-panel">
+        <div className="panel-head"><div><h2>Chamados que precisam de atenção</h2><span>Itens do suporte relacionados ao contexto do desenvolvimento</span></div><button className="text-button" onClick={() => onChange("Chamados")}>Ver chamados →</button></div>
+        {[["CH-028","Falha na autenticação","v1.2.0","Em validação","orange"],["CH-027","Relatório apresenta dados inconsistentes","v1.1.4","Em atendimento","blue"],["CH-025","Usuário sem permissão de acesso","v1.1.4","Aguardando contexto","purple"]].map(([id,title,version,status,tone]) => <div className="support-row" key={id}><div className="support-main"><strong>{id}</strong><span>{title}</span></div><span className="version">{version}</span><span className={"status "+tone}>{status}</span></div>)}
+      </div>
+
+      <div className="panel ai-panel">
+        <div className="panel-head"><div><h2>IA e validação humana</h2><span>Uso da IA no apoio ao atendimento</span></div><Sparkles size={16} className="sparkle"/></div>
+        <div className="ai-metrics"><div><strong>18</strong><span>sugestões geradas</span></div><div><strong>11</strong><span>validadas</span></div><div><strong>4</strong><span>editadas</span></div><div><strong>3</strong><span>rejeitadas</span></div></div>
+        <div className="validation-note"><CircleCheck size={15}/><span>61% das sugestões registradas foram aprovadas sem rejeição.</span></div>
+      </div>
+    </section>
+
+    <section className="quick-metrics">
+      <Metric icon={<Clock3 size={15}/>} title="Tempo médio de atendimento" value="2h 18min" detail="indicador do suporte"/>
+      <Metric icon={<Database size={15}/>} title="Conhecimentos reutilizados" value="24" detail="soluções validadas"/>
+      <Metric icon={<CircleCheck size={15}/>} title="Soluções validadas" value="31" detail="registradas na base"/>
+      <Metric icon={<CircleAlert size={15}/>} title="Chamados sem contexto" value="3" detail="necessitam complemento"/>
+    </section>
+  </div>;
 }
 
 function Stat({ title, value, trend, icon, tone }: { title: string; value: string; trend: string; icon: string; tone: string }) {
   return <article className="stat-card"><div className={"stat-icon " + tone}>{icon}</div><span>{title}</span><strong>{value}</strong><small className={tone === "orange" ? "negative" : ""}>{trend}</small></article>;
+}
+
+function Metric({ icon, title, value, detail }: { icon: React.ReactNode; title: string; value: string; detail: string }) {
+  return <article className="metric-card"><div className="metric-icon">{icon}</div><div><span>{title}</span><strong>{value}</strong><small>{detail}</small></div></article>;
 }
 
 function ModuleView({ view }: { view: Exclude<View, "Dashboard"> }) {
