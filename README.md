@@ -1,24 +1,10 @@
-# Nexus Sync
+# NEXUS — Conexão entre Demanda, Desenvolvimento e Suporte
 
-se conecte a esse meu github e sempre se atualize no preview leia a estrutura e sempre se mantenha atualizado: https://github.com/DanNves/NEXUS
+Plataforma web para preservar o contexto produzido durante o desenvolvimento de uma solução de software e utilizá-lo no atendimento de chamados de suporte.
 
-This project was built with [Lovable](https://lovable.dev).
+## MVP
+Demanda → Requisitos → Versão da solução → Chamado → Recuperação do contexto → IA generativa → Sugestão → Validação humana → Base de conhecimento
 
-## Build with Lovable
+**Regra central:** IA sugere → humano valida → sistema consolida.
 
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/fd763109-0f82-4047-868d-39cfb8180582).
-
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
-
-## Development
-
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
-
-```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
-npm run dev
-```
+O GitHub é a fonte principal do desenvolvimento. O escopo poderá evoluir durante o TCC sem perder o foco central.
