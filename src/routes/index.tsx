@@ -1,4 +1,5 @@
 import * as React from "react";
+import { Bell, BookOpen, CheckSquare, ClipboardList, Headset, Home, Layers3, BarChart3, Settings } from "lucide-react";
 
 import { createFileRoute } from "@tanstack/react-router";
 import "../nexus-app.css";
@@ -15,10 +16,10 @@ export const Route = createFileRoute("/")({
 
 type View = "Dashboard" | "Demandas" | "Requisitos" | "Produtos e Versões" | "Chamados" | "Conhecimento" | "Indicadores" | "Configurações";
 
-const menu: {label: View; icon: string}[] = [
-  { label: "Dashboard", icon: "⌂" }, { label: "Demandas", icon: "▣" }, { label: "Requisitos", icon: "✓" },
-  { label: "Produtos e Versões", icon: "▤" }, { label: "Chamados", icon: "▣" }, { label: "Conhecimento", icon: "▤" },
-  { label: "Indicadores", icon: "▥" }, { label: "Configurações", icon: "⚙" },
+const menu: {label: View; icon: React.ComponentType<{size?: number; strokeWidth?: number}>}[] = [
+  { label: "Dashboard", icon: Home }, { label: "Demandas", icon: ClipboardList }, { label: "Requisitos", icon: CheckSquare },
+  { label: "Produtos e Versões", icon: Layers3 }, { label: "Chamados", icon: Headset }, { label: "Conhecimento", icon: BookOpen },
+  { label: "Indicadores", icon: BarChart3 }, { label: "Configurações", icon: Settings },
 ];
 
 const recent = [
@@ -39,11 +40,11 @@ const records: Record<Exclude<View, "Dashboard">, { title: string; description: 
 };
 
 function Sidebar({ active, onChange }: { active: View; onChange: (view: View) => void }) {
-  return <aside className="sidebar"><div className="brand"><div className="brand-mark">N</div><span>NEXUS</span></div><nav>{menu.map((item) => <button key={item.label} className={active === item.label ? "nav-item active" : "nav-item"} onClick={() => onChange(item.label)}><span className="nav-icon">{item.icon}</span><span>{item.label}</span></button>)}</nav><div className="sidebar-footer"><div className="mini-mark">N</div><span>Conectando pessoas,<br/>tecnologia e soluções.</span></div></aside>;
+  return <aside className="sidebar"><div className="brand"><div className="brand-mark">N</div><span>NEXUS</span></div><nav>{menu.map((item) => <button key={item.label} className={active === item.label ? "nav-item active" : "nav-item"} onClick={() => onChange(item.label)}><span className="nav-icon"><item.icon size={15} strokeWidth={1.8} /></span><span>{item.label}</span></button>)}</nav><div className="sidebar-footer"><div className="mini-mark">N</div><span>Conectando pessoas,<br/>tecnologia e soluções.</span></div></aside>;
 }
 
 function NotificationIcon() {
-  return <span className="notification-icon" aria-label="Notificações" title="Notificações"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" /></svg></span>;
+  return <span className="notification-icon" aria-label="Notificações" title="Notificações"><Bell size={17} strokeWidth={1.8} /></span>;
 }
 
 function Header() {
