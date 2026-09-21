@@ -1,4 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
+
+import "../nexus-app.css";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -25,122 +28,267 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-const steps: Array<[string, string, string]> = [
-  ["01", "Demanda", "Necessidade registrada e contextualizada."],
-  ["02", "Requisitos", "Requisitos, regras e critérios relacionados."],
-  ["03", "Versão", "Solução e versão vinculadas ao contexto."],
-  ["04", "Chamado", "Atendimento conectado ao produto e à versão."],
-  ["05", "Contexto", "Recuperação das informações relevantes."],
-  ["06", "IA generativa", "Análise e sugestões baseadas no contexto."],
-  ["07", "Validação", "Profissional aprova, edita ou rejeita."],
-  ["08", "Conhecimento", "Solução validada disponível para reuso."],
+// Sincronizado com DanNves/NEXUS · frontend/src/App.tsx
+
+type View =
+  | "Dashboard"
+  | "Demandas"
+  | "Requisitos"
+  | "Produtos e Versões"
+  | "Chamados"
+  | "Conhecimento"
+  | "Indicadores"
+  | "Configurações";
+
+const menu: { label: View; icon: string }[] = [
+  { label: "Dashboard", icon: "⌂" },
+  { label: "Demandas", icon: "▣" },
+  { label: "Requisitos", icon: "✓" },
+  { label: "Produtos e Versões", icon: "▤" },
+  { label: "Chamados", icon: "▣" },
+  { label: "Conhecimento", icon: "▤" },
+  { label: "Indicadores", icon: "▥" },
+  { label: "Configurações", icon: "⚙" },
 ];
 
-const aiFocus = [
-  "Classificação do chamado",
-  "Possíveis causas",
-  "Procedimentos e soluções",
-  "Conhecimento relacionado",
+const recent = [
+  { icon: "+", text: "Nova demanda criada para o módulo de pagamentos.", time: "Há 2 horas", user: "Ana Costa", tone: "blue" },
+  { icon: "✓", text: "Requisito REQ-214 validado com sucesso.", time: "Há 5 horas", user: "Rafael Dias", tone: "green" },
+  { icon: "▤", text: "Chamado #4421 resolvido — erro de login.", time: "Ontem", user: "Suporte N1", tone: "orange" },
+  { icon: "◆", text: "Release v2.4.0 publicado em produção.", time: "Ontem", user: "DevOps", tone: "purple" },
 ];
 
-const humanControl = [
-  "Aprovar a sugestão",
-  "Editar a sugestão",
-  "Rejeitar a sugestão",
-  "Consolidar conhecimento validado",
-];
+const records: Record<Exclude<View, "Dashboard">, { title: string; description: string; action: string; rows: string[] }> = {
+  Demandas: {
+    title: "Demandas",
+    description: "Registre e acompanhe as necessidades que originam novas soluções.",
+    action: "+ Nova Demanda",
+    rows: ["Sistema de Atendimento — Em análise", "Portal do Cliente — Aprovada", "Relatório Financeiro — Concluída"],
+  },
+  Requisitos: {
+    title: "Requisitos",
+    description: "Organize requisitos, regras de negócio e critérios de aceitação.",
+    action: "+ Novo Requisito",
+    rows: ["REQ-214 — Recuperação de senha", "REQ-215 — Cadastro de usuários", "REQ-216 — Notificação de atendimento"],
+  },
+  "Produtos e Versões": {
+    title: "Produtos e Versões",
+    description: "Relacione soluções, versões publicadas e requisitos vinculados.",
+    action: "+ Novo Produto",
+    rows: ["Sistema de Atendimento — v2.4.0", "Portal do Cliente — v1.8.2", "Central de Relatórios — v3.1.0"],
+  },
+  Chamados: {
+    title: "Chamados",
+    description: "Atenda chamados mantendo o contexto produzido durante o desenvolvimento.",
+    action: "+ Novo Chamado",
+    rows: ["#4421 — Erro de login — Em atendimento", "#4420 — Relatório não carrega — Resolvido", "#4419 — Usuário sem acesso — Aberto"],
+  },
+  Conhecimento: {
+    title: "Base de Conhecimento",
+    description: "Reutilize soluções validadas e preserve conhecimento dos atendimentos.",
+    action: "+ Novo Conhecimento",
+    rows: ["Recuperação de senha — 12 utilizações", "Erro de envio de e-mail — 7 utilizações", "Permissão de usuário — 4 utilizações"],
+  },
+  Indicadores: {
+    title: "Indicadores",
+    description: "Acompanhe os dados utilizados para avaliar a contribuição do NEXUS.",
+    action: "Exportar",
+    rows: ["Tempo médio de atendimento", "Sugestões da IA: aceitas, editadas e rejeitadas", "Reuso do conhecimento e avaliação dos profissionais"],
+  },
+  Configurações: {
+    title: "Configurações",
+    description: "Gerencie usuários, preferências e parâmetros do sistema.",
+    action: "Salvar alterações",
+    rows: ["Usuários e permissões", "Preferências da plataforma", "Parâmetros da IA e validação"],
+  },
+};
 
-function Eyebrow({ children }: { children: string }) {
+function Sidebar({ active, onChange }: { active: View; onChange: (view: View) => void }) {
   return (
-    <span className="text-xs font-extrabold tracking-[0.12em] text-eyebrow">
-      {children}
-    </span>
+    <aside className="sidebar">
+      <div className="brand">
+        <div className="brand-mark">N</div>
+        <span>NEXUS</span>
+      </div>
+      <nav>
+        {menu.map((item) => (
+          <button
+            key={item.label}
+            className={active === item.label ? "nav-item active" : "nav-item"}
+            onClick={() => onChange(item.label)}
+          >
+            <span className="nav-icon">{item.icon}</span>
+            <span>{item.label}</span>
+          </button>
+        ))}
+      </nav>
+      <div className="sidebar-footer">
+        <div className="mini-mark">N</div>
+        <span>
+          Conectando pessoas,
+          <br />
+          tecnologia e soluções.
+        </span>
+      </div>
+    </aside>
+  );
+}
+
+function Header() {
+  return (
+    <header className="topbar">
+      <div className="top-brand">
+        <div className="top-mark">N</div>
+        <div>
+          <strong>NEXUS</strong>
+          <small>CONEXÃO ENTRE DEMANDA, DESENVOLVIMENTO E SUPORTE</small>
+        </div>
+      </div>
+      <div className="top-actions">
+        <div className="search">
+          ⌕ <span>Pesquisar...</span>
+        </div>
+        <span className="bell">♧</span>
+        <div className="user">
+          <span>
+            Usuário<small>ADMIN</small>
+          </span>
+          <div className="avatar">U</div>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+function Stat({ title, value, trend, icon, tone }: { title: string; value: string; trend: string; icon: string; tone: string }) {
+  return (
+    <article className="stat-card">
+      <div className={"stat-icon " + tone}>{icon}</div>
+      <span>{title}</span>
+      <strong>{value}</strong>
+      <small className={tone === "orange" ? "negative" : ""}>{trend}</small>
+    </article>
+  );
+}
+
+function Dashboard({ onChange }: { onChange: (view: View) => void }) {
+  return (
+    <div className="content">
+      <div className="page-heading">
+        <div>
+          <h1>Painel de Controle</h1>
+          <p>Bem-vindo ao Nexus, aqui está o resumo operacional de hoje.</p>
+        </div>
+        <button className="primary" onClick={() => onChange("Demandas")}>
+          + Nova Demanda
+        </button>
+      </div>
+      <section className="stats">
+        <Stat title="Total de Demandas" value="124" trend="+12% vs mês anterior" icon="⚑" tone="blue" />
+        <Stat title="Chamados Abertos" value="15" trend="-8% vs mês anterior" icon="▤" tone="orange" />
+        <Stat title="Produtos Ativos" value="8" trend="Em 3 ambientes" icon="▰" tone="purple" />
+        <Stat title="Saúde do Sistema" value="98%" trend="Operacional estável" icon="♥" tone="green" />
+      </section>
+      <section className="dashboard-grid">
+        <div className="panel trend-panel">
+          <div className="panel-head">
+            <div>
+              <h2>Tendência de Demandas</h2>
+              <span>Volume de demandas registradas</span>
+            </div>
+            <small>Últimos 6 meses</small>
+          </div>
+          <div className="chart">
+            <div className="y-labels">
+              <span>35</span>
+              <span>30</span>
+              <span>25</span>
+              <span>20</span>
+              <span>15</span>
+              <span>10</span>
+              <span>5</span>
+            </div>
+            <svg viewBox="0 0 600 190" preserveAspectRatio="none">
+              <path d="M0 145 L120 105 L240 125 L360 62 L480 88 L600 30 L600 190 L0 190 Z" fill="rgba(52,112,245,.08)" />
+              <path d="M0 145 L120 105 L240 125 L360 62 L480 88 L600 30" fill="none" stroke="#3470f5" strokeWidth="2.5" />
+            </svg>
+            <div className="x-labels">
+              <span>Dez</span>
+              <span>Jan</span>
+              <span>Fev</span>
+              <span>Mar</span>
+              <span>Abr</span>
+              <span>Mai</span>
+            </div>
+          </div>
+        </div>
+        <div className="panel activity">
+          <div className="panel-head">
+            <div>
+              <h2>Atividade Recente</h2>
+              <span>Últimas atualizações</span>
+            </div>
+          </div>
+          {recent.map((item, i) => (
+            <div className="activity-item" key={i}>
+              <span className={"activity-icon " + item.tone}>{item.icon}</span>
+              <div>
+                <p>{item.text}</p>
+                <small>
+                  {item.time} • {item.user}
+                </small>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function ModuleView({ view }: { view: Exclude<View, "Dashboard"> }) {
+  const data = records[view];
+  return (
+    <div className="content">
+      <div className="page-heading">
+        <div>
+          <h1>{data.title}</h1>
+          <p>{data.description}</p>
+        </div>
+        <button className="primary">{data.action}</button>
+      </div>
+      <div className="module-panel">
+        <div className="module-toolbar">
+          <div className="module-search">
+            ⌕ <span>Pesquisar...</span>
+          </div>
+          <select>
+            <option>Todos os status</option>
+          </select>
+        </div>
+        {data.rows.map((row) => (
+          <div className="module-row" key={row}>
+            <div>
+              <strong>{row.split(" — ")[0]}</strong>
+              <span>{row.split(" — ").slice(1).join(" — ")}</span>
+            </div>
+            <button>Ver detalhes →</button>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
 function Index() {
+  const [active, setActive] = useState<View>("Dashboard");
   return (
-    <main className="min-h-screen bg-background font-sans text-foreground">
-      <div className="mx-auto w-full max-w-[1180px] px-5 pt-16 pb-8">
-        <header>
-          <Eyebrow>TCC • MVP EM CONSTRUÇÃO</Eyebrow>
-          <h1 className="mt-2 mb-1 text-[clamp(52px,8vw,86px)] leading-[0.95] font-bold tracking-[-0.06em]">
-            NEXUS
-          </h1>
-          <p className="text-[clamp(18px,3vw,26px)] font-bold">
-            Conexão entre Demanda, Desenvolvimento e Suporte
-          </p>
-          <p className="mt-4 max-w-[720px] text-[17px] leading-relaxed text-muted-foreground">
-            Preservar o contexto criado durante o desenvolvimento para apoiar o
-            atendimento de suporte com IA generativa e validação humana.
-          </p>
-        </header>
-
-        <section className="mt-11 mb-14 flex flex-col items-start justify-between gap-4 rounded-[20px] border bg-card px-7 py-6 shadow-card sm:flex-row sm:items-center">
-          <div>
-            <Eyebrow>REGRA CENTRAL</Eyebrow>
-            <h2 className="mt-2 text-xl font-semibold">
-              IA sugere → humano valida → sistema consolida.
-            </h2>
-          </div>
-          <span className="rounded-full bg-badge px-3 py-2 text-xs font-bold text-primary">
-            MVP
-          </span>
-        </section>
-
-        <section>
-          <Eyebrow>FLUXO PRINCIPAL</Eyebrow>
-          <h2 className="mt-2 text-2xl font-bold">
-            Do desenvolvimento ao suporte
-          </h2>
-          <p className="mt-2 leading-relaxed text-muted-foreground">
-            O contexto acompanha o chamado e alimenta a análise assistida.
-          </p>
-          <div className="mt-6 grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
-            {steps.map(([n, t, d]) => (
-              <article
-                key={n}
-                className="min-h-[165px] rounded-[20px] border bg-card p-5 shadow-card"
-              >
-                <small className="font-extrabold text-eyebrow">{n}</small>
-                <h3 className="mt-7 mb-2 font-semibold">{t}</h3>
-                <p className="text-sm leading-relaxed text-muted-foreground">
-                  {d}
-                </p>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="mt-14 grid gap-4 md:grid-cols-2">
-          <article className="rounded-[20px] border bg-card p-7 shadow-card">
-            <Eyebrow>FOCO DA IA</Eyebrow>
-            <h2 className="mt-2 mb-4 text-xl font-bold">
-              Assistência no atendimento
-            </h2>
-            <ul className="list-disc space-y-2.5 pl-5 text-muted-foreground">
-              {aiFocus.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </article>
-          <article className="rounded-[20px] border bg-card p-7 shadow-card">
-            <Eyebrow>HUMANO NO CONTROLE</Eyebrow>
-            <h2 className="mt-2 mb-4 text-xl font-bold">
-              Validação obrigatória
-            </h2>
-            <ul className="list-disc space-y-2.5 pl-5 text-muted-foreground">
-              {humanControl.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </article>
-        </section>
-
-        <footer className="mt-14 border-t pt-6 text-[13px] text-muted-foreground">
-          NEXUS • Estrutura inicial do MVP
-        </footer>
+    <div className="app">
+      <Sidebar active={active} onChange={setActive} />
+      <div className="main">
+        <Header />
+        {active === "Dashboard" ? <Dashboard onChange={setActive} /> : <ModuleView view={active} />}
       </div>
-    </main>
+    </div>
   );
 }
