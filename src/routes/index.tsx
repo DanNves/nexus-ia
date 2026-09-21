@@ -1,4 +1,4 @@
-import { useState } from "react";
+import * as React from "react";
 
 import { createFileRoute } from "@tanstack/react-router";
 import "../nexus-app.css";
@@ -67,7 +67,7 @@ function ModuleView({ view }: { view: Exclude<View, "Dashboard"> }) {
 }
 
 function Index() {
-  const [active, setActive] = useState<View>("Dashboard");
+  const [active, setActive] = React.useState<View>("Dashboard");
   return <div className="app"><Sidebar active={active} onChange={setActive}/><div className="main"><Header/>{active === "Dashboard" ? <Dashboard onChange={setActive}/> : <ModuleView view={active}/>}</div></div>;
 }
 
