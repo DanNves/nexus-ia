@@ -40,7 +40,7 @@ const records: Record<Exclude<View, "Dashboard">, { title: string; description: 
 };
 
 function Sidebar({ active, onChange }: { active: View; onChange: (view: View) => void }) {
-  return <aside className="sidebar"><div className="brand"><div className="brand-mark">N</div><span>NEXUS</span></div><nav>{menu.map((item) => <button key={item.label} className={active === item.label ? "nav-item active" : "nav-item"} onClick={() => onChange(item.label)}><span className="nav-icon"><item.icon size={15} strokeWidth={1.8} /></span><span>{item.label}</span></button>)}</nav><div className="sidebar-footer"><div className="mini-mark">N</div><span>Conectando pessoas,<br/>tecnologia e soluções.</span></div></aside>;
+  return <aside className="sidebar"><div className="brand"><img className="brand-logo" src="/nexus-logo.svg" alt="NEXUS" /><span>NEXUS</span></div><nav>{menu.map((item) => <button key={item.label} className={active === item.label ? "nav-item active" : "nav-item"} onClick={() => onChange(item.label)}><span className="nav-icon"><item.icon size={15} strokeWidth={1.8} /></span><span>{item.label}</span></button>)}</nav><div className="sidebar-footer"><img className="mini-logo" src="/nexus-logo.svg" alt="" /><span>Conectando pessoas,<br/>tecnologia e soluções.</span></div></aside>;
 }
 
 function NotificationIcon() {
@@ -49,7 +49,7 @@ function NotificationIcon() {
 
 function Header() {
   return <header className="topbar">
-    <div className="top-brand"><div className="top-mark">N</div><div className="top-brand-text"><strong>NEXUS</strong><small>CONEXÃO ENTRE DEMANDA, DESENVOLVIMENTO E SUPORTE</small></div></div>
+    <div className="top-brand"><img className="top-logo" src="/nexus-logo.svg" alt="NEXUS" /><div className="top-brand-text"><strong>NEXUS</strong><small>CONEXÃO ENTRE DEMANDA, DESENVOLVIMENTO E SUPORTE</small></div></div>
     <div className="top-actions"><div className="search">⌕ <span>Pesquisar...</span></div><NotificationIcon/><div className="user"><span>Usuário<small>ADMIN</small></span><div className="avatar">U</div></div></div>
   </header>;
 }
