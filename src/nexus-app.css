@@ -427,14 +427,14 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  color: var(--nx-ink);
-  background: #fff;
-  border-color: #dbe5f0;
+  color: #dbe7f5;
+  background: #07162d;
+  border-color: #102b4d;
 }
-.context-focus .panel-head h2 { color: #1a2b44; }
-.context-focus .panel-head > div > span:not(.section-kicker) { color: #8794a7; }
-.context-focus .section-kicker { color: #4b78a8; }
-.context-focus-icon { color: var(--nx-blue); }
+.context-focus .panel-head h2 { color: #fff; }
+.context-focus .panel-head > div > span:not(.section-kicker) { color: #8fa5c0; }
+.context-focus .section-kicker { color: #62b7e8; }
+.context-focus-icon { color: #5fc5ee; }
 .context-score { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; margin: 10px 0 18px; text-align: center; }
 .score-ring {
   width: 78px;
@@ -444,16 +444,16 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
   align-items: center;
   justify-content: center;
   flex: 0 0 78px;
-  border: 5px solid #dce8f6;
+  border: 5px solid #183452;
   border-top-color: #1677ff;
   border-right-color: #25c7e8;
   border-radius: 50%;
 }
-.score-ring strong { color: #18304f; font-size: 16px; line-height: 1; }
-.score-ring span { margin-top: 4px; color: #8a98aa; font-size: 6px; }
+.score-ring strong { color: #fff; font-size: 16px; line-height: 1; }
+.score-ring span { margin-top: 4px; color: #91a6bf; font-size: 6px; }
 .context-score > div:last-child { width: min(250px, 100%); }
-.context-score > div:last-child strong { display: block; color: #263851; font-size: 10px; line-height: 1.35; }
-.context-score p { margin: 5px 0 0; color: #7f8da1; font-size: 7px; line-height: 1.55; }
+.context-score > div:last-child strong { display: block; color: #eaf2fb; font-size: 10px; line-height: 1.35; }
+.context-score p { margin: 5px 0 0; color: #91a2b8; font-size: 7px; line-height: 1.55; }
 .context-progress { display: flex; align-items: center; gap: 9px; margin: 2px 0 15px; }
 .context-progress > span { height: 6px; flex: 1; overflow: hidden; border-radius: 999px; background: rgba(255,255,255,.1); }
 .context-progress i { display: block; height: 100%; border-radius: inherit; background: #25aee0; }
