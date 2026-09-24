@@ -42,7 +42,7 @@ const records: Record<Exclude<View, "Dashboard">, { title: string; description: 
 };
 
 function Sidebar({ active, onChange }: { active: View; onChange: (view: View) => void }) {
-  return <aside className="sidebar"><div className="brand"><img className="brand-logo" src="/nexus-logo.svg" alt="NEXUS" /><span>NEXUS</span></div><nav>{menu.map((item) => <button key={item.label} className={active === item.label ? "nav-item active" : "nav-item"} onClick={() => onChange(item.label)}><span className="nav-icon"><item.icon size={15} strokeWidth={1.8} /></span><span>{item.label}</span></button>)}</nav><div className="sidebar-footer"><img className="mini-logo" src="/nexus-logo.svg" alt="" /><span>Conectando pessoas,<br/>tecnologia e soluções.</span></div></aside>;
+  return <aside className="sidebar"><div className="brand"><img className="brand-logo" src="/nexus-logo.svg" alt="NEXUS" /><span>NEXUS</span></div><div className="sidebar-caption">GESTÃO DO CICLO DE SOFTWARE</div><nav>{menu.map((item) => <button key={item.label} className={active === item.label ? "nav-item active" : "nav-item"} onClick={() => onChange(item.label)}><span className="nav-icon"><item.icon size={16} strokeWidth={1.8} /></span><span>{item.label}</span></button>)}</nav><div className="sidebar-footer"><img className="mini-logo" src="/nexus-logo.svg" alt="" /><span>Contexto conectado<br/>do desenvolvimento ao suporte.</span></div></aside>;
 }
 
 function NotificationIcon() {
@@ -168,6 +168,7 @@ function Index() {
   const [active,setActive]=React.useState<View>("Dashboard");
   const [wizard,setWizard]=React.useState<WizardType|null>(null);
   const [searchOpen,setSearchOpen]=React.useState(false);
+  React.useEffect(()=>{const open=()=>setSearchOpen(true);window.addEventListener("nexus:search",open);return()=>window.removeEventListener("nexus:search",open);},[]);
   const openCreate=(type:WizardType)=>setWizard(type);
   return <div className="app"><Sidebar active={active} onChange={setActive}/><div className="main"><Header/>{active==="Dashboard"?<Dashboard onChange={setActive} onCreate={openCreate}/>:<ModuleView view={active} onCreate={openCreate}/>}</div>{wizard&&<Stepper type={wizard} onClose={()=>setWizard(null)}/>} {searchOpen&&<div className="search-overlay" onClick={()=>setSearchOpen(false)}><div className="search-dialog" onClick={e=>e.stopPropagation()}><div className="search-dialog-head"><Search size={16}/><input autoFocus placeholder="Pesquisar demandas, atividades, requisitos, chamados..."/><button onClick={()=>setSearchOpen(false)}><X size={16}/></button></div><div className="search-empty"><Search size={22}/><strong>Pesquisa global</strong><span>Encontre informações do NEXUS sem precisar navegar entre módulos.</span></div></div></div>}</div>;
 }
