@@ -134,7 +134,7 @@ function Stepper({ type, onClose }: { type: WizardType; onClose: () => void }) {
   const [data,setData]=React.useState<Record<string,string>>({});
   React.useEffect(() => {
     const raw=localStorage.getItem("nexus-"+type+"-draft");
-    if(raw){try{const draft=JSON.parse(raw);setData(draft.data||{});setStep(Math.min(draft.step||0,steps.length-1));}catch{}}
+    if(raw){try{const draft=JSON.parse(raw);setData(draft.data||{});setStep(Math.min(draft.step||0,3));}catch{}}
   },[type]);
   const update=(key:string,value:string)=>setData(current=>({...current,[key]:value}));
   const saveStep=()=>{
