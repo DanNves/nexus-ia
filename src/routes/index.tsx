@@ -26,7 +26,7 @@ const menu: {label: View; icon: React.ComponentType<{size?: number; strokeWidth?
 const recent = [
   { icon: ClipboardList, text: "Nova demanda registrada: integração com atendimento.", time: "Hoje, 09:42", user: "Equipe de análise", tone: "blue" },
   { icon: CheckCircle2, text: "Requisito REQ-014 validado e vinculado à versão 1.2.0.", time: "Hoje, 08:17", user: "Analista responsável", tone: "green" },
-  { icon: text: "Chamado CH-028 aguarda validação do atendimento.", time: "Ontem, 16:31", user: "Suporte", tone: "orange" },
+  { icon: CircleAlert, text: "Chamado CH-028 aguarda validação do atendimento.", time: "Ontem, 16:31", user: "Suporte", tone: "orange" },
   { icon: Database, text: "Solução validada adicionada à Base de Conhecimento.", time: "Ontem, 14:05", user: "Equipe de suporte", tone: "purple" },
 ];
 
