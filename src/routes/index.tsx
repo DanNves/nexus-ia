@@ -105,7 +105,7 @@ function Dashboard({ onChange, onCreate }: { onChange: (view: View) => void; onC
 
     <section className="dashboard-lower">
       <div className="panel recent-panel"><div className="panel-head"><div><span className="section-kicker">ATIVIDADE</span><h2>Últimas movimentações</h2></div></div>{recent.map((item, i) => <div className="activity-item" key={i}><span className={"activity-icon "+item.tone}><item.icon size={14}/></span><div><p>{item.text}</p><small>{item.time} · {item.user}</small></div></div>)}</div>
-      <div className="panel indicators-panel"><div className="panel-head"><div><span className="section-kicker">NEXUS EM NÚMEROS</span><h2>Indicadores rápidos</h2></div><BarChart3 size={17} className="indicator-icon"/></div><div className="indicator-grid"><Metric icon={<Clock3 size={15}/>} title="Tempo médio" value="2h 18min"/><Metric icon={<Database size={15}/>} title="Conhecimentos reutilizados" value="24"/><Metric icon={<CircleCheck2 size={15}/>} title="Soluções validadas" value="31"/><Metric icon={<CircleAlert size={15}/>} title="Sem contexto" value="3"/></div></div>
+      <div className="panel indicators-panel"><div className="panel-head"><div><span className="section-kicker">NEXUS EM NÚMEROS</span><h2>Indicadores rápidos</h2></div><BarChart3 size={17} className="indicator-icon"/></div><div className="indicator-grid"><Metric icon={<Clock3 size={15}/>} title="Tempo médio" value="2h 18min"/><Metric icon={<Database size={15}/>} title="Conhecimentos reutilizados" value="24"/><Metric icon={<CheckCircle2 size={15}/>} title="Soluções validadas" value="31"/><Metric icon={<CircleAlert size={15}/>} title="Sem contexto" value="3"/></div></div>
     </section>
   </div>;
 }
