@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Activity, ArrowRight, BarChart3, Bell, BookOpen, BrainCircuit, Check, CheckCircle2, CheckSquare, ChevronLeft, ChevronRight, CircleAlert, ClipboardList, Clock3, Database, Headset, Home, Layers3, Plus, Search, Settings, Sparkles, UserRound, X, Zap } from "lucide-react";
+import { Activity, ArrowRight, BarChart3, Bell, BookOpen, Check, CheckCircle2, CheckSquare, ChevronLeft, ChevronRight, CircleAlert, ClipboardList, Clock3, Database, Headset, Home, Layers3, Plus, Search, Settings, UserRound, X } from "lucide-react";
 
 import { createFileRoute } from "@tanstack/react-router";
 import "../nexus-app.css";
@@ -26,7 +26,7 @@ const menu: {label: View; icon: React.ComponentType<{size?: number; strokeWidth?
 const recent = [
   { icon: ClipboardList, text: "Nova demanda registrada: integração com atendimento.", time: "Hoje, 09:42", user: "Equipe de análise", tone: "blue" },
   { icon: CheckCircle2, text: "Requisito REQ-014 validado e vinculado à versão 1.2.0.", time: "Hoje, 08:17", user: "Analista responsável", tone: "green" },
-  { icon: Sparkles, text: "Chamado CH-028 aguarda validação da sugestão da IA.", time: "Ontem, 16:31", user: "Suporte", tone: "orange" },
+  { icon: text: "Chamado CH-028 aguarda validação da sugestão da IA.", time: "Ontem, 16:31", user: "Suporte", tone: "orange" },
   { icon: Database, text: "Solução validada adicionada à Base de Conhecimento.", time: "Ontem, 14:05", user: "Equipe de suporte", tone: "purple" },
 ];
 
@@ -51,19 +51,19 @@ function NotificationIcon() {
 
 function Header() {
   return <header className="topbar">
-    <div className="top-brand"><img className="top-logo" src="/nexus-logo.svg" alt="NEXUS" /><div className="top-brand-text"><strong>NEXUS</strong><small>CONTEXTO CONECTADO</small></div></div>
+    <div className="top-location"><span className="top-section">NEXUS</span><ChevronRight size={13}/><strong>Dashboard</strong></div>
     <div className="top-actions"><button className="global-search" onClick={() => window.dispatchEvent(new CustomEvent("nexus:search"))}><Search size={15}/><span>Pesquisar no NEXUS</span><kbd>⌘ K</kbd></button><button className="notification-icon" aria-label="Notificações"><Bell size={17} strokeWidth={1.8}/><i/></button><div className="user"><div className="avatar"><UserRound size={14}/></div><span>Usuário<small>ADMIN</small></span></div></div>
   </header>;
 }
 function Dashboard({ onChange, onCreate }: { onChange: (view: View) => void; onCreate: (type: WizardType) => void }) {
   const priorities = [
-    { icon: <Sparkles size={15}/>, title: "Validar sugestão da IA", detail: "CH-028 · Falha na autenticação", tag: "5 pendentes", tone: "purple" },
-    { icon: <CheckSquare size={15}/>, title: "Revisar requisito", detail: "REQ-014 · Recuperação de senha", tag: "2 hoje", tone: "blue" },
+    { icon: <CircleAlert size={15}/>, title: "Validar atendimento", detail: "CH-028 · Falha na autenticação", tag: "5 pendentes", tone: "orange" },
+    { icon: <ClipboardList size={15}/>, title: "Revisar requisito", detail: "REQ-014 · Recuperação de senha", tag: "2 hoje", tone: "blue" },
     { icon: <Clock3 size={15}/>, title: "Atividade próxima do prazo", detail: "Publicar versão 1.2.0 · vence amanhã", tag: "Atenção", tone: "orange" },
   ];
   return <div className="content dashboard-content">
     <div className="welcome-row">
-      <div><span className="eyebrow">VISÃO GERAL</span><h1>Bom dia, Usuário.</h1><p>Veja o que precisa da sua atenção e continue de onde parou.</p></div>
+      <div><span className="eyebrow">DASHBOARD</span><h1>Bom dia, Usuário.</h1><p>Tenha uma visão rápida do trabalho e continue de onde parou.</p></div>
       <div className="dashboard-actions"><button className="secondary-action" onClick={() => onCreate("atividade")}><Activity size={15}/> Nova atividade</button><button className="primary" onClick={() => onCreate("demanda")}><Plus size={15}/> Nova demanda</button></div>
     </div>
 
@@ -71,7 +71,7 @@ function Dashboard({ onChange, onCreate }: { onChange: (view: View) => void; onC
       <Stat title="Demandas em andamento" value="12" trend="4 aguardando análise" icon={<ClipboardList size={17}/>} tone="blue"/>
       <Stat title="Atividades em andamento" value="18" trend="6 vencem esta semana" icon={<Activity size={17}/>} tone="green"/>
       <Stat title="Chamados abertos" value="8" trend="3 com contexto recuperado" icon={<Headset size={17}/>} tone="orange"/>
-      <Stat title="Validações pendentes" value="5" trend="Aguardando revisão humana" icon={<Sparkles size={17}/>} tone="purple"/>
+      <Stat title="Pendências de validação" value="5" trend="Requerem revisão" icon={<CheckSquare size={17}/>} tone="purple"/>
     </section>
 
     <section className="dashboard-layout">
@@ -105,7 +105,7 @@ function Dashboard({ onChange, onCreate }: { onChange: (view: View) => void; onC
 
     <section className="dashboard-lower">
       <div className="panel recent-panel"><div className="panel-head"><div><span className="section-kicker">ATIVIDADE</span><h2>Últimas movimentações</h2></div></div>{recent.map((item, i) => <div className="activity-item" key={i}><span className={"activity-icon "+item.tone}><item.icon size={14}/></span><div><p>{item.text}</p><small>{item.time} · {item.user}</small></div></div>)}</div>
-      <div className="panel indicators-panel"><div className="panel-head"><div><span className="section-kicker">NEXUS EM NÚMEROS</span><h2>Indicadores rápidos</h2></div><BarChart3 size={17} className="indicator-icon"/></div><div className="indicator-grid"><Metric icon={<Clock3 size={15}/>} title="Tempo médio" value="2h 18min"/><Metric icon={<Database size={15}/>} title="Conhecimentos reutilizados" value="24"/><Metric icon={<CheckCircle2 size={15}/>} title="Soluções validadas" value="31"/><Metric icon={<CircleAlert size={15}/>} title="Sem contexto" value="3"/></div></div>
+      <div className="panel indicators-panel"><div className="panel-head"><div><span className="section-kicker">RESUMO</span><h2>Indicadores rápidos</h2></div><BarChart3 size={17} className="indicator-icon"/></div><div className="indicator-grid"><Metric icon={<Clock3 size={15}/>} title="Tempo médio" value="2h 18min"/><Metric icon={<Database size={15}/>} title="Conhecimentos reutilizados" value="24"/><Metric icon={<CheckCircle2 size={15}/>} title="Soluções validadas" value="31"/><Metric icon={<CircleAlert size={15}/>} title="Sem contexto" value="3"/></div></div>
     </section>
   </div>;
 }
@@ -157,7 +157,7 @@ function WizardFields({ type, step, data, update }: { type: WizardType; step: nu
   const demand=type==="demanda";
   if(step===0)return <div className="wizard-form"><WizardIntro icon={<ClipboardList size={18}/>} title={demand?"Comece pelo essencial":"Comece pelo trabalho"} text={demand?"Registre a necessidade de forma simples.":"Defina o que precisa ser feito."}/><label>{demand?"Título da demanda":"Título da atividade"}<input value={data.titulo||""} onChange={e=>update("titulo",e.target.value)} placeholder={demand?"Ex.: Melhorar recuperação de senha":"Ex.: Implementar validação de senha"}/></label><label>{demand?"Descrição inicial":"Descrição da atividade"}<textarea value={data.descricao||""} onChange={e=>update("descricao",e.target.value)} placeholder="Descreva de forma objetiva..." rows={5}/></label></div>;
   if(step===1)return <div className="wizard-form"><WizardIntro icon={<BrainCircuit size={18}/>} title={demand?"Preserve o contexto":"Organize o planejamento"} text={demand?"Essas informações serão relacionadas ao restante do ciclo.":"Relacione a atividade à demanda e registre o necessário para executá-la."}/><div className="form-grid"><label>{demand?"Área solicitante":"Demanda relacionada"}<input value={data.area||""} onChange={e=>update("area",e.target.value)} placeholder={demand?"Ex.: Atendimento":"Ex.: DEM-012"}/></label><label>{demand?"Origem":"Responsável"}<input value={data.origem||""} onChange={e=>update("origem",e.target.value)} placeholder={demand?"Ex.: Suporte":"Ex.: João Silva"}/></label></div><label>{demand?"Informações adicionais":"Critério de conclusão"}<textarea value={data.contexto||""} onChange={e=>update("contexto",e.target.value)} placeholder={demand?"Registre regras, exemplos ou informações relevantes...":"Como saberemos que a atividade foi concluída?"} rows={5}/></label></div>;
-  return <div className="wizard-form"><WizardIntro icon={<Zap size={18}/>} title={demand?"Defina o objetivo":"Defina prioridade e prazo"} text={demand?"Um objetivo claro facilita a transformação em requisito.":"Esses dados ajudam a equipe a visualizar o que precisa acontecer primeiro."}/><label>{demand?"Objetivo esperado":"Resultado esperado"}<textarea value={data.objetivo||""} onChange={e=>update("objetivo",e.target.value)} placeholder={demand?"Ex.: reduzir chamados de recuperação de senha":"Ex.: usuários conseguem redefinir a senha sem suporte"} rows={4}/></label><div className="form-grid"><label>Prioridade<select value={data.prioridade||""} onChange={e=>update("prioridade",e.target.value)}><option value="">Selecionar</option><option>Alta</option><option>Média</option><option>Baixa</option></select></label><label>{demand?"Prazo desejado":"Prazo"}<input type="date" value={data.prazo||""} onChange={e=>update("prazo",e.target.value)}/></label></div></div>;
+  return <div className="wizard-form"><WizardIntro icon={<ClipboardList size={18}/>} title={demand?"Defina o objetivo":"Defina prioridade e prazo"} text={demand?"Um objetivo claro facilita a transformação em requisito.":"Esses dados ajudam a equipe a visualizar o que precisa acontecer primeiro."}/><label>{demand?"Objetivo esperado":"Resultado esperado"}<textarea value={data.objetivo||""} onChange={e=>update("objetivo",e.target.value)} placeholder={demand?"Ex.: reduzir chamados de recuperação de senha":"Ex.: usuários conseguem redefinir a senha sem suporte"} rows={4}/></label><div className="form-grid"><label>Prioridade<select value={data.prioridade||""} onChange={e=>update("prioridade",e.target.value)}><option value="">Selecionar</option><option>Alta</option><option>Média</option><option>Baixa</option></select></label><label>{demand?"Prazo desejado":"Prazo"}<input type="date" value={data.prazo||""} onChange={e=>update("prazo",e.target.value)}/></label></div></div>;
 }
 
 function WizardIntro({ icon, title, text }: { icon: React.ReactNode; title: string; text: string }) {
