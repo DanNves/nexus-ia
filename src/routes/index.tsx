@@ -26,7 +26,7 @@ const menu: {label: View; icon: React.ComponentType<{size?: number; strokeWidth?
 const recent = [
   { icon: ClipboardList, text: "Nova demanda registrada: integração com atendimento.", time: "Hoje, 09:42", user: "Equipe de análise", tone: "blue" },
   { icon: CheckCircle2, text: "Requisito REQ-014 validado e vinculado à versão 1.2.0.", time: "Hoje, 08:17", user: "Analista responsável", tone: "green" },
-  { icon: text: "Chamado CH-028 aguarda validação da sugestão da IA.", time: "Ontem, 16:31", user: "Suporte", tone: "orange" },
+  { icon: text: "Chamado CH-028 aguarda validação do atendimento.", time: "Ontem, 16:31", user: "Suporte", tone: "orange" },
   { icon: Database, text: "Solução validada adicionada à Base de Conhecimento.", time: "Ontem, 14:05", user: "Equipe de suporte", tone: "purple" },
 ];
 
@@ -57,9 +57,9 @@ function Header() {
 }
 function Dashboard({ onChange, onCreate }: { onChange: (view: View) => void; onCreate: (type: WizardType) => void }) {
   const priorities = [
-    { icon: <CircleAlert size={15}/>, title: "Validar atendimento", detail: "CH-028 · Falha na autenticação", tag: "5 pendentes", tone: "orange" },
-    { icon: <ClipboardList size={15}/>, title: "Revisar requisito", detail: "REQ-014 · Recuperação de senha", tag: "2 hoje", tone: "blue" },
-    { icon: <Clock3 size={15}/>, title: "Atividade próxima do prazo", detail: "Publicar versão 1.2.0 · vence amanhã", tag: "Atenção", tone: "orange" },
+    { icon: <CircleAlert size={15}/>, title: "Validar atendimento", detail: "CH-028 · Falha na autenticação", tag: "5 pendentes", tone: "orange", view: "Chamados" as View },
+    { icon: <ClipboardList size={15}/>, title: "Revisar requisito", detail: "REQ-014 · Recuperação de senha", tag: "2 hoje", tone: "blue", view: "Requisitos" as View },
+    { icon: <Clock3 size={15}/>, title: "Atividade próxima do prazo", detail: "Publicar versão 1.2.0 · vence amanhã", tag: "Atenção", tone: "orange", view: "Atividades" as View },
   ];
   return <div className="content dashboard-content">
     <div className="welcome-row">
@@ -78,7 +78,7 @@ function Dashboard({ onChange, onCreate }: { onChange: (view: View) => void; onC
       <div className="dashboard-main-column">
         <div className="panel priority-panel">
           <div className="panel-head"><div><span className="section-kicker">PRÓXIMAS AÇÕES</span><h2>O que precisa da sua atenção</h2><span>Resolva as tarefas prioritárias sem navegar por vários menus.</span></div><button className="text-button" onClick={() => onChange("Atividades")}>Ver atividades <ArrowRight size={12}/></button></div>
-          <div className="priority-list">{priorities.map((item) => <div className="priority-item" key={item.title}><span className={"priority-icon "+item.tone}>{item.icon}</span><div className="priority-copy"><strong>{item.title}</strong><span>{item.detail}</span></div><span className={"priority-tag "+item.tone}>{item.tag}</span><ChevronRight size={15} className="priority-arrow"/></div>)}</div>
+          <div className="priority-list">{priorities.map((item) => <button className="priority-item" key={item.title} onClick={() => onChange(item.view)}><span className={"priority-icon "+item.tone}>{item.icon}</span><div className="priority-copy"><strong>{item.title}</strong><span>{item.detail}</span></div><span className={"priority-tag "+item.tone}>{item.tag}</span><ChevronRight size={15} className="priority-arrow"/></button>)}</div>
         </div>
 
         <div className="panel support-overview">
@@ -89,15 +89,15 @@ function Dashboard({ onChange, onCreate }: { onChange: (view: View) => void; onC
 
       <div className="dashboard-side-column">
         <div className="panel quick-create">
-          <div className="panel-head"><div><span className="section-kicker">ACESSO RÁPIDO</span><h2>Comece por aqui</h2></div><Zap size={17} className="quick-icon"/></div>
+          <div className="panel-head"><div><span className="section-kicker">ACESSO RÁPIDO</span><h2>Comece por aqui</h2></div></div>
           <button onClick={() => onCreate("demanda")}><span className="quick-button-icon blue"><Plus size={17}/></span><span><strong>Criar demanda</strong><small>Registrar uma nova necessidade</small></span><ArrowRight size={14}/></button>
           <button onClick={() => onCreate("atividade")}><span className="quick-button-icon green"><Activity size={17}/></span><span><strong>Criar atividade</strong><small>Adicionar trabalho ao fluxo</small></span><ArrowRight size={14}/></button>
           <button onClick={() => onChange("Chamados")}><span className="quick-button-icon orange"><Headset size={17}/></span><span><strong>Atender chamados</strong><small>3 aguardam contexto</small></span><ArrowRight size={14}/></button>
         </div>
 
         <div className="panel context-focus">
-          <div className="panel-head"><div><span className="section-kicker">CONTEXTO NEXUS</span><h2>Contexto em foco</h2></div><BrainCircuit size={17} className="context-focus-icon"/></div>
-          <div className="context-score"><div className="score-ring"><strong>82%</strong><span>com contexto</span></div><div><strong>3 chamados</strong><p>precisam de informações adicionais para completar o contexto.</p></div></div>
+          <div className="panel-head"><div><span className="section-kicker">CONTEXTO DA SOLUÇÃO</span><h2>Continuidade do contexto</h2></div><Database size={17} className="context-focus-icon"/></div>
+          <div className="context-score"><div className="score-ring"><strong>82%</strong><span>com contexto</span></div><div><strong>3 chamados aguardam contexto</strong><p>Precisam de informações adicionais para completar o atendimento.</p></div></div>
           <div className="context-flow-mini"><span>Desenvolvimento</span><ArrowRight size={12}/><span>Suporte</span><ArrowRight size={12}/><span>Conhecimento</span></div>
         </div>
       </div>
@@ -156,7 +156,7 @@ function Stepper({ type, onClose }: { type: WizardType; onClose: () => void }) {
 function WizardFields({ type, step, data, update }: { type: WizardType; step: number; data: Record<string,string>; update: (key:string,value:string)=>void }) {
   const demand=type==="demanda";
   if(step===0)return <div className="wizard-form"><WizardIntro icon={<ClipboardList size={18}/>} title={demand?"Comece pelo essencial":"Comece pelo trabalho"} text={demand?"Registre a necessidade de forma simples.":"Defina o que precisa ser feito."}/><label>{demand?"Título da demanda":"Título da atividade"}<input value={data.titulo||""} onChange={e=>update("titulo",e.target.value)} placeholder={demand?"Ex.: Melhorar recuperação de senha":"Ex.: Implementar validação de senha"}/></label><label>{demand?"Descrição inicial":"Descrição da atividade"}<textarea value={data.descricao||""} onChange={e=>update("descricao",e.target.value)} placeholder="Descreva de forma objetiva..." rows={5}/></label></div>;
-  if(step===1)return <div className="wizard-form"><WizardIntro icon={<BrainCircuit size={18}/>} title={demand?"Preserve o contexto":"Organize o planejamento"} text={demand?"Essas informações serão relacionadas ao restante do ciclo.":"Relacione a atividade à demanda e registre o necessário para executá-la."}/><div className="form-grid"><label>{demand?"Área solicitante":"Demanda relacionada"}<input value={data.area||""} onChange={e=>update("area",e.target.value)} placeholder={demand?"Ex.: Atendimento":"Ex.: DEM-012"}/></label><label>{demand?"Origem":"Responsável"}<input value={data.origem||""} onChange={e=>update("origem",e.target.value)} placeholder={demand?"Ex.: Suporte":"Ex.: João Silva"}/></label></div><label>{demand?"Informações adicionais":"Critério de conclusão"}<textarea value={data.contexto||""} onChange={e=>update("contexto",e.target.value)} placeholder={demand?"Registre regras, exemplos ou informações relevantes...":"Como saberemos que a atividade foi concluída?"} rows={5}/></label></div>;
+  if(step===1)return <div className="wizard-form"><WizardIntro icon={<Database size={18}/>} title={demand?"Preserve o contexto":"Organize o planejamento"} text={demand?"Essas informações serão relacionadas ao restante do ciclo.":"Relacione a atividade à demanda e registre o necessário para executá-la."}/><div className="form-grid"><label>{demand?"Área solicitante":"Demanda relacionada"}<input value={data.area||""} onChange={e=>update("area",e.target.value)} placeholder={demand?"Ex.: Atendimento":"Ex.: DEM-012"}/></label><label>{demand?"Origem":"Responsável"}<input value={data.origem||""} onChange={e=>update("origem",e.target.value)} placeholder={demand?"Ex.: Suporte":"Ex.: João Silva"}/></label></div><label>{demand?"Informações adicionais":"Critério de conclusão"}<textarea value={data.contexto||""} onChange={e=>update("contexto",e.target.value)} placeholder={demand?"Registre regras, exemplos ou informações relevantes...":"Como saberemos que a atividade foi concluída?"} rows={5}/></label></div>;
   return <div className="wizard-form"><WizardIntro icon={<ClipboardList size={18}/>} title={demand?"Defina o objetivo":"Defina prioridade e prazo"} text={demand?"Um objetivo claro facilita a transformação em requisito.":"Esses dados ajudam a equipe a visualizar o que precisa acontecer primeiro."}/><label>{demand?"Objetivo esperado":"Resultado esperado"}<textarea value={data.objetivo||""} onChange={e=>update("objetivo",e.target.value)} placeholder={demand?"Ex.: reduzir chamados de recuperação de senha":"Ex.: usuários conseguem redefinir a senha sem suporte"} rows={4}/></label><div className="form-grid"><label>Prioridade<select value={data.prioridade||""} onChange={e=>update("prioridade",e.target.value)}><option value="">Selecionar</option><option>Alta</option><option>Média</option><option>Baixa</option></select></label><label>{demand?"Prazo desejado":"Prazo"}<input type="date" value={data.prazo||""} onChange={e=>update("prazo",e.target.value)}/></label></div></div>;
 }
 
