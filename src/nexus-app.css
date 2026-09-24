@@ -319,6 +319,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
   margin-top: 10px;
 }
 .dashboard-main-column, .dashboard-side-column { display: grid; gap: 13px; align-content: start; }
+.dashboard-side-column { height: 100%; grid-template-rows: auto minmax(0, 1fr); }
 .panel, .module-panel {
   border: 1px solid var(--nx-line);
   border-radius: 12px;
@@ -422,6 +423,9 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .quick-button-icon.orange { color: var(--nx-orange); background: #fff3df; }
 
 .context-focus {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
   color: var(--nx-ink);
   background: #fff;
@@ -454,6 +458,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .context-progress i { display: block; height: 100%; border-radius: inherit; background: #25aee0; }
 .context-progress strong { color: #c8d9ec; font-size: 7px; }
 .context-flow-mini {
+  margin-top: auto;
   display: flex;
   align-items: center;
   gap: 6px;
