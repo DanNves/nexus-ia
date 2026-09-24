@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Bell, BookOpen, CheckSquare, ClipboardList, Headset, Home, Layers3, BarChart3, Settings, ArrowUpRight, Clock3, BrainCircuit, Database, CircleCheck, CircleAlert, Sparkles } from "lucide-react";
+import { Activity, ArrowRight, BarChart3, Bell, BookOpen, BrainCircuit, Check, CheckCircle2, CheckSquare, ChevronLeft, ChevronRight, CircleAlert, ClipboardList, Clock3, Database, Headset, Home, Layers3, Plus, Search, Settings, Sparkles, UserRound, X, Zap } from "lucide-react";
 
 import { createFileRoute } from "@tanstack/react-router";
 import "../nexus-app.css";
@@ -24,10 +24,10 @@ const menu: {label: View; icon: React.ComponentType<{size?: number; strokeWidth?
 ];
 
 const recent = [
-  { icon: "+", text: "Nova demanda registrada: integração com atendimento.", time: "Hoje, 09:42", user: "Equipe de análise", tone: "blue" },
-  { icon: "✓", text: "Requisito REQ-014 validado e vinculado à versão 1.2.0.", time: "Hoje, 08:17", user: "Analista responsável", tone: "green" },
-  { icon: "!", text: "Chamado CH-028 aguarda validação da sugestão da IA.", time: "Ontem, 16:31", user: "Suporte", tone: "orange" },
-  { icon: "◆", text: "Solução validada adicionada à Base de Conhecimento.", time: "Ontem, 14:05", user: "Equipe de suporte", tone: "purple" },
+  { icon: ClipboardList, text: "Nova demanda registrada: integração com atendimento.", time: "Hoje, 09:42", user: "Equipe de análise", tone: "blue" },
+  { icon: CheckCircle2, text: "Requisito REQ-014 validado e vinculado à versão 1.2.0.", time: "Hoje, 08:17", user: "Analista responsável", tone: "green" },
+  { icon: Sparkles, text: "Chamado CH-028 aguarda validação da sugestão da IA.", time: "Ontem, 16:31", user: "Suporte", tone: "orange" },
+  { icon: Database, text: "Solução validada adicionada à Base de Conhecimento.", time: "Ontem, 14:05", user: "Equipe de suporte", tone: "purple" },
 ];
 
 const records: Record<Exclude<View, "Dashboard">, { title: string; description: string; action: string; rows: string[] }> = {
@@ -51,11 +51,10 @@ function NotificationIcon() {
 
 function Header() {
   return <header className="topbar">
-    <div className="top-brand"><img className="top-logo" src="/nexus-logo.svg" alt="NEXUS" /><div className="top-brand-text"><strong>NEXUS</strong><small>CONEXÃO ENTRE DEMANDA, DESENVOLVIMENTO E SUPORTE</small></div></div>
-    <div className="top-actions"><div className="search">⌕ <span>Pesquisar...</span></div><NotificationIcon/><div className="user"><span>Usuário<small>ADMIN</small></span><div className="avatar">U</div></div></div>
+    <div className="top-brand"><img className="top-logo" src="/nexus-logo.svg" alt="NEXUS" /><div className="top-brand-text"><strong>NEXUS</strong><small>CONTEXTO CONECTADO</small></div></div>
+    <div className="top-actions"><button className="global-search" onClick={() => window.dispatchEvent(new CustomEvent("nexus:search"))}><Search size={15}/><span>Pesquisar no NEXUS</span><kbd>⌘ K</kbd></button><button className="notification-icon" aria-label="Notificações"><Bell size={17} strokeWidth={1.8}/><i/></button><div className="user"><div className="avatar"><UserRound size={14}/></div><span>Usuário<small>ADMIN</small></span></div></div>
   </header>;
 }
-
 function Dashboard({ onChange, onCreate }: { onChange: (view: View) => void; onCreate: (type: WizardType) => void }) {
   const priorities = [
     { icon: <Sparkles size={15}/>, title: "Validar sugestão da IA", detail: "CH-028 · Falha na autenticação", tag: "5 pendentes", tone: "purple" },
