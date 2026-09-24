@@ -121,7 +121,7 @@ function ModuleView({ view, onCreate }: { view: Exclude<View, "Dashboard">; onCr
   const data = records[view];
   const isWizard = view === "Demandas" || view === "Atividades";
   return <div className="content">
-    <div className="page-heading"><div><span className="eyebrow">{view.toUpperCase()}</span><h1>{data.title}</h1><p>{data.description}</p></div>{isWizard ? <button className="primary" onClick={() => onCreate(view === "Demandas" ? "demanda" : "atividade")}><Plus size={15}/>{data.action.replace("+ ","")}</button> : <button className="primary">{data.action}</button>}</div>
+    <div className="page-heading"><div><span className="eyebrow">{view.toUpperCase()}</span><h1>{data.title}</h1><p>{data.description}</p></div>{isWizard && <button className="primary" onClick={() => onCreate(view === "Demandas" ? "demanda" : "atividade")}><Plus size={15}/>{data.action.replace("+ ","")}</button>}</div>
     <div className="module-panel"><div className="module-toolbar"><div className="module-search"><Search size={14}/><span>Pesquisar...</span></div><select><option>Todos os status</option></select></div>{data.rows.map((row) => <div className="module-row" key={row}><div><strong>{row.split(" — ")[0]}</strong><span>{row.split(" — ").slice(1).join(" — ")}</span></div><button>Ver detalhes <ArrowRight size={12}/></button></div>)}</div>
   </div>;
 }
@@ -168,7 +168,7 @@ function Index() {
   const [active,setActive]=React.useState<View>("Dashboard");
   const [wizard,setWizard]=React.useState<WizardType|null>(null);
   const [searchOpen,setSearchOpen]=React.useState(false);
-  React.useEffect(()=>{const open=()=>setSearchOpen(true);window.addEventListener("nexus:search",open);return()=>window.removeEventListener("nexus:search",open);},[]);
+  React.useEffect(()=>{const open=()=>setSearchOpen(true);const onKeyDown=(event:KeyboardEvent)=>{if((event.metaKey||event.ctrlKey)&&event.key.toLowerCase()==="k"){event.preventDefault();setSearchOpen(true);}if(event.key==="Escape"){setSearchOpen(false);setWizard(null);}};window.addEventListener("nexus:search",open);window.addEventListener("keydown",onKeyDown);return()=>{window.removeEventListener("nexus:search",open);window.removeEventListener("keydown",onKeyDown);};},[]);
   const openCreate=(type:WizardType)=>setWizard(type);
   return <div className="app"><Sidebar active={active} onChange={setActive}/><div className="main"><Header/>{active==="Dashboard"?<Dashboard onChange={setActive} onCreate={openCreate}/>:<ModuleView view={active} onCreate={openCreate}/>}</div>{wizard&&<Stepper type={wizard} onClose={()=>setWizard(null)}/>} {searchOpen&&<div className="search-overlay" onClick={()=>setSearchOpen(false)}><div className="search-dialog" onClick={e=>e.stopPropagation()}><div className="search-dialog-head"><Search size={16}/><input autoFocus placeholder="Pesquisar demandas, atividades, requisitos, chamados..."/><button onClick={()=>setSearchOpen(false)}><X size={16}/></button></div><div className="search-empty"><Search size={22}/><strong>Pesquisa global</strong><span>Encontre informações do NEXUS sem precisar navegar entre módulos.</span></div></div></div>}</div>;
 }
