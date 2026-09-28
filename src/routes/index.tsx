@@ -53,16 +53,11 @@ function Header({ active }: { active: View }) {
 }
 
 function Dashboard({ onChange, onCreate }: { onChange: (view: View) => void; onCreate: (type: WizardType) => void }) {
-  const priorities = [
-    { icon: <CircleAlert size={15}/>, title: "Validar atendimento", detail: "CH-028 · Falha na autenticação", tag: "5 pendentes", tone: "orange", view: "Chamados" as View },
-    { icon: <ClipboardList size={15}/>, title: "Revisar requisito", detail: "REQ-014 · Recuperação de senha", tag: "2 hoje", tone: "blue", view: "Requisitos" as View },
-    { icon: <Clock3 size={15}/>, title: "Atividade próxima do prazo", detail: "Publicar versão 1.2.0 · vence amanhã", tag: "Atenção", tone: "orange", view: "Atividades" as View },
-  ];
   const solutions = [
-    { name: "Portal de Atendimento", description: "Sistema de chamados e suporte ao cliente.", version: "v1.2.0", status: "Em desenvolvimento", progress: "68%", deadline: "22/09/2026" },
-    { name: "Aplicativo Mobile", description: "Aplicativo para gestão interna da equipe.", version: "v1.0.0", status: "Em especificação", progress: "32%", deadline: "30/09/2026" },
-    { name: "Dashboard de Relatórios", description: "Visualização de dados e métricas do negócio.", version: "v2.1.0", status: "Em validação", progress: "45%", deadline: "05/10/2026" },
-    { name: "Integração com API Externa", description: "Conexão com serviços e pagamentos.", version: "v1.1.0", status: "Em testes", progress: "80%", deadline: "12/10/2026" },
+    { name: "Portal de Atendimento", version: "v1.2.0", status: "Em desenvolvimento", progress: 68, deadline: "22/09/2026", context: "12 requisitos" },
+    { name: "Aplicativo Mobile", version: "v1.0.0", status: "Em especificação", progress: 32, deadline: "30/09/2026", context: "8 requisitos" },
+    { name: "Dashboard de Relatórios", version: "v2.1.0", status: "Em validação", progress: 45, deadline: "05/10/2026", context: "14 requisitos" },
+    { name: "Integração com API", version: "v1.1.0", status: "Em testes", progress: 80, deadline: "12/10/2026", context: "10 requisitos" },
   ];
   const demands = [
     { title: "Implementar autenticação de dois fatores", requester: "Carlos Mendes", date: "18/09/2026", status: "Em análise" },
@@ -70,64 +65,129 @@ function Dashboard({ onChange, onCreate }: { onChange: (view: View) => void; onC
     { title: "Correção de acesso ao login", requester: "Juliana Silva", date: "15/09/2026", status: "Concluída" },
     { title: "Adicionar relatório de atendimento", requester: "Bruna Lima", date: "14/09/2026", status: "Pendente" },
   ];
-  return <div className="content dashboard-content">
-    <div className="welcome-row">
-      <div><span className="eyebrow">DASHBOARD</span><h1>Olá, Tester!</h1><p>Acompanhe demandas, desenvolvimento e suporte mantendo o contexto da solução conectado.</p></div>
-      <div className="dashboard-actions"><button className="secondary-action" onClick={() => onCreate("atividade")}><Activity size={15}/> Nova atividade</button><button className="primary" onClick={() => onCreate("demanda")}><Plus size={15}/> Nova demanda</button></div>
-    </div>
-    <section className="stats dashboard-stats">
-      <button className="stat-card stat-card-button" onClick={() => onChange("Demandas")}><div className="stat-icon blue"><ClipboardList size={17}/></div><span>Demandas em andamento</span><strong>12</strong><small>4 aguardando análise</small></button>
-      <button className="stat-card stat-card-button" onClick={() => onChange("Requisitos")}><div className="stat-icon green"><CheckSquare size={17}/></div><span>Requisitos em validação</span><strong>8</strong><small>2 precisam de revisão</small></button>
-      <button className="stat-card stat-card-button" onClick={() => onChange("Chamados")}><div className="stat-icon orange"><Headset size={17}/></div><span>Chamados abertos</span><strong>8</strong><small className="negative">3 sem contexto completo</small></button>
-      <button className="stat-card stat-card-button" onClick={() => onChange("Conhecimento")}><div className="stat-icon purple"><Database size={17}/></div><span>Soluções validadas</span><strong>31</strong><small>24 reutilizadas</small></button>
-    </section>
-    <section className="dashboard-layout">
-      <div className="dashboard-main-column">
-        <div className="panel solutions-panel">
-          <div className="panel-head"><div><span className="section-kicker">DESENVOLVIMENTO</span><h2>Soluções em andamento</h2><span>Versões e requisitos que mantêm o contexto disponível para o suporte.</span></div><button className="text-button" onClick={() => onChange("Soluções e Versões")}>Ver todas <ArrowRight size={12}/></button></div>
-          <div className="solution-table">
-            <div className="solution-table-head"><span>Solução</span><span>Versão</span><span>Status</span><span>Progresso</span><span>Prazo</span></div>
-            {solutions.map((item) => <button className="solution-row" key={item.name} onClick={() => onChange("Soluções e Versões")}>
-              <span className="solution-name"><strong>{item.name}</strong><small>{item.description}</small></span>
-              <span className="solution-version">{item.version}</span>
-              <span><em className={"status-pill "+item.status.toLowerCase().replaceAll(" ","-")}>{item.status}</em></span>
-              <span className="solution-progress"><strong>{item.progress}</strong><i><b style={{width:item.progress}}/></i></span>
-              <span className="solution-deadline">{item.deadline}</span>
-              <ChevronRight size={14} className="solution-arrow"/>
-            </button>)}
-          </div>
-        </div>
-        <div className="panel demands-panel">
-          <div className="panel-head"><div><span className="section-kicker">DEMANDAS</span><h2>Demandas recentes</h2></div><button className="text-button" onClick={() => onChange("Demandas")}>Ver todas <ArrowRight size={12}/></button></div>
-          <div className="demand-table">
-            <div className="demand-table-head"><span>Título</span><span>Solicitante</span><span>Data</span><span>Status</span><span></span></div>
-            {demands.map((item) => <button className="demand-row" key={item.title} onClick={() => onChange("Demandas")}>
-              <strong>{item.title}</strong><span>{item.requester}</span><span>{item.date}</span><em className={"status-pill "+item.status.toLowerCase().replaceAll(" ","-")}>{item.status}</em><ChevronRight size={13}/>
-            </button>)}
-          </div>
-        </div>
+  const priorities = [
+    { icon: <CircleAlert size={15}/>, title: "Validar atendimento", detail: "CH-028 · Falha na autenticação", tag: "5 pendentes", tone: "orange", view: "Chamados" as View },
+    { icon: <ClipboardList size={15}/>, title: "Revisar requisito", detail: "REQ-014 · Recuperação de senha", tag: "2 hoje", tone: "blue", view: "Requisitos" as View },
+    { icon: <Clock3 size={15}/>, title: "Atividade próxima do prazo", detail: "Publicar versão 1.2.0 · vence amanhã", tag: "Atenção", tone: "orange", view: "Atividades" as View },
+  ];
+
+  return <div className="content dashboard-content nexus-dashboard">
+    <section className="nx-welcome">
+      <div>
+        <span className="eyebrow">VISÃO GERAL</span>
+        <h1>Olá, Tester!</h1>
+        <p>Veja o que está acontecendo nas soluções e onde o contexto precisa da sua atenção.</p>
       </div>
-      <div className="dashboard-side-column">
-        <div className="panel quick-create">
-          <div className="panel-head"><div><span className="section-kicker">ACESSO RÁPIDO</span><h2>Comece por aqui</h2></div></div>
-          <button onClick={() => onCreate("demanda")}><span className="quick-button-icon blue"><Plus size={17}/></span><span><strong>Criar demanda</strong><small>Registrar uma nova necessidade</small></span><ArrowRight size={14}/></button>
-          <button onClick={() => onCreate("atividade")}><span className="quick-button-icon green"><Activity size={17}/></span><span><strong>Criar atividade</strong><small>Adicionar trabalho ao fluxo</small></span><ArrowRight size={14}/></button>
-          <button onClick={() => onChange("Chamados")}><span className="quick-button-icon orange"><Headset size={17}/></span><span><strong>Atender chamados</strong><small>Recuperar contexto do atendimento</small></span><ArrowRight size={14}/></button>
-        </div>
-        <div className="panel context-focus">
-          <div className="panel-head"><div><span className="section-kicker">CONTEXTO DA SOLUÇÃO</span><h2>Continuidade do contexto</h2></div><Database size={17} className="context-focus-icon"/></div>
-          <div className="context-score"><div className="score-ring"><strong>82%</strong><span>com contexto</span></div><div><strong>3 chamados aguardam contexto</strong><p>Precisam de informações adicionais para completar o atendimento.</p></div></div>
-          <div className="context-flow-mini"><span>Desenvolvimento</span><ArrowRight size={12}/><span>Suporte</span><ArrowRight size={12}/><span>Conhecimento</span></div>
-        </div>
-        <div className="panel attention-panel">
-          <div className="panel-head"><div><span className="section-kicker">ATENÇÃO</span><h2>O que precisa da sua atenção</h2></div></div>
-          <div className="priority-list">{priorities.map((item) => <button className="priority-item" key={item.title} onClick={() => onChange(item.view)}><span className={"priority-icon "+item.tone}>{item.icon}</span><div className="priority-copy"><strong>{item.title}</strong><span>{item.detail}</span></div><span className={"priority-tag "+item.tone}>{item.tag}</span><ChevronRight size={15} className="priority-arrow"/></button>)}</div>
-        </div>
+      <div className="nx-welcome-actions">
+        <button className="secondary-action" onClick={() => onCreate("atividade")}><Activity size={15}/> Nova atividade</button>
+        <button className="primary" onClick={() => onCreate("demanda")}><Plus size={15}/> Nova demanda</button>
       </div>
     </section>
-    <section className="dashboard-lower">
-      <div className="panel recent-panel"><div className="panel-head"><div><span className="section-kicker">ATIVIDADE</span><h2>Últimas movimentações</h2></div></div>{recent.map((item, i) => <div className="activity-item" key={i}><span className={"activity-icon "+item.tone}><item.icon size={14}/></span><div><p>{item.text}</p><small>{item.time} · {item.user}</small></div></div>)}</div>
-      <div className="panel indicators-panel"><div className="panel-head"><div><span className="section-kicker">RESUMO</span><h2>Indicadores rápidos</h2></div><BarChart3 size={17} className="indicator-icon"/></div><div className="indicator-grid"><Metric icon={<Clock3 size={15}/>} title="Tempo médio de atendimento" value="2h 18min"/><Metric icon={<Database size={15}/>} title="Conhecimentos reutilizados" value="24"/><Metric icon={<CheckCircle2 size={15}/>} title="Soluções validadas" value="31"/><Metric icon={<CircleAlert size={15}/>} title="Chamados sem contexto" value="3"/></div></div>
+
+    <section className="nx-stats">
+      <button onClick={() => onChange("Demandas")} className="nx-stat">
+        <span className="nx-stat-icon blue"><ClipboardList size={17}/></span>
+        <span className="nx-stat-label">Demandas em andamento</span>
+        <strong>12</strong>
+        <small>4 aguardando análise</small>
+      </button>
+      <button onClick={() => onChange("Requisitos")} className="nx-stat">
+        <span className="nx-stat-icon green"><CheckSquare size={17}/></span>
+        <span className="nx-stat-label">Requisitos em validação</span>
+        <strong>8</strong>
+        <small>2 precisam de revisão</small>
+      </button>
+      <button onClick={() => onChange("Chamados")} className="nx-stat">
+        <span className="nx-stat-icon orange"><Headset size={17}/></span>
+        <span className="nx-stat-label">Chamados abertos</span>
+        <strong>8</strong>
+        <small>3 sem contexto completo</small>
+      </button>
+      <button onClick={() => onChange("Conhecimento")} className="nx-stat">
+        <span className="nx-stat-icon purple"><BookOpen size={17}/></span>
+        <span className="nx-stat-label">Conhecimentos validados</span>
+        <strong>31</strong>
+        <small>24 reutilizados em chamados</small>
+      </button>
+    </section>
+
+    <section className="nx-dashboard-grid">
+      <div className="nx-main-column">
+        <article className="panel nx-panel">
+          <div className="nx-panel-head">
+            <div><span className="section-kicker">DESENVOLVIMENTO</span><h2>Soluções em andamento</h2><p>Versões e requisitos que formam o contexto usado posteriormente pelo suporte.</p></div>
+            <button className="text-button" onClick={() => onChange("Soluções e Versões")}>Ver todas <ArrowRight size={12}/></button>
+          </div>
+          <div className="nx-solution-table">
+            <div className="nx-solution-head"><span>Solução</span><span>Versão</span><span>Status</span><span>Progresso</span><span>Prazo</span></div>
+            {solutions.map((item) => <button key={item.name} className="nx-solution-row" onClick={() => onChange("Soluções e Versões")}>
+              <span className="nx-solution-name"><strong>{item.name}</strong><small>{item.context}</small></span>
+              <span className="nx-version">{item.version}</span>
+              <em className={"status-pill "+item.status.toLowerCase().replaceAll(" ","-")}>{item.status}</em>
+              <span className="nx-progress"><b>{item.progress}%</b><i><span style={{width: item.progress+"%"}}/></i></span>
+              <span className="nx-deadline">{item.deadline}</span>
+            </button>)}
+          </div>
+        </article>
+
+        <article className="panel nx-panel">
+          <div className="nx-panel-head compact">
+            <div><span className="section-kicker">DEMANDAS</span><h2>Demandas recentes</h2></div>
+            <button className="text-button" onClick={() => onChange("Demandas")}>Ver todas <ArrowRight size={12}/></button>
+          </div>
+          <div className="nx-demand-table">
+            <div className="nx-demand-head"><span>Título</span><span>Solicitante</span><span>Data</span><span>Status</span></div>
+            {demands.map((item) => <button key={item.title} className="nx-demand-row" onClick={() => onChange("Demandas")}>
+              <strong>{item.title}</strong><span>{item.requester}</span><span>{item.date}</span><em className={"status-pill "+item.status.toLowerCase().replaceAll(" ","-")}>{item.status}</em>
+            </button>)}
+          </div>
+        </article>
+      </div>
+
+      <aside className="nx-side-column">
+        <article className="panel nx-panel nx-quick-panel">
+          <div className="nx-panel-head compact"><div><span className="section-kicker">AÇÕES RÁPIDAS</span><h2>Comece por aqui</h2></div></div>
+          <button onClick={() => onCreate("demanda")}><span className="nx-action-icon blue"><Plus size={16}/></span><span><strong>Nova demanda</strong><small>Registrar uma necessidade</small></span><ArrowRight size={13}/></button>
+          <button onClick={() => onCreate("atividade")}><span className="nx-action-icon green"><Activity size={16}/></span><span><strong>Nova atividade</strong><small>Adicionar trabalho ao fluxo</small></span><ArrowRight size={13}/></button>
+          <button onClick={() => onChange("Chamados")}><span className="nx-action-icon orange"><Headset size={16}/></span><span><strong>Atender chamado</strong><small>Consultar contexto do suporte</small></span><ArrowRight size={13}/></button>
+        </article>
+
+        <article className="panel nx-context-card">
+          <div className="nx-context-head"><div><span className="section-kicker">CONTEXTO DA SOLUÇÃO</span><h2>Continuidade do contexto</h2></div><Database size={17}/></div>
+          <div className="nx-context-body">
+            <div className="nx-context-ring"><strong>82%</strong><span>com contexto</span></div>
+            <div className="nx-context-copy"><strong>3 chamados aguardam contexto</strong><p>Precisam de informações adicionais para completar o atendimento.</p></div>
+          </div>
+          <div className="nx-context-flow"><span>Desenvolvimento</span><ArrowRight size={12}/><span>Suporte</span><ArrowRight size={12}/><span>Conhecimento</span></div>
+        </article>
+
+        <article className="panel nx-panel nx-attention">
+          <div className="nx-panel-head compact"><div><span className="section-kicker">ATENÇÃO</span><h2>O que precisa da sua atenção</h2></div></div>
+          <div className="nx-priority-list">{priorities.map((item) => <button key={item.title} onClick={() => onChange(item.view)}>
+            <span className={"nx-priority-icon "+item.tone}>{item.icon}</span><span className="nx-priority-copy"><strong>{item.title}</strong><small>{item.detail}</small></span><em className={item.tone}>{item.tag}</em><ChevronRight size={14}/>
+          </button>)}</div>
+        </article>
+      </aside>
+    </section>
+
+    <section className="nx-bottom-grid">
+      <article className="panel nx-panel nx-chart-panel">
+        <div className="nx-panel-head compact"><div><span className="section-kicker">SUPORTE</span><h2>Evolução do atendimento</h2></div><span className="nx-period">Últimos 6 meses</span></div>
+        <div className="nx-chart">
+          <div className="nx-chart-y"><span>40</span><span>30</span><span>20</span><span>10</span><span>0</span></div>
+          <svg viewBox="0 0 600 170" preserveAspectRatio="none" aria-label="Evolução de chamados">
+            <polyline points="0,125 100,108 200,92 300,100 400,72 500,54 600,44" fill="none" stroke="#1677ff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+            <polyline points="0,143 100,130 200,118 300,122 400,98 500,78 600,67" fill="none" stroke="#58b89a" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          <div className="nx-chart-months"><span>Abr</span><span>Mai</span><span>Jun</span><span>Jul</span><span>Ago</span><span>Set</span><span>Out</span></div>
+          <div className="nx-chart-legend"><span><i className="received"/>Recebidos</span><span><i className="resolved"/>Resolvidos</span></div>
+        </div>
+      </article>
+
+      <article className="panel nx-panel nx-activity-panel">
+        <div className="nx-panel-head compact"><div><span className="section-kicker">ATIVIDADE RECENTE</span><h2>Últimas movimentações</h2></div></div>
+        <div className="nx-activity-list">{recent.slice(0,4).map((item, index) => <div className="nx-activity-item" key={index}><span className={"nx-activity-icon "+item.tone}><item.icon size={13}/></span><div><strong>{item.text}</strong><small>{item.time} · {item.user}</small></div></div>)}</div>
+      </article>
     </section>
   </div>;
 }
