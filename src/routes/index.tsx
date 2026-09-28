@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Activity, ArrowRight, BarChart3, Bell, BookOpen, Check, CheckCircle2, CheckSquare, ChevronLeft, ChevronRight, CircleAlert, ClipboardList, Clock3, Database, Headset, Home, Layers3, Plus, Search, Settings, UserRound, X } from "lucide-react";
+import { Activity, ArrowRight, BarChart3, Bell, BookOpen, Check, CheckCircle2, CheckSquare, ChevronLeft, ChevronRight, ChevronDown, CircleAlert, ClipboardList, Clock3, Database, Headset, Home, Layers3, Plus, Search, Settings, UserRound, X, MoreHorizontal } from "lucide-react";
 
 import { createFileRoute } from "@tanstack/react-router";
 import "../nexus-app.css";
@@ -41,8 +41,30 @@ const records: Record<Exclude<View, "Dashboard">, { title: string; description: 
   Configurações: { title: "Configurações", description: "Gerencie usuários, preferências e parâmetros do sistema.", action: "Salvar alterações", rows: ["Usuários e permissões", "Preferências da plataforma", "Parâmetros da IA e validação"] },
 };
 
-function Sidebar({ active, onChange }: { active: View; onChange: (view: View) => void }) {
-  return <aside className="sidebar"><div className="brand"><img className="brand-logo" src="/nexus-logo.svg" alt="NEXUS" /><span>NEXUS</span></div><div className="sidebar-caption">GESTÃO DO CICLO DE SOFTWARE</div><nav>{menu.map((item) => <button key={item.label} className={active === item.label ? "nav-item active" : "nav-item"} onClick={() => onChange(item.label)}><span className="nav-icon"><item.icon size={16} strokeWidth={1.8} /></span><span>{item.label}</span></button>)}</nav><div className="sidebar-footer"><img className="mini-logo" src="/nexus-logo.svg" alt="" /><span>Contexto conectado<br/>do desenvolvimento ao suporte.</span></div></aside>;
+function Navbar({ active, onChange, onCreate }: { active: View; onChange: (view: View) => void; onCreate: (type: WizardType) => void }) {
+  const primary: View[] = ["Dashboard","Demandas","Requisitos","Soluções e Versões","Chamados","Conhecimento"];
+  const secondary: View[] = ["Atividades","Indicadores","Configurações"];
+  return <header className="nx-navbar">
+    <div className="nx-nav-brand">
+      <img src="/nexus-logo.svg" alt="NEXUS" />
+      <div><strong>NEXUS</strong><small>CONEXÃO DE CONTEXTO</small></div>
+    </div>
+    <nav className="nx-nav-links" aria-label="Navegação principal">
+      {primary.map((item) => <button key={item} className={active === item ? "active" : ""} onClick={() => onChange(item)}>{item === "Dashboard" && <Home size={14}/>} {item}</button>)}
+      <div className="nx-nav-more">
+        <button className={secondary.includes(active) ? "active" : ""}><MoreHorizontal size={15}/> Mais <ChevronDown size={12}/></button>
+        <div className="nx-nav-dropdown">
+          {secondary.map((item) => <button key={item} onClick={() => onChange(item)}><span>{item === "Atividades" ? <Activity size={14}/> : item === "Indicadores" ? <BarChart3 size={14}/> : <Settings size={14}/>}</span>{item}</button>)}
+        </div>
+      </div>
+    </nav>
+    <div className="nx-nav-actions">
+      <button className="nx-nav-create" onClick={() => onCreate("demanda")}><Plus size={14}/> Nova demanda</button>
+      <button className="global-search" onClick={() => window.dispatchEvent(new CustomEvent("nexus:search"))}><Search size={15}/><span>Pesquisar</span><kbd>⌘ K</kbd></button>
+      <button className="notification-icon" aria-label="Notificações"><Bell size={17} strokeWidth={1.8}/><i/></button>
+      <div className="user"><div className="avatar"><UserRound size={14}/></div><span>Tester<small>USUÁRIO</small></span></div>
+    </div>
+  </header>;
 }
 
 function Header({ active }: { active: View }) {
@@ -252,6 +274,6 @@ function Index() {
   const [searchOpen,setSearchOpen]=React.useState(false);
   React.useEffect(()=>{const open=()=>setSearchOpen(true);const onKeyDown=(event:KeyboardEvent)=>{if((event.metaKey||event.ctrlKey)&&event.key.toLowerCase()==="k"){event.preventDefault();setSearchOpen(true);}if(event.key==="Escape"){setSearchOpen(false);setWizard(null);}};window.addEventListener("nexus:search",open);window.addEventListener("keydown",onKeyDown);return()=>{window.removeEventListener("nexus:search",open);window.removeEventListener("keydown",onKeyDown);};},[]);
   const openCreate=(type:WizardType)=>setWizard(type);
-  return <div className="app"><Sidebar active={active} onChange={setActive}/><div className="main"><Header active={active}/>{active==="Dashboard"?<Dashboard onChange={setActive} onCreate={openCreate}/>:<ModuleView view={active} onCreate={openCreate}/>}</div>{wizard&&<Stepper type={wizard} onClose={()=>setWizard(null)}/>} {searchOpen&&<div className="search-overlay" onClick={()=>setSearchOpen(false)}><div className="search-dialog" onClick={e=>e.stopPropagation()}><div className="search-dialog-head"><Search size={16}/><input autoFocus placeholder="Pesquisar demandas, atividades, requisitos, chamados..."/><button onClick={()=>setSearchOpen(false)}><X size={16}/></button></div><div className="search-empty"><Search size={22}/><strong>Pesquisa global</strong><span>Encontre informações do NEXUS sem precisar navegar entre módulos.</span></div></div></div>}</div>;
+  return <div className="app"><div className="main"><Navbar active={active} onChange={setActive} onCreate={openCreate}/>{active==="Dashboard"?<Dashboard onChange={setActive} onCreate={openCreate}/>:<ModuleView view={active} onCreate={openCreate}/>}</div>{wizard&&<Stepper type={wizard} onClose={()=>setWizard(null)}/>} {searchOpen&&<div className="search-overlay" onClick={()=>setSearchOpen(false)}><div className="search-dialog" onClick={e=>e.stopPropagation()}><div className="search-dialog-head"><Search size={16}/><input autoFocus placeholder="Pesquisar demandas, atividades, requisitos, chamados..."/><button onClick={()=>setSearchOpen(false)}><X size={16}/></button></div><div className="search-empty"><Search size={22}/><strong>Pesquisa global</strong><span>Encontre informações do NEXUS sem precisar navegar entre módulos.</span></div></div></div>}</div>;
 }
 
