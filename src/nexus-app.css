@@ -746,6 +746,207 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .search-empty strong { color: #40516a; font-size: 11px; }
 .search-empty span { max-width: 350px; color: #8996a8; font-size: 8px; line-height: 1.5; }
 
+/* Dashboard MVP — navigation and operational overview */
+.stat-card-button {
+  width: 100%;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.stat-card-button:hover {
+  border-color: #c9dced;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 22px rgba(18,37,62,.07);
+}
+.stat-card-button:focus-visible,
+.solution-row:focus-visible,
+.demand-row:focus-visible {
+  outline: 2px solid rgba(22,119,255,.32);
+  outline-offset: -2px;
+}
+.dashboard-side-column {
+  height: auto;
+  grid-template-rows: auto auto auto;
+}
+.solutions-panel,
+.demands-panel {
+  min-width: 0;
+}
+.solution-table,
+.demand-table {
+  width: 100%;
+  overflow: hidden;
+}
+.solution-table-head,
+.solution-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.8fr) 72px 112px minmax(105px, .9fr) 78px 18px;
+  align-items: center;
+  gap: 10px;
+}
+.solution-table-head {
+  padding: 0 8px 9px;
+  color: #9aa7b7;
+  font-size: 7px;
+  font-weight: 750;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.solution-row {
+  width: 100%;
+  min-height: 58px;
+  padding: 9px 8px;
+  border: 0;
+  border-top: 1px solid #edf1f5;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.solution-row:hover,
+.demand-row:hover {
+  background: #fbfdff;
+}
+.solution-name {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.solution-name strong {
+  overflow: hidden;
+  color: #263851;
+  font-size: 8px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.solution-name small {
+  overflow: hidden;
+  color: #8b98a9;
+  font-size: 7px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.solution-version,
+.solution-deadline {
+  color: #687990;
+  font-size: 7px;
+}
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  width: max-content;
+  max-width: 100%;
+  padding: 4px 7px;
+  border-radius: 999px;
+  color: #61738a;
+  background: #eef2f6;
+  font-size: 6.5px;
+  font-style: normal;
+  font-weight: 750;
+  white-space: nowrap;
+}
+.status-pill.em-desenvolvimento,
+.status-pill.em-andamento {
+  color: #1474d8;
+  background: #eaf3ff;
+}
+.status-pill.em-especificação,
+.status-pill.em-análise {
+  color: #7558ba;
+  background: #f0edff;
+}
+.status-pill.em-validação,
+.status-pill.pendente {
+  color: #b16a16;
+  background: #fff3df;
+}
+.status-pill.em-testes,
+.status-pill.concluída {
+  color: #19845d;
+  background: #e7f7f0;
+}
+.solution-progress {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.solution-progress strong {
+  width: 25px;
+  color: #4e6078;
+  font-size: 7px;
+}
+.solution-progress i {
+  height: 4px;
+  flex: 1;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e8edf3;
+}
+.solution-progress b {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #1677ff;
+}
+.solution-arrow {
+  color: #a6b1bf;
+}
+.demand-table-head,
+.demand-row {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.8fr) minmax(100px, .8fr) 92px 92px 18px;
+  align-items: center;
+  gap: 10px;
+}
+.demand-table-head {
+  padding: 0 8px 9px;
+  color: #9aa7b7;
+  font-size: 7px;
+  font-weight: 750;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.demand-row {
+  width: 100%;
+  min-height: 43px;
+  padding: 8px;
+  border: 0;
+  border-top: 1px solid #edf1f5;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.demand-row > strong {
+  overflow: hidden;
+  color: #31445d;
+  font-size: 8px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.demand-row > span {
+  overflow: hidden;
+  color: #8290a3;
+  font-size: 7px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.demand-row > svg {
+  color: #a6b1bf;
+}
+.attention-panel .panel-head {
+  margin-bottom: 4px;
+}
+.attention-panel .priority-list {
+  border-top: 1px solid #edf1f5;
+}
+.attention-panel .priority-item {
+  min-height: 55px;
+}
+
 @media (max-width: 1080px) {
   .sidebar { width: 220px; }
   .main { margin-left: 220px; }
