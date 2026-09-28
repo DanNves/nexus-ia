@@ -48,7 +48,11 @@ function Sidebar({ active, onChange }: { active: View; onChange: (view: View) =>
 function Header({ active }: { active: View }) {
   return <header className="topbar">
     <div className="top-location"><span className="top-section">NEXUS</span><ChevronRight size={13}/><strong>{active}</strong></div>
-    <div className="top-actions"><button className="global-search" onClick={() => window.dispatchEvent(new CustomEvent("nexus:search"))}><Search size={15}/><span>Pesquisar no NEXUS</span><kbd>⌘ K</kbd></button><button className="notification-icon" aria-label="Notificações"><Bell size={17} strokeWidth={1.8}/><i/></button><div className="user"><div className="avatar"><UserRound size={14}/></div><span>Tester<small>USUÁRIO</small></span>function Dashboard({ onChange, onCreate }: { onChange: (view: View) => void; onCreate: (type: WizardType) => void }) {
+    <div className="top-actions"><button className="global-search" onClick={() => window.dispatchEvent(new CustomEvent("nexus:search"))}><Search size={15}/><span>Pesquisar no NEXUS</span><kbd>⌘ K</kbd></button><button className="notification-icon" aria-label="Notificações"><Bell size={17} strokeWidth={1.8}/><i/></button><div className="user"><div className="avatar"><UserRound size={14}/></div><span>Tester<small>USUÁRIO</small></span></div></div>
+  </header>;
+}
+
+function Dashboard({ onChange, onCreate }: { onChange: (view: View) => void; onCreate: (type: WizardType) => void }) {
   const priorities = [
     { icon: <CircleAlert size={15}/>, title: "Validar atendimento", detail: "CH-028 · Falha na autenticação", tag: "5 pendentes", tone: "orange", view: "Chamados" as View },
     { icon: <ClipboardList size={15}/>, title: "Revisar requisito", detail: "REQ-014 · Recuperação de senha", tag: "2 hoje", tone: "blue", view: "Requisitos" as View },
