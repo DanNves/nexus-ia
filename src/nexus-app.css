@@ -1141,7 +1141,8 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .nx-activity-item small { color:#9aa6b6; font-size:6px; }
 @media (max-width:1080px) {
   .nx-dashboard-grid { grid-template-columns:1fr; }
-  .nx-side-column { display:grid; grid-template-columns:1fr 1fr; }
+  .nx-side-column { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-items:stretch; }
+  .nx-side-column > .nx-attention { grid-column:1 / -1; }
   .nx-context-card { min-height:260px; }
   .nx-bottom-grid { grid-template-columns:1fr; }
 }
