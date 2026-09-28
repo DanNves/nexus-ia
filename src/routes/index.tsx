@@ -42,35 +42,34 @@ const records: Record<Exclude<View, "Dashboard">, { title: string; description: 
 };
 
 function Navbar({ active, onChange, onCreate }: { active: View; onChange: (view: View) => void; onCreate: (type: WizardType) => void }) {
+  const [mobileOpen,setMobileOpen]=React.useState(false);
+  const [moreOpen,setMoreOpen]=React.useState(false);
   const primary: View[] = ["Dashboard","Demandas","Requisitos","Soluções e Versões","Chamados","Conhecimento"];
   const secondary: View[] = ["Atividades","Indicadores","Configurações"];
+  const select=(view:View)=>{onChange(view);setMobileOpen(false);setMoreOpen(false);};
   return <header className="nx-navbar">
-    <div className="nx-nav-brand">
+    <div className="nx-nav-brand" onClick={()=>select("Dashboard")} role="button" tabIndex={0}>
       <img src="/nexus-logo.svg" alt="NEXUS" />
       <div><strong>NEXUS</strong><small>CONEXÃO DE CONTEXTO</small></div>
     </div>
-    <nav className="nx-nav-links" aria-label="Navegação principal">
-      {primary.map((item) => <button key={item} className={active === item ? "active" : ""} onClick={() => onChange(item)}>{item === "Dashboard" && <Home size={14}/>} {item}</button>)}
-      <div className="nx-nav-more">
-        <button className={secondary.includes(active) ? "active" : ""}><MoreHorizontal size={15}/> Mais <ChevronDown size={12}/></button>
-        <div className="nx-nav-dropdown">
-          {secondary.map((item) => <button key={item} onClick={() => onChange(item)}><span>{item === "Atividades" ? <Activity size={14}/> : item === "Indicadores" ? <BarChart3 size={14}/> : <Settings size={14}/>}</span>{item}</button>)}
+    <button className="nx-mobile-toggle" aria-label="Abrir navegação" aria-expanded={mobileOpen} onClick={()=>setMobileOpen(v=>!v)}><span/><span/><span/></button>
+    <div className={"nx-nav-content "+(mobileOpen?"open":"")}>
+      <nav className="nx-nav-links" aria-label="Navegação principal">
+        {primary.map((item) => <button key={item} className={active === item ? "active" : ""} onClick={() => select(item)}>{item === "Dashboard" && <Home size={14}/>}<span>{item}</span></button>)}
+        <div className="nx-nav-more">
+          <button className={secondary.includes(active) ? "active" : ""} aria-expanded={moreOpen} onClick={()=>setMoreOpen(v=>!v)}><MoreHorizontal size={15}/> <span>Mais</span><ChevronDown size={12}/></button>
+          {moreOpen&&<div className="nx-nav-dropdown">
+            {secondary.map((item) => <button key={item} onClick={() => select(item)}><span>{item === "Atividades" ? <Activity size={14}/> : item === "Indicadores" ? <BarChart3 size={14}/> : <Settings size={14}/>}</span>{item}</button>)}
+          </div>}
         </div>
+      </nav>
+      <div className="nx-nav-actions">
+        <button className="nx-nav-create" onClick={() => {onCreate("demanda");setMobileOpen(false)}}><Plus size={14}/> <span>Nova demanda</span></button>
+        <button className="global-search" onClick={() => {window.dispatchEvent(new CustomEvent("nexus:search"));setMobileOpen(false)}}><Search size={15}/><span>Pesquisar</span><kbd>⌘ K</kbd></button>
+        <button className="notification-icon" aria-label="Notificações"><Bell size={17} strokeWidth={1.8}/><i/></button>
+        <button className="user nx-user-button" aria-label="Usuário Tester"><div className="avatar"><UserRound size={14}/></div><span>Tester<small>USUÁRIO</small></span></button>
       </div>
-    </nav>
-    <div className="nx-nav-actions">
-      <button className="nx-nav-create" onClick={() => onCreate("demanda")}><Plus size={14}/> Nova demanda</button>
-      <button className="global-search" onClick={() => window.dispatchEvent(new CustomEvent("nexus:search"))}><Search size={15}/><span>Pesquisar</span><kbd>⌘ K</kbd></button>
-      <button className="notification-icon" aria-label="Notificações"><Bell size={17} strokeWidth={1.8}/><i/></button>
-      <div className="user"><div className="avatar"><UserRound size={14}/></div><span>Tester<small>USUÁRIO</small></span></div>
     </div>
-  </header>;
-}
-
-function Header({ active }: { active: View }) {
-  return <header className="topbar">
-    <div className="top-location"><span className="top-section">NEXUS</span><ChevronRight size={13}/><strong>{active}</strong></div>
-    <div className="top-actions"><button className="global-search" onClick={() => window.dispatchEvent(new CustomEvent("nexus:search"))}><Search size={15}/><span>Pesquisar no NEXUS</span><kbd>⌘ K</kbd></button><button className="notification-icon" aria-label="Notificações"><Bell size={17} strokeWidth={1.8}/><i/></button><div className="user"><div className="avatar"><UserRound size={14}/></div><span>Tester<small>USUÁRIO</small></span></div></div>
   </header>;
 }
 
