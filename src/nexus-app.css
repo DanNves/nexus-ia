@@ -1961,3 +1961,291 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
     grid-column: 1 / -1;
   }
 }
+
+
+/* =========================================================
+   FINAL NAVBAR FIX — aligns the current Navbar JSX
+   ========================================================= */
+
+/* The header contains a dedicated .nx-navbar-main wrapper.
+   The wrapper, not the header itself, must own the horizontal layout. */
+.nx-navbar {
+  display: block;
+  min-height: 68px;
+  padding: 0 clamp(14px, 2.4vw, 32px);
+}
+.nx-navbar-main {
+  width: 100%;
+  min-height: 68px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.nx-navbar-divider {
+  width: 1px;
+  height: 28px;
+  flex: 0 0 1px;
+  background: #e8edf3;
+}
+.nx-nav-brand {
+  min-width: 145px;
+  height: 42px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  flex: 0 0 auto;
+}
+.nx-nav-brand img {
+  width: 31px;
+  height: 31px;
+  flex: 0 0 31px;
+}
+.nx-nav-brand > span {
+  min-width: 0;
+}
+.nx-nav-links {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: visible;
+}
+.nx-nav-links > button,
+.nx-nav-more > button {
+  flex: 0 0 auto;
+}
+.nx-nav-actions {
+  flex: 0 0 auto;
+}
+.nx-user-menu {
+  position: relative;
+  flex: 0 0 auto;
+}
+.nx-user-button {
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 4px 2px 3px;
+  border-radius: 8px;
+}
+.nx-user-button:hover {
+  background: #f4f7fa;
+}
+.nx-user-button > span:not(.avatar) {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+.nx-user-button strong {
+  color: #30445e;
+  font-size: 7.5px;
+  line-height: 1;
+}
+.nx-user-button small {
+  color: #9aa6b5;
+  font-size: 5px;
+  line-height: 1;
+  letter-spacing: .04em;
+}
+.nx-user-dropdown {
+  position: absolute;
+  top: calc(100% + 7px);
+  right: 0;
+  z-index: 80;
+  width: 180px;
+  padding: 7px;
+  border: 1px solid #e1e8ef;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 15px 35px rgba(18,38,62,.13);
+}
+.nx-user-dropdown > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px 9px;
+  border-bottom: 1px solid #edf1f5;
+  color: #344a64;
+  font-size: 8px;
+}
+.nx-user-dropdown button {
+  width: 100%;
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #5d6f84;
+  font-size: 7.5px;
+  text-align: left;
+  cursor: pointer;
+}
+.nx-user-dropdown button:hover {
+  background: #f4f8fc;
+  color: #1677ff;
+}
+
+/* Desktop: never let the mobile navigation participate in layout. */
+.nx-mobile-panel {
+  display: none !important;
+}
+
+/* Medium desktop: compress controls before switching to mobile. */
+@media (max-width: 1100px) and (min-width: 901px) {
+  .nx-navbar {
+    padding: 0 14px;
+  }
+  .nx-navbar-main {
+    gap: 7px;
+  }
+  .nx-nav-brand {
+    min-width: 132px;
+  }
+  .nx-nav-links {
+    gap: 0;
+  }
+  .nx-nav-links > button,
+  .nx-nav-more > button {
+    height: 34px;
+    padding: 0 5px;
+    gap: 4px;
+    font-size: 7px;
+  }
+  .nx-nav-actions {
+    gap: 3px;
+  }
+  .nx-nav-create {
+    width: 31px;
+    padding: 0;
+    justify-content: center;
+    font-size: 0;
+  }
+  .nx-nav-create svg {
+    width: 14px;
+    height: 14px;
+  }
+  .nx-navbar .global-search {
+    width: 32px;
+    min-width: 32px;
+    padding: 0;
+    justify-content: center;
+  }
+  .nx-navbar .global-search span,
+  .nx-navbar .global-search kbd {
+    display: none;
+  }
+  .nx-user-button > span:not(.avatar),
+  .nx-user-button > svg {
+    display: none;
+  }
+  .nx-user-button {
+    padding-right: 0;
+  }
+}
+
+/* Mobile: one coherent control, with all navigation inside the drawer. */
+@media (max-width: 900px) {
+  .nx-navbar {
+    min-height: 62px;
+    padding: 0 13px;
+  }
+  .nx-navbar-main {
+    min-height: 62px;
+    gap: 8px;
+  }
+  .nx-navbar-divider,
+  .nx-nav-links,
+  .nx-nav-actions {
+    display: none;
+  }
+  .nx-nav-brand {
+    min-width: auto;
+  }
+  .nx-mobile-toggle {
+    display: grid;
+    margin-left: auto;
+  }
+  .nx-mobile-panel {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 70;
+    display: none !important;
+    padding: 12px 14px 15px;
+    border-bottom: 1px solid #e4eaf1;
+    background: #fff;
+    box-shadow: 0 15px 30px rgba(20,43,70,.1);
+  }
+  .nx-mobile-panel.open {
+    display: block !important;
+  }
+  .nx-mobile-primary {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0,1fr));
+    gap: 4px;
+  }
+  .nx-mobile-primary button,
+  .nx-mobile-secondary button {
+    min-height: 38px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 10px;
+    border: 1px solid #e5ebf2;
+    border-radius: 8px;
+    background: #fff;
+    color: #53647b;
+    font-size: 8px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .nx-mobile-primary button.active {
+    color: #126bdc;
+    border-color: #cfe0f3;
+    background: #eaf3ff;
+  }
+  .nx-mobile-secondary {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+    margin-top: 7px;
+    padding-top: 8px;
+    border-top: 1px solid #edf1f5;
+  }
+  .nx-mobile-create {
+    width: 100%;
+    min-height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    margin-top: 8px;
+    border: 1px solid #1677ff;
+    border-radius: 8px;
+    background: #1677ff;
+    color: #fff;
+    font-size: 8px;
+    font-weight: 750;
+    cursor: pointer;
+  }
+}
+@media (max-width: 480px) {
+  .nx-nav-brand img {
+    width: 29px;
+    height: 29px;
+  }
+  .nx-nav-brand strong {
+    font-size: 12px;
+  }
+  .nx-nav-brand small {
+    display: none;
+  }
+  .nx-mobile-primary,
+  .nx-mobile-secondary {
+    grid-template-columns: 1fr;
+  }
+}
