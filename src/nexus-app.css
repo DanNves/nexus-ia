@@ -2249,3 +2249,327 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
     grid-template-columns: 1fr;
   }
 }
+
+
+/* =========================================================
+   NEXUS — final visual polish
+   Icons, typography, density and dashboard whitespace.
+   ========================================================= */
+
+/* Navbar: clearer iconography and more comfortable reading. */
+.nx-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.nx-nav-links > button,
+.nx-nav-more > button {
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #60718a;
+  font-size: 9px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background .15s ease, color .15s ease;
+}
+.nx-nav-links > button svg,
+.nx-nav-more > button svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 1.9;
+  flex: 0 0 auto;
+}
+.nx-nav-links > button:hover,
+.nx-nav-more > button:hover {
+  color: #1b70df;
+  background: #f4f8fd;
+}
+.nx-nav-links > button.active,
+.nx-nav-more > button.active {
+  color: #126bdc;
+  background: #eaf3ff;
+  box-shadow: inset 0 -2px 0 #1677ff;
+}
+.nx-nav-more {
+  position: relative;
+  flex: 0 0 auto;
+}
+.nx-nav-dropdown {
+  position: absolute;
+  top: calc(100% + 5px);
+  right: 0;
+  z-index: 90;
+  width: 175px;
+  padding: 6px;
+  border: 1px solid #e1e8ef;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 15px 35px rgba(18,38,62,.13);
+}
+.nx-nav-dropdown button {
+  width: 100%;
+  min-height: 34px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #53657c;
+  font-size: 9px;
+  font-weight: 650;
+  text-align: left;
+  cursor: pointer;
+}
+.nx-nav-dropdown button:hover {
+  background: #f4f8fc;
+  color: #1677ff;
+}
+
+/* Make the brand mark visually match the navigation scale. */
+.nx-nav-brand img {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+}
+.nx-nav-brand > span strong {
+  font-size: 14px;
+}
+.nx-nav-brand > span small {
+  font-size: 6.5px;
+}
+
+/* Search / notification / user controls need the same visual weight. */
+.nx-navbar .global-search {
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  justify-content: center;
+}
+.nx-navbar .global-search span,
+.nx-navbar .global-search kbd {
+  display: none;
+}
+.nx-navbar .notification-icon {
+  width: 38px;
+  height: 38px;
+}
+.nx-navbar .notification-icon svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 1.8;
+}
+.nx-navbar .nx-nav-create {
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  justify-content: center;
+  font-size: 0;
+}
+.nx-navbar .nx-nav-create svg {
+  width: 17px;
+  height: 17px;
+}
+
+/* Dashboard typography: stop using ultra-small admin-template text. */
+.nexus-dashboard {
+  font-size: 11px;
+}
+.nexus-dashboard .eyebrow,
+.nexus-dashboard .section-kicker {
+  font-size: 9px;
+  letter-spacing: .09em;
+  font-weight: 800;
+}
+.nexus-dashboard .nx-welcome h1 {
+  font-size: clamp(25px, 2.5vw, 31px);
+  line-height: 1.08;
+}
+.nexus-dashboard .nx-welcome p {
+  font-size: 10px;
+  line-height: 1.5;
+}
+.nexus-dashboard .nx-panel-head h2,
+.nexus-dashboard .nx-context-head h2 {
+  font-size: 15px;
+  line-height: 1.2;
+}
+.nexus-dashboard .nx-panel-head {
+  min-height: 42px;
+  margin-bottom: 11px;
+}
+.nexus-dashboard .panel-link {
+  font-size: 9px;
+}
+
+/* Indicators: more readable and slightly more substantial. */
+.nx-stat-grid {
+  gap: 12px;
+}
+.nx-stat-grid .stat-card {
+  min-height: 112px;
+  padding: 17px;
+}
+.nx-stat-grid .stat-card > span {
+  font-size: 10px;
+  line-height: 1.35;
+  color: #61738c;
+}
+.nx-stat-grid .stat-card strong {
+  margin-top: 9px;
+  font-size: 29px;
+}
+.nx-stat-grid .stat-card small {
+  margin-top: 9px;
+  font-size: 9px;
+}
+
+/* Main panels use their available area instead of leaving unexplained gaps. */
+.nx-main-grid {
+  gap: 12px;
+}
+.nx-main-column,
+.nx-side-column {
+  gap: 12px;
+}
+.nx-flow-panel {
+  min-height: 178px;
+}
+.nx-flow-panel .mvp-flow {
+  min-height: 72px;
+  gap: 8px;
+  padding: 12px 17px;
+}
+.nx-flow-panel .mvp-flow > span {
+  min-height: 30px;
+  padding: 0 10px;
+  font-size: 9px;
+}
+.nx-flow-panel .mvp-flow-note {
+  padding: 13px 17px 15px;
+  font-size: 9.5px;
+}
+.nx-flow-panel .mvp-flow-note strong {
+  font-size: 10px;
+}
+
+/* Support list: readable IDs, titles and secondary context. */
+.nx-main-column > .nx-panel:not(.nx-flow-panel) {
+  min-height: 208px;
+}
+.mvp-ticket-row {
+  min-height: 65px;
+  grid-template-columns: 34px minmax(0,1fr) max-content 17px;
+  gap: 11px;
+  padding: 10px 17px;
+}
+.ticket-icon {
+  width: 32px;
+  height: 32px;
+}
+.mvp-ticket-row strong {
+  font-size: 10px;
+}
+.mvp-ticket-row small {
+  font-size: 8.5px;
+}
+
+/* Context card: use the vertical space intentionally. */
+.nx-context-card {
+  min-height: 230px;
+}
+.nx-context-body {
+  flex: 1 1 auto;
+}
+.nx-context-copy strong {
+  font-size: 11px;
+}
+.nx-context-copy p {
+  font-size: 9px;
+  line-height: 1.5;
+}
+.nx-context-flow {
+  min-height: 48px;
+}
+.nx-context-flow span {
+  font-size: 8px;
+}
+
+/* Attention panel: no giant empty card and no microscopic text. */
+.nx-attention {
+  min-height: 205px;
+}
+.nx-attention .nx-panel-head {
+  margin-bottom: 0;
+}
+.mvp-attention > button {
+  min-height: 64px;
+  padding: 10px 15px;
+}
+.mvp-attention > button strong {
+  font-size: 9.5px;
+}
+.mvp-attention > button small {
+  font-size: 8px;
+}
+
+/* Bottom cards: clearer visual anchors. */
+.nx-bottom-grid {
+  gap: 12px;
+}
+.nx-bottom-grid > .nx-panel {
+  min-height: 132px;
+}
+.mvp-trace {
+  min-height: 82px;
+  padding: 12px 17px;
+}
+.mvp-trace strong {
+  font-size: 9px;
+}
+.mvp-trace span {
+  font-size: 8px;
+}
+.mvp-knowledge-summary {
+  min-height: 82px;
+}
+.mvp-knowledge-summary strong {
+  font-size: 29px;
+}
+.mvp-knowledge-summary span {
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+/* Keep compact sizing only on genuinely narrow screens. */
+@media (max-width: 1100px) and (min-width: 901px) {
+  .nx-nav-links > button,
+  .nx-nav-more > button {
+    padding: 0 5px;
+    font-size: 8px;
+  }
+  .nx-nav-links > button svg,
+  .nx-nav-more > button svg {
+    width: 15px;
+    height: 15px;
+  }
+}
+@media (max-width: 640px) {
+  .nexus-dashboard .nx-welcome h1 {
+    font-size: 25px;
+  }
+  .nx-flow-panel {
+    min-height: auto;
+  }
+  .nx-main-column > .nx-panel:not(.nx-flow-panel),
+  .nx-context-card,
+  .nx-attention {
+    min-height: auto;
+  }
+}
