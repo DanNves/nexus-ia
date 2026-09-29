@@ -1344,3 +1344,75 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
   .nx-demand-head span:nth-child(2),.nx-demand-row > span:nth-child(2) { display:none; }
   .nx-context-card { min-height:250px; }
 }
+
+/* NEXUS UX refinement — hierarchy, orientation and module navigation */
+.nx-module-page { max-width: 1500px; }
+.nx-breadcrumb { display:flex; align-items:center; gap:5px; margin:2px 0 9px; color:#97a4b4; font-size:8px; }
+.nx-breadcrumb button { border:0; padding:0; background:transparent; color:#6f8097; font-size:8px; cursor:pointer; }
+.nx-breadcrumb button:hover { color:#1677ff; }
+.nx-module-heading { margin-bottom:14px; }
+.nx-page-actions { display:flex; gap:8px; align-items:center; }
+.nx-module-summary {
+  display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin-bottom:12px;
+}
+.nx-module-summary > div {
+  display:flex; align-items:baseline; gap:7px; min-height:58px; padding:12px 14px;
+  border:1px solid #e5ebf2; border-radius:11px; background:#fff;
+}
+.nx-module-summary strong { color:#172a44; font-size:18px; letter-spacing:-.03em; }
+.nx-module-summary span { color:#8795a7; font-size:8px; }
+.nx-module-panel { overflow:hidden; }
+.nx-module-toolbar { min-height:58px; display:flex; align-items:center; gap:10px; padding:9px 13px; border-bottom:1px solid #edf1f5; }
+.nx-module-toolbar .module-search { flex:1; min-width:180px; }
+.nx-module-toolbar .module-search input { width:100%; border:0; outline:0; background:transparent; color:#33465f; font-size:9px; }
+.nx-toolbar-filters { display:flex; align-items:center; gap:4px; }
+.nx-filter {
+  height:29px; padding:0 9px; border:1px solid #e4eaf1; border-radius:7px; background:#fff; color:#78879a; font-size:7.5px; cursor:pointer;
+}
+.nx-filter:hover,.nx-filter.active { color:#1677ff; border-color:#cfe0f3; background:#f7fbff; }
+.nx-list-head,.nx-module-row {
+  display:grid; grid-template-columns:minmax(260px,1.6fr) minmax(160px,.9fr) 125px 18px; gap:12px; align-items:center;
+}
+.nx-list-head { padding:9px 15px; color:#9aa6b6; font-size:6.5px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; }
+.nx-module-row {
+  width:100%; min-height:63px; padding:10px 15px; border:0; border-top:1px solid #edf1f5; background:#fff; color:inherit; text-align:left; cursor:pointer;
+}
+.nx-module-row:hover { background:#fbfdff; }
+.nx-record-main { min-width:0; display:flex; flex-direction:column; gap:4px; }
+.nx-record-main strong { overflow:hidden; color:#263851; font-size:9px; white-space:nowrap; text-overflow:ellipsis; }
+.nx-record-main small { color:#8997a8; font-size:7px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.nx-record-context { display:flex; align-items:center; gap:6px; color:#718198; font-size:7px; }
+.nx-record-context i { width:6px; height:6px; border-radius:50%; background:#31a878; box-shadow:0 0 0 3px #e7f7f0; }
+.nx-module-row > svg { color:#a3afbd; }
+.nx-module-hint {
+  display:flex; align-items:flex-start; gap:9px; margin-top:10px; padding:11px 13px;
+  border:1px solid #dceaf8; border-radius:10px; background:#f7fbff; color:#718198; font-size:7.5px; line-height:1.5;
+}
+.nx-module-hint svg { flex:0 0 auto; margin-top:1px; color:#1677ff; }
+.nx-module-hint strong { color:#38516d; }
+
+/* More intentional dashboard hierarchy */
+.nexus-dashboard { padding-bottom:28px; }
+.nx-welcome { padding:4px 1px 1px; }
+.nx-welcome h1 { font-weight:800; }
+.nx-stat { box-shadow:0 3px 14px rgba(18,37,62,.025); }
+.nx-stat small { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.nx-context-card { border-color:#dbe5ef; }
+.nx-priority-list button { transition:background .14s ease, transform .14s ease; }
+.nx-priority-list button:hover { transform:translateX(2px); }
+@media (max-width:900px) {
+  .nx-module-summary { grid-template-columns:1fr; }
+  .nx-module-toolbar { align-items:stretch; flex-direction:column; }
+  .nx-toolbar-filters { width:100%; overflow-x:auto; padding-bottom:2px; }
+  .nx-filter { flex:0 0 auto; }
+  .nx-list-head { display:none; }
+  .nx-module-row { grid-template-columns:minmax(0,1fr) auto; gap:8px; }
+  .nx-record-context,.nx-module-row > .status-pill { display:none; }
+}
+@media (max-width:600px) {
+  .nx-module-heading { align-items:flex-start; flex-direction:column; }
+  .nx-page-actions { width:100%; }
+  .nx-page-actions .primary,.nx-page-actions .secondary-action { flex:1; }
+  .nx-module-row { min-height:69px; padding:11px 12px; }
+  .nx-module-hint { font-size:7px; }
+}
