@@ -1439,3 +1439,491 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .mvp-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:40px;border:1px dashed #dbe4ed;border-radius:10px;background:#fff;color:#8b99a9}.mvp-empty strong{font-size:9px;color:#53667c}.mvp-empty span{font-size:7px}
 .mvp-search{max-width:680px}.mvp-search-results{max-height:430px;overflow:auto;padding:7px}.mvp-search-results button{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px;border:0;border-radius:8px;background:transparent;text-align:left;cursor:pointer}.mvp-search-results button:hover{background:#f4f8fc}.mvp-search-results span{display:flex;flex-direction:column;gap:3px}.mvp-search-results strong{font-size:8px;color:#33485f}.mvp-search-results small{font-size:6.5px;color:#8b99a9}
 @media(max-width:700px){.mvp-drawer-head,.mvp-detail-body{padding-left:15px;padding-right:15px}.mvp-context-strip{padding-left:15px;padding-right:15px}.mvp-fields{grid-template-columns:1fr}.mvp-validation{align-items:flex-start;flex-direction:column}.mvp-validation>div{width:100%;flex-wrap:wrap}.mvp-validation button{flex:1}.mvp-drawer-footer{padding-left:15px;padding-right:15px}.mvp-flow{justify-content:flex-start}.mvp-trace{justify-content:flex-start}}
+
+
+/* =========================================================
+   NEXUS — dashboard/current JSX alignment
+   This block intentionally targets the classes used by the
+   current MVP components. It does not change the visual
+   language of the navbar; it restores the intended layout
+   structure and responsive behavior.
+   ========================================================= */
+
+/* Current navbar markup uses <span> for the brand text. */
+.nx-nav-brand > span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.nx-nav-brand > span strong {
+  color: #14263f;
+  font-size: 13px;
+  line-height: 1;
+  letter-spacing: .14em;
+}
+.nx-nav-brand > span small {
+  color: #8090a5;
+  font-size: 6px;
+  font-weight: 800;
+  letter-spacing: .1em;
+}
+
+/* The current JSX uses nx-mobile-panel, not the old nx-nav-content. */
+.nx-mobile-panel {
+  display: none;
+}
+.nx-mobile-panel.open {
+  display: none;
+}
+
+/* Dashboard summary cards — the current component uses nx-stat-grid. */
+.nx-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.nx-stat-grid .stat-card {
+  min-width: 0;
+  min-height: 100px;
+  margin: 0;
+  padding: 15px;
+}
+.nx-stat-grid .stat-card > span {
+  max-width: calc(100% - 42px);
+}
+.nx-stat-grid .stat-card strong {
+  font-size: 25px;
+}
+.nx-stat-grid .stat-card small {
+  margin-top: 8px;
+}
+
+/* Main dashboard composition: work/context on the left, attention on the right. */
+.nx-main-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.72fr) minmax(290px, .78fr);
+  gap: 10px;
+  align-items: start;
+}
+.nx-main-column,
+.nx-side-column {
+  min-width: 0;
+}
+.nx-main-column {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.nx-side-column {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Context flow */
+.nx-flow-panel {
+  overflow: hidden;
+}
+.mvp-flow {
+  min-height: 66px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 7px;
+  padding: 10px 15px;
+  border-top: 1px solid #edf1f5;
+  border-bottom: 1px solid #edf1f5;
+  background: #fbfcfe;
+  color: #7d8da2;
+  font-size: 7px;
+  font-weight: 700;
+}
+.mvp-flow > svg {
+  color: #a1adbb;
+  flex: 0 0 auto;
+}
+.mvp-flow > span {
+  min-height: 25px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 8px;
+  border: 1px solid #e2e8ef;
+  border-radius: 999px;
+  background: #fff;
+  white-space: nowrap;
+}
+.mvp-flow > span.done {
+  color: #1677ff;
+  border-color: #cfe0f5;
+  background: #f4f9ff;
+}
+.mvp-flow > span.current {
+  color: #b16a16;
+  border-color: #f1d7aa;
+  background: #fff8ec;
+}
+.mvp-flow-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 11px 15px 13px;
+  color: #7b8a9e;
+  font-size: 7px;
+  line-height: 1.5;
+}
+.mvp-flow-note > svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: #1677ff;
+}
+.mvp-flow-note div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.mvp-flow-note strong {
+  color: #38516d;
+  font-size: 7.5px;
+}
+
+/* Support queue */
+.mvp-ticket-list {
+  border-top: 1px solid #edf1f5;
+}
+.mvp-ticket-row {
+  width: 100%;
+  min-height: 58px;
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) max-content 16px;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 15px;
+  border: 0;
+  border-bottom: 1px solid #edf1f5;
+  background: #fff;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mvp-ticket-row:last-child {
+  border-bottom: 0;
+}
+.mvp-ticket-row:hover {
+  background: #fbfdff;
+}
+.mvp-ticket-row > span:nth-child(2) {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.mvp-ticket-row strong {
+  overflow: hidden;
+  color: #2c3f58;
+  font-size: 7.8px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.mvp-ticket-row small {
+  overflow: hidden;
+  color: #8d99aa;
+  font-size: 6.7px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.ticket-icon {
+  width: 29px;
+  height: 29px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  color: #b16a16;
+  background: #fff3df;
+}
+.mvp-ticket-row > svg {
+  color: #a6b1bf;
+}
+
+/* Attention panel */
+.nx-attention {
+  overflow: hidden;
+}
+.mvp-attention {
+  border-top: 1px solid #edf1f5;
+}
+.mvp-attention > button {
+  width: 100%;
+  min-height: 58px;
+  display: grid;
+  grid-template-columns: 29px minmax(0, 1fr) 15px;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border: 0;
+  border-bottom: 1px solid #edf1f5;
+  background: #fff;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mvp-attention > button:last-child {
+  border-bottom: 0;
+}
+.mvp-attention > button:hover {
+  background: #fbfdff;
+}
+.mvp-attention > button > span:nth-child(2) {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.mvp-attention > button strong {
+  overflow: hidden;
+  color: #2c3f58;
+  font-size: 7.5px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.mvp-attention > button small {
+  overflow: hidden;
+  color: #8d99aa;
+  font-size: 6.5px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.mvp-attention > button > svg {
+  color: #a6b1bf;
+}
+.mvp-no-comments {
+  padding: 18px 14px;
+  color: #8997a8;
+  font-size: 7px;
+  text-align: center;
+}
+
+/* Lower dashboard: traceability + reusable knowledge */
+.nx-bottom-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(290px, .85fr);
+  gap: 10px;
+  margin-top: 10px;
+}
+.mvp-trace {
+  min-height: 86px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 7px;
+  padding: 12px 15px;
+  border-top: 1px solid #edf1f5;
+}
+.mvp-trace > div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.mvp-trace strong {
+  color: #2a3d57;
+  font-size: 8px;
+}
+.mvp-trace span {
+  color: #8d9aab;
+  font-size: 6.5px;
+}
+.mvp-trace > svg {
+  flex: 0 0 auto;
+  color: #a5b0be;
+}
+.mvp-knowledge-summary {
+  min-height: 86px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 15px;
+  border-top: 1px solid #edf1f5;
+}
+.mvp-knowledge-summary strong {
+  color: #172a44;
+  font-size: 25px;
+  line-height: 1;
+}
+.mvp-knowledge-summary span {
+  max-width: 190px;
+  color: #7f8da0;
+  font-size: 7px;
+  line-height: 1.5;
+}
+
+/* Dashboard headings and links used by the current JSX. */
+.nx-panel-head .panel-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 3px;
+  border: 0;
+  background: transparent;
+  color: #1677ff;
+  font-size: 7.5px;
+  font-weight: 750;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.nx-panel-head .panel-link:hover {
+  color: #0d67e8;
+}
+.nx-period {
+  padding-top: 4px;
+  color: #929eae;
+  font-size: 6.5px;
+}
+
+/* Keep the dashboard compact at normal desktop widths. */
+@media (max-width: 1080px) {
+  .nx-stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .nx-main-grid {
+    grid-template-columns: 1fr;
+  }
+  .nx-side-column {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+  }
+  .nx-side-column .nx-attention {
+    grid-column: 1 / -1;
+  }
+  .nx-bottom-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Do not expose the mobile panel as normal document content. */
+@media (min-width: 901px) {
+  .nx-mobile-toggle,
+  .nx-mobile-panel {
+    display: none !important;
+  }
+}
+
+/* At tablet/mobile widths the navigation becomes an actual drawer. */
+@media (max-width: 900px) {
+  .nx-navbar {
+    min-height: 62px;
+  }
+  .nx-mobile-toggle {
+    display: grid;
+    margin-left: auto;
+  }
+  .nx-nav-links,
+  .nx-nav-actions {
+    display: none;
+  }
+  .nx-mobile-panel {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 70;
+    padding: 12px 14px 15px;
+    border-bottom: 1px solid #e4eaf1;
+    background: #fff;
+    box-shadow: 0 15px 30px rgba(20,43,70,.1);
+  }
+  .nx-mobile-panel.open {
+    display: block;
+  }
+  .nx-mobile-primary {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+  }
+  .nx-mobile-primary button,
+  .nx-mobile-secondary button,
+  .nx-mobile-create {
+    min-height: 38px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 10px;
+    border: 1px solid #e5ebf2;
+    border-radius: 8px;
+    background: #fff;
+    color: #53647b;
+    font-size: 8px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .nx-mobile-primary button.active {
+    color: #126bdc;
+    border-color: #cfe0f3;
+    background: #eaf3ff;
+  }
+  .nx-mobile-secondary {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+    margin-top: 6px;
+    padding-top: 8px;
+    border-top: 1px solid #edf1f5;
+  }
+  .nx-mobile-create {
+    width: 100%;
+    justify-content: center;
+    margin-top: 8px;
+    border-color: #1677ff;
+    background: #1677ff;
+    color: #fff;
+  }
+  .nx-stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 640px) {
+  .nx-stat-grid {
+    grid-template-columns: 1fr;
+  }
+  .nx-side-column {
+    display: flex;
+  }
+  .mvp-flow {
+    justify-content: flex-start;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    scrollbar-width: thin;
+  }
+  .mvp-flow > span {
+    flex: 0 0 auto;
+  }
+  .mvp-ticket-row {
+    grid-template-columns: 29px minmax(0, 1fr) 15px;
+  }
+  .mvp-ticket-row > .status-pill {
+    display: none;
+  }
+  .mvp-trace {
+    overflow-x: auto;
+    justify-content: flex-start;
+  }
+  .mvp-trace > div {
+    flex: 0 0 62px;
+  }
+}
+@media (max-width: 480px) {
+  .nx-welcome-actions {
+    width: 100%;
+    flex-direction: column;
+  }
+  .nx-welcome-actions button {
+    width: 100%;
+  }
+  .nx-stat-grid {
+    grid-template-columns: 1fr;
+  }
+}
