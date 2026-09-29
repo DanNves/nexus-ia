@@ -223,9 +223,48 @@ function Metric({ icon, title, value }: { icon: React.ReactNode; title: string; 
 function ModuleView({ view, onCreate }: { view: Exclude<View, "Dashboard">; onCreate: (type: WizardType) => void }) {
   const data = records[view];
   const isWizard = view === "Demandas" || view === "Atividades";
-  return <div className="content">
-    <div className="page-heading"><div><span className="eyebrow">{view.toUpperCase()}</span><h1>{data.title}</h1><p>{data.description}</p></div>{isWizard && <button className="primary" onClick={() => onCreate(view === "Demandas" ? "demanda" : "atividade")}><Plus size={15}/>{data.action.replace("+ ","")}</button>}</div>
-    <div className="module-panel"><div className="module-toolbar"><div className="module-search"><Search size={14}/><span>Pesquisar...</span></div><select><option>Todos os status</option></select></div>{data.rows.map((row) => <div className="module-row" key={row}><div><strong>{row.split(" — ")[0]}</strong><span>{row.split(" — ").slice(1).join(" — ")}</span></div><button>Ver detalhes <ArrowRight size={12}/></button></div>)}</div>
+  const isSupport = view === "Chamados";
+  const isKnowledge = view === "Conhecimento";
+  const isMetrics = view === "Indicadores";
+  return <div className="content nx-module-page">
+    <div className="nx-breadcrumb"><button onClick={() => window.dispatchEvent(new CustomEvent("nexus:go-dashboard"))}>Início</button><ChevronRight size={11}/><span>{data.title}</span></div>
+    <div className="page-heading nx-module-heading">
+      <div><span className="eyebrow">{view.toUpperCase()}</span><h1>{data.title}</h1><p>{data.description}</p></div>
+      <div className="nx-page-actions">
+        {isWizard && <button className="primary" onClick={() => onCreate(view === "Demandas" ? "demanda" : "atividade")}><Plus size={15}/>{data.action.replace("+ ","")}</button>}
+        {isSupport && <button className="secondary-action"><Headset size={14}/> Atender chamado</button>}
+      </div>
+    </div>
+
+    {!isMetrics && <div className="nx-module-summary">
+      <div><strong>{data.rows.length + 8}</strong><span>itens registrados</span></div>
+      <div><strong>{isSupport ? "3" : isKnowledge ? "24" : "6"}</strong><span>{isSupport ? "aguardam contexto" : isKnowledge ? "reutilizados hoje" : "em validação"}</span></div>
+      <div><strong>82%</strong><span>com contexto relacionado</span></div>
+    </div>}
+
+    <div className="module-panel nx-module-panel">
+      <div className="module-toolbar nx-module-toolbar">
+        <div className="module-search"><Search size={14}/><input aria-label={"Pesquisar em "+data.title} placeholder={isSupport ? "Pesquisar chamado, erro ou solução..." : "Pesquisar..."}/></div>
+        <div className="nx-toolbar-filters"><button className="nx-filter active">Todos</button><button className="nx-filter">Em andamento</button><button className="nx-filter">Validação</button><button className="nx-filter">Concluídos</button></div>
+      </div>
+      <div className="nx-list-head"><span>Registro</span><span>Contexto</span><span>Status</span><span></span></div>
+      <div className="nx-module-list">
+        {data.rows.map((row, index) => {
+          const parts = row.split(" — ");
+          const title = parts[0];
+          const detail = parts.slice(1).join(" — ");
+          const context = index === 0 ? "Contexto completo" : index === 1 ? "Relacionar requisito" : "Contexto disponível";
+          const status = detail || (isMetrics ? "Indicador" : "Disponível");
+          return <button className="nx-module-row" key={row}>
+            <span className="nx-record-main"><strong>{title}</strong><small>{detail || "Informação do módulo"}</small></span>
+            <span className="nx-record-context"><i/> {context}</span>
+            <em className={"status-pill "+status.toLowerCase().replaceAll(" ","-")}>{status}</em>
+            <ArrowRight size={14}/>
+          </button>;
+        })}
+      </div>
+    </div>
+    <div className="nx-module-hint"><Database size={14}/><span><strong>O contexto acompanha o registro.</strong> Demandas, requisitos, versões, chamados e conhecimentos podem ser relacionados ao longo do fluxo.</span></div>
   </div>;
 }
 
@@ -271,7 +310,7 @@ function Index() {
   const [active,setActive]=React.useState<View>("Dashboard");
   const [wizard,setWizard]=React.useState<WizardType|null>(null);
   const [searchOpen,setSearchOpen]=React.useState(false);
-  React.useEffect(()=>{const open=()=>setSearchOpen(true);const onKeyDown=(event:KeyboardEvent)=>{if((event.metaKey||event.ctrlKey)&&event.key.toLowerCase()==="k"){event.preventDefault();setSearchOpen(true);}if(event.key==="Escape"){setSearchOpen(false);setWizard(null);}};window.addEventListener("nexus:search",open);window.addEventListener("keydown",onKeyDown);return()=>{window.removeEventListener("nexus:search",open);window.removeEventListener("keydown",onKeyDown);};},[]);
+  React.useEffect(()=>{const open=()=>setSearchOpen(true);const goDashboard=()=>setActive("Dashboard");const onKeyDown=(event:KeyboardEvent)=>{if((event.metaKey||event.ctrlKey)&&event.key.toLowerCase()==="k"){event.preventDefault();setSearchOpen(true);}if(event.key==="Escape"){setSearchOpen(false);setWizard(null);}};window.addEventListener("nexus:search",open);window.addEventListener("nexus:go-dashboard",goDashboard);window.addEventListener("keydown",onKeyDown);return()=>{window.removeEventListener("nexus:search",open);window.removeEventListener("nexus:go-dashboard",goDashboard);window.removeEventListener("keydown",onKeyDown);};},[]);
   const openCreate=(type:WizardType)=>setWizard(type);
   return <div className="app"><div className="main"><Navbar active={active} onChange={setActive} onCreate={openCreate}/>{active==="Dashboard"?<Dashboard onChange={setActive} onCreate={openCreate}/>:<ModuleView view={active} onCreate={openCreate}/>}</div>{wizard&&<Stepper type={wizard} onClose={()=>setWizard(null)}/>} {searchOpen&&<div className="search-overlay" onClick={()=>setSearchOpen(false)}><div className="search-dialog" onClick={e=>e.stopPropagation()}><div className="search-dialog-head"><Search size={16}/><input autoFocus placeholder="Pesquisar demandas, atividades, requisitos, chamados..."/><button onClick={()=>setSearchOpen(false)}><X size={16}/></button></div><div className="search-empty"><Search size={22}/><strong>Pesquisa global</strong><span>Encontre informações do NEXUS sem precisar navegar entre módulos.</span></div></div></div>}</div>;
 }
