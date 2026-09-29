@@ -3,6 +3,7 @@ import { Activity, ArrowRight, BarChart3, Bell, BookOpen, Check, CheckCircle2, C
 
 import { createFileRoute } from "@tanstack/react-router";
 import "../nexus-app.css";
+import NexusMVP from "../nexus-mvp";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -11,7 +12,7 @@ export const Route = createFileRoute("/")({
       { name: "description", content: "Plataforma web que preserva o contexto produzido durante o desenvolvimento de uma solução de software e o utiliza no atendimento de chamados de suporte, com IA generativa e validação humana." },
     ],
   }),
-  component: Index,
+  component: NexusMVP,
 });
 
 type View = "Dashboard" | "Demandas" | "Atividades" | "Requisitos" | "Soluções e Versões" | "Chamados" | "Conhecimento" | "Indicadores" | "Configurações";
