@@ -441,7 +441,7 @@ function Detail({
   const [approved, setApproved] = React.useState(item.aiValidated ?? false);
   const isTicket = item.type === "Chamado";
   const isWork = item.type === "Demanda" || item.type === "Atividade";
-  const related = item.relatedIds.map((id) => null).filter(Boolean) as RecordItem[];
+  const isCollaborative = isWork || item.type === "Chamado";
 
   const openRelated = (id: string) => {
     const relation = window.dispatchEvent(new CustomEvent("nexus:open-related", { detail: id }));
@@ -488,9 +488,9 @@ function Detail({
 
           {isWork && <LifecycleActions item={item} onStatus={updateStatus} />}
 
-          {isWork && <PeopleSection item={item} onAssign={assign} onMessage={(person) => addComment("Solicitação enviada para " + person.name + ".", person.name)} />}
+          {isCollaborative && <PeopleSection item={item} onAssign={assign} onMessage={(person) => addComment("Solicitação enviada para " + person.name + ".", person.name)} />}
 
-          {isWork && <CommunicationSection item={item} onComment={addComment} />}
+          {isCollaborative && <CommunicationSection item={item} onComment={addComment} />}
 
           {isTicket && (
             <section className="mvp-ai-card">
