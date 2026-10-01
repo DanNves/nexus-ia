@@ -1,0 +1,3 @@
+import { createFileRoute } from '@tanstack/react-router';
+import NexusApp, { routeViews } from '../components/nexus-app';
+export const Route=createFileRoute('/$view')({head:({params})=>{const name=routeViews[params.view]??'NEXUS';return {meta:[{title:`${name} — NEXUS`},{name:'description',content:`Acompanhe ${name.toLowerCase()} e preserve o contexto de desenvolvimento e suporte no NEXUS.`},{property:'og:title',content:`${name} — NEXUS`},{property:'og:description',content:`Acompanhe ${name.toLowerCase()} e preserve o contexto de desenvolvimento e suporte no NEXUS.`},{property:'og:type',content:'website'},{name:'twitter:card',content:'summary'}]}} ,component:()=>{const {view}=Route.useParams();return <NexusApp view={view}/>}});
