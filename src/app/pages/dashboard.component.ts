@@ -20,4 +20,8 @@ export class DashboardComponent {
 
   open(record: NexusRecord) { this.store.select(record); }
   go(view: string) { this.router.navigate(['/', view]); }
+  advance(record: NexusRecord) {
+    if (record.type === 'Chamado' && record.aiValidated !== true) this.store.validateAi(record.id, true);
+    else this.store.changeStatus(record.id, 'Em desenvolvimento');
+  }
 }
