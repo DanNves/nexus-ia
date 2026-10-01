@@ -2,6 +2,7 @@ export type View = 'Dashboard' | 'Demandas' | 'Atividades' | 'Requisitos' | 'Sol
 export type RecordType = 'Demanda' | 'Atividade' | 'Requisito' | 'Solução' | 'Versão' | 'Chamado' | 'Conhecimento';
 export type Status = 'Pendente' | 'Em análise' | 'Em desenvolvimento' | 'Em validação' | 'Concluído';
 export type Priority = 'Alta' | 'Média' | 'Baixa' | 'Normal';
+export type WizardType = 'demanda' | 'atividade';
 export type PersonKind = 'Solicitante' | 'Responsável' | 'Participante';
 
 export interface Person { name: string; role: string; kind: PersonKind; }
