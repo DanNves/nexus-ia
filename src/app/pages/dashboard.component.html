@@ -88,7 +88,7 @@
             </div>
             <div class="next-action-buttons">
               <button class="btn secondary" (click)="open(action)"><nx-icon name="activity" [size]="15"/> Abrir registro</button>
-              <button class="btn primary" (click)="open(action)"><nx-icon name="check" [size]="15"/> Validar e concluir</button>
+              <button class="btn primary" (click)="advance(action)"><nx-icon name="check" [size]="15"/> {{ action.type === 'Chamado' && action.aiValidated !== true ? 'Validar e concluir' : 'Avançar registro' }}</button>
             </div>
           </div>
         </article>
