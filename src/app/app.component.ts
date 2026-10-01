@@ -82,7 +82,7 @@ export class AppComponent {
     this.wizardStep = 1;
   }
   private emptyDraft(): WizardDraft {
-    return { title:'', description:'', requester:'Marina Costa', assignee:'Carlos Lima', participants:[], context:'', solution:'', version:'', priority:'Média', objective:'', dueDate:'' };
+    return { title:'', description:'', requester:'Marina Costa', assignee:'Carlos Lima', participants:'', context:'', solution:'', version:'', priority:'Média', objective:'', dueDate:'' };
   }
 
   addComment() {
