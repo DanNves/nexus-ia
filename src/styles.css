@@ -700,3 +700,5 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 .ai-next-step .btn{min-width:145px}
 @media(max-width:1000px){.ai-layout{grid-template-columns:1fr}.ai-ticket-list{position:static}.ai-ticket-items{display:grid;grid-template-columns:repeat(3,1fr)}.ai-ticket-items>button{border-right:1px solid #edf1f5}}
 @media(max-width:760px){.ai-process{justify-content:flex-start;overflow:auto}.ai-process>svg{display:none}.ai-process-step{min-width:max-content}.ai-input-grid,.recovered-context,.analysis-grid{grid-template-columns:1fr}.ai-ticket-items{grid-template-columns:1fr}.ai-next-step{align-items:flex-start;flex-wrap:wrap}.ai-next-step .btn{width:100%}.ai-intro-badge{display:none}}
+
+.ai-header-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}.ai-run-btn{min-height:30px!important;padding:0 9px!important;font-size:9px!important}
