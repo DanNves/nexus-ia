@@ -27,6 +27,11 @@ export interface NexusRecord {
   objective?: string;
   dueDate?: string;
   aiValidated?: boolean;
+  aiCause?: string;
+  aiProcedure?: string[];
+  aiEvidence?: string[];
+  nextAction?: string;
+  nextActionHint?: string;
   reuseCount?: number;
 }
 export interface WizardDraft {
