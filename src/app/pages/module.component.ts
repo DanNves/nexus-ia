@@ -17,9 +17,8 @@ export class ModuleComponent {
   filter = 'Todos';
 
   constructor() {
-    this.route.paramMap.subscribe(params => {
-      const value = params.get('view') as View | null;
-      this.view = value ?? 'Demandas';
+    this.route.data.subscribe(data => {
+      this.view = (data['view'] as View | undefined) ?? 'Demandas';
       this.store.setSearch('');
     });
   }
