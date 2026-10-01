@@ -10,24 +10,24 @@
         <button class="btn primary" (click)="create()"><nx-icon name="plus"/> {{ view === 'Demandas' ? 'Nova demanda' : 'Nova atividade' }}</button>
       }
       @if (view === 'Chamados') {
-        <button class="btn primary" (click)="store.setSearch('CH-')"><nx-icon name="ticket"/> Atender chamado</button>
+        <button class="btn primary" (click)="openNextTicket()"><nx-icon name="ticket"/> Abrir próximo chamado</button>
       }
     </div>
   </section>
 
   @if (view === 'Indicadores') {
     <section class="indicator-grid">
-      <article class="indicator-card"><span class="indicator-icon blue"><nx-icon name="link" [size]="19"/></span><div><small>CONTEXTO RECUPERÁVEL</small><strong>82%</strong><p>Registros com informações suficientes para apoiar o atendimento.</p></div></article>
-      <article class="indicator-card"><span class="indicator-icon orange"><nx-icon name="ticket" [size]="19"/></span><div><small>CHAMADOS ABERTOS</small><strong>{{ store.openTickets() }}</strong><p>Ocorrências que ainda exigem análise ou atendimento.</p></div></article>
-      <article class="indicator-card"><span class="indicator-icon purple"><nx-icon name="spark" [size]="19"/></span><div><small>VALIDAÇÕES PENDENTES</small><strong>{{ store.validationCount() }}</strong><p>Sugestões que dependem da decisão do responsável.</p></div></article>
-      <article class="indicator-card"><span class="indicator-icon green"><nx-icon name="knowledge" [size]="19"/></span><div><small>CONHECIMENTOS VALIDADOS</small><strong>{{ store.validatedKnowledge() }}</strong><p>Soluções aprovadas e disponíveis para reutilização.</p></div></article>
+      <article class="indicator-card"><span class="indicator-icon blue"><nx-icon name="link" [size]="19"/></span><div><small>CONTEXTO RECUPERÁVEL</small><strong>{{ store.contextCoverage() }}%</strong><p>Registros com contexto e relacionamento suficientes para apoiar a recuperação.</p></div></article>
+      <article class="indicator-card"><span class="indicator-icon orange"><nx-icon name="ticket" [size]="19"/></span><div><small>CHAMADOS ABERTOS</small><strong>{{ store.openTickets() }}</strong><p>Ocorrências que ainda exigem análise, validação ou atendimento.</p></div></article>
+      <article class="indicator-card"><span class="indicator-icon purple"><nx-icon name="spark" [size]="19"/></span><div><small>VALIDAÇÕES PENDENTES</small><strong>{{ store.validationCount() }}</strong><p>Sugestões da IA que dependem da decisão do responsável.</p></div></article>
+      <article class="indicator-card"><span class="indicator-icon green"><nx-icon name="knowledge" [size]="19"/></span><div><small>CONHECIMENTOS VALIDADOS</small><strong>{{ store.validatedKnowledge() }}</strong><p>Procedimentos aprovados e disponíveis para reutilização.</p></div></article>
     </section>
 
     <section class="dashboard-grid indicator-layout">
       <article class="panel">
         <header class="panel-head"><div><span class="section-kicker">LEITURA DO FLUXO</span><h2>Continuidade do contexto</h2></div><nx-icon name="chart" [size]="18"/></header>
         <div class="indicator-rows">
-          <div><span><b class="indicator-dot blue"></b>Desenvolvimento → suporte</span><strong>82%</strong></div>
+          <div><span><b class="indicator-dot blue"></b>Desenvolvimento → suporte</span><strong>{{ store.contextCoverage() }}%</strong></div>
           <div><span><b class="indicator-dot green"></b>Conhecimento reutilizável</span><strong>{{ store.validatedKnowledge() }}</strong></div>
           <div><span><b class="indicator-dot orange"></b>Chamados em atendimento</span><strong>{{ store.openTickets() }}</strong></div>
           <div><span><b class="indicator-dot purple"></b>Validação humana pendente</span><strong>{{ store.validationCount() }}</strong></div>
@@ -36,27 +36,27 @@
       <article class="panel indicator-purpose">
         <span class="section-kicker">PROPÓSITO</span>
         <h2>O que os indicadores acompanham</h2>
-        <p>Os indicadores do NEXUS ajudam a observar se o contexto produzido durante o desenvolvimento está chegando ao suporte e se as sugestões da IA estão passando pela validação humana.</p>
+        <p>Os indicadores mostram se o contexto produzido durante o desenvolvimento está chegando ao suporte e se a sugestão da IA está passando pela validação humana.</p>
         <div class="purpose-tags"><span><nx-icon name="link" [size]="13"/> Contexto</span><span><nx-icon name="spark" [size]="13"/> IA</span><span><nx-icon name="check" [size]="13"/> Validação</span><span><nx-icon name="knowledge" [size]="13"/> Reuso</span></div>
       </article>
     </section>
   } @else if (view === 'Configurações') {
     <section class="settings-grid">
-      <article class="setting-card"><span class="setting-icon blue"><nx-icon name="check" [size]="18"/></span><div><span class="section-kicker">VALIDAÇÃO</span><h2>Validação humana</h2><p>Obrigatória para transformar uma sugestão da IA em decisão registrada.</p><strong class="setting-status"><i></i> Ativa no MVP</strong></div></article>
-      <article class="setting-card"><span class="setting-icon purple"><nx-icon name="spark" [size]="18"/></span><div><span class="section-kicker">IA GENERATIVA</span><h2>Apoio ao suporte</h2><p>A sugestão é controlada e demonstrativa nesta versão do frontend.</p><strong class="setting-status"><i></i> Simulação controlada</strong></div></article>
-      <article class="setting-card"><span class="setting-icon green"><nx-icon name="link" [size]="18"/></span><div><span class="section-kicker">PERSISTÊNCIA</span><h2>Contexto local</h2><p>Registros e rascunhos são preservados no navegador enquanto o backend não está conectado.</p><strong class="setting-status"><i></i> LocalStorage</strong></div></article>
-      <article class="setting-card"><span class="setting-icon orange"><nx-icon name="bell" [size]="18"/></span><div><span class="section-kicker">NOTIFICAÇÕES</span><h2>Acompanhamento</h2><p>O ambiente apresenta alertas visuais para chamar atenção para pendências e validações.</p><strong class="setting-status"><i></i> Visual</strong></div></article>
+      <article class="setting-card"><span class="setting-icon blue"><nx-icon name="check" [size]="18"/></span><div><span class="section-kicker">REGRA DO FLUXO</span><h2>Validação humana</h2><p>A sugestão da IA não encerra o atendimento. O responsável precisa aprovar ou rejeitar antes do fechamento.</p><strong class="setting-status"><i></i> Obrigatória</strong></div></article>
+      <article class="setting-card"><span class="setting-icon purple"><nx-icon name="spark" [size]="18"/></span><div><span class="section-kicker">ESCOPO DA IA</span><h2>Apoio ao suporte</h2><p>Nesta versão a IA é uma simulação controlada para demonstrar a recuperação de contexto e a etapa de validação.</p><strong class="setting-status"><i></i> Simulação controlada</strong></div></article>
+      <article class="setting-card"><span class="setting-icon green"><nx-icon name="link" [size]="18"/></span><div><span class="section-kicker">PERSISTÊNCIA</span><h2>Contexto local</h2><p>Registros e rascunhos são preservados no navegador. API, banco e autenticação ficam para a próxima camada.</p><strong class="setting-status"><i></i> LocalStorage</strong></div></article>
+      <article class="setting-card"><span class="setting-icon orange"><nx-icon name="bell" [size]="18"/></span><div><span class="section-kicker">NOTIFICAÇÕES</span><h2>Pendências do fluxo</h2><p>O sino reúne chamados com validação pendente e registros aguardando atenção.</p><strong class="setting-status"><i></i> Funcional no MVP</strong></div></article>
     </section>
     <section class="panel settings-note">
-      <span class="section-kicker">CONFIGURAÇÃO DO MVP</span>
-      <h2>O que está configurado nesta etapa</h2>
-      <p>Esta tela documenta o comportamento atual do protótipo. Integração com autenticação, API, banco de dados, provedor de LLM e notificações reais pertence à próxima camada de implementação.</p>
+      <span class="section-kicker">LIMITE DO MVP</span>
+      <h2>O que a apresentação deve demonstrar</h2>
+      <p>O foco é provar a continuidade do contexto: demanda, requisito, versão, chamado, recuperação, sugestão da IA, validação humana e conhecimento. Integração com LLM real, API, banco, autenticação e RAG ficam como evolução arquitetural.</p>
     </section>
   } @else {
     <section class="module-summary">
       <article><span><nx-icon name="layers" [size]="14"/> Registros</span><strong>{{ items.length }}</strong><small>neste módulo</small></article>
       <article><span><nx-icon name="check" [size]="14"/> Em validação</span><strong>{{ items.filter(r => r.status === 'Em validação').length }}</strong><small>aguardando responsável</small></article>
-      <article><span><nx-icon name="link" [size]="14"/> Com contexto</span><strong>{{ items.filter(r => !r.context.includes('Aguardando')).length }}</strong><small>informações relacionadas</small></article>
+      <article><span><nx-icon name="link" [size]="14"/> Com contexto</span><strong>{{ contextReadyCount() }}</strong><small>relacionamentos disponíveis</small></article>
       <article><span><nx-icon name="check" [size]="14"/> Concluídos</span><strong>{{ items.filter(r => r.status === 'Concluído').length }}</strong><small>finalizados</small></article>
     </section>
 
@@ -65,7 +65,7 @@
         <div class="search-box"><nx-icon name="search" [size]="17"/><input [value]="store.search()" (input)="store.setSearch($any($event.target).value)" placeholder="Pesquisar por código, título, solução ou versão..." aria-label="Pesquisar registros"></div>
         <div class="filter-label"><nx-icon name="filter" [size]="15"/> <span>Filtrar por status</span></div>
         <div class="filters">
-          @for (f of ['Todos','Pendente','Em análise','Em desenvolvimento','Em validação','Concluído']; track f) {
+          @for (f of statusFilters(); track f) {
             <button [class.active]="filter === f" (click)="setFilter(f)">{{ f }}</button>
           }
         </div>
