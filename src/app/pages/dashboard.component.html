@@ -61,10 +61,38 @@
         <header class="panel-head"><div><span class="section-kicker">PRÓXIMAS AÇÕES</span><h2>O que precisa da sua atenção</h2></div></header>
         <div class="attention-list">
           @for (item of attention(); track item.id) {
-            <button class="attention-row" (click)="open(item)"><span class="dot"></span><span><strong>{{ item.id }} · {{ item.title }}</strong><small>{{ item.status }} · {{ item.priority }}</small></span><nx-icon name="arrow" [size]="13"/></button>
+            <button class="attention-row" (click)="open(item)">
+              <span class="attention-icon" [class.blue]="item.type === 'Demanda'" [class.orange]="item.type === 'Chamado'" [class.green]="item.type === 'Atividade'">
+                <nx-icon [name]="item.type === 'Chamado' ? 'ticket' : item.type === 'Atividade' ? 'activity' : 'demand'" [size]="15"/>
+              </span>
+              <span class="attention-copy">
+                <strong>{{ item.nextAction || (item.type === 'Chamado' ? 'Analisar chamado' : 'Revisar registro') }}</strong>
+                <small>{{ item.id }} · {{ item.title }}</small>
+              </span>
+              <nx-icon name="arrow" [size]="14"/>
+            </button>
           }
         </div>
       </article>
+
+      @if (nextAction(); as action) {
+        <article class="panel next-action">
+          <header class="panel-head">
+            <div><span class="section-kicker">PRÓXIMA AÇÃO</span><h2>{{ action.nextAction || 'Defina quem assume e avance o registro' }}</h2></div>
+            <span class="next-action-id">{{ action.id }}</span>
+          </header>
+          <div class="next-action-body">
+            <div class="next-action-copy">
+              <strong>{{ action.title }}</strong>
+              <span>{{ action.nextActionHint || 'O status representa a etapa atual do trabalho e precisa ficar visível para os envolvidos.' }}</span>
+            </div>
+            <div class="next-action-buttons">
+              <button class="btn secondary" (click)="open(action)"><nx-icon name="activity" [size]="15"/> Abrir registro</button>
+              <button class="btn primary" (click)="open(action)"><nx-icon name="check" [size]="15"/> Validar e concluir</button>
+            </div>
+          </div>
+        </article>
+      }
     </aside>
   </section>
 
