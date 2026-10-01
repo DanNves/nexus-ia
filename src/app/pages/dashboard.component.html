@@ -1,0 +1,83 @@
+<main class="page dashboard-page">
+  <section class="page-intro">
+    <div>
+      <span class="eyebrow">VISÃO GERAL</span>
+      <h1>Olá, Tester.</h1>
+      <p>O NEXUS conecta quem solicita, quem desenvolve e quem atende, preservando o contexto da solução.</p>
+    </div>
+    <div class="intro-actions">
+      <button class="btn secondary" (click)="store.openWizard('atividade')"><nx-icon name="activity"/> Nova atividade</button>
+      <button class="btn primary" (click)="store.openWizard('demanda')"><nx-icon name="plus"/> Nova demanda</button>
+    </div>
+  </section>
+
+  <section class="stat-grid">
+    <article class="stat-card"><div><span>Demandas em andamento</span><strong>{{ store.activeDemands() }}</strong><small>trabalho em desenvolvimento</small></div><div class="stat-icon blue"><nx-icon name="demand"/></div></article>
+    <article class="stat-card"><div><span>Atividades em desenvolvimento</span><strong>{{ store.records().filter(r => r.type === 'Atividade' && r.status !== 'Concluído').length }}</strong><small>execuções ativas</small></div><div class="stat-icon green"><nx-icon name="activity"/></div></article>
+    <article class="stat-card"><div><span>Chamados abertos</span><strong>{{ store.openTickets() }}</strong><small>com contexto de suporte</small></div><div class="stat-icon orange"><nx-icon name="ticket"/></div></article>
+    <article class="stat-card"><div><span>Pendências de validação</span><strong>{{ store.validationCount() }}</strong><small>aguardando responsável</small></div><div class="stat-icon purple"><nx-icon name="requirement"/></div></article>
+  </section>
+
+  <section class="dashboard-grid">
+    <div class="main-column">
+      <article class="panel context-flow">
+        <header class="panel-head"><div><span class="section-kicker">CONTEXTO DO CICLO</span><h2>Fluxo do NEXUS</h2></div><button class="text-button" (click)="go('demandas')">Ver demandas <nx-icon name="arrow" [size]="14"/></button></header>
+        <div class="flow">
+          <span class="done">Demanda</span><nx-icon name="arrow" [size]="13"/>
+          <span class="done">Requisito</span><nx-icon name="arrow" [size]="13"/>
+          <span class="done">Versão</span><nx-icon name="arrow" [size]="13"/>
+          <span class="current">Chamado</span><nx-icon name="arrow" [size]="13"/>
+          <span>IA sugere</span><nx-icon name="arrow" [size]="13"/>
+          <span>Humano valida</span><nx-icon name="arrow" [size]="13"/>
+          <span>Conhecimento</span>
+        </div>
+        <div class="flow-note"><nx-icon name="link" [size]="17"/><div><strong>O contexto acompanha a solução.</strong><span>O suporte recupera requisitos, versão e conhecimento relacionado ao chamado antes da sugestão da IA.</span></div></div>
+      </article>
+
+      <article class="panel">
+        <header class="panel-head"><div><span class="section-kicker">SUPORTE</span><h2>Chamados que precisam de ação</h2></div><button class="text-button" (click)="go('chamados')">Ver chamados <nx-icon name="arrow" [size]="14"/></button></header>
+        <div class="record-list">
+          @for (item of tickets(); track item.id) {
+            <button class="record-row" (click)="open(item)">
+              <span class="row-icon orange"><nx-icon name="ticket" [size]="16"/></span>
+              <span class="row-content"><strong>{{ item.id }} · {{ item.title }}</strong><small>{{ item.context }} · {{ item.version }}</small></span>
+              <span class="status" [class]="item.status.toLowerCase().replace(' ','-')">{{ item.status }}</span>
+              <nx-icon name="arrow" [size]="14"/>
+            </button>
+          }
+        </div>
+      </article>
+    </div>
+
+    <aside class="side-column">
+      <article class="panel context-card">
+        <header class="panel-head"><div><span class="section-kicker">CONTINUIDADE</span><h2>Contexto da solução</h2></div><nx-icon name="link" [size]="17"/></header>
+        <div class="context-score"><strong>82%</strong><span>dos registros com contexto recuperável</span></div>
+        <div class="mini-metrics"><div><strong>3</strong><span>chamados sem contexto completo</span></div><div><strong>1.2.0</strong><span>versão mais relacionada ao suporte</span></div></div>
+        <div class="mini-flow"><span>Desenvolvimento</span><b>→</b><span>Suporte</span><b>→</b><span>Conhecimento</span></div>
+      </article>
+
+      <article class="panel attention">
+        <header class="panel-head"><div><span class="section-kicker">PRÓXIMAS AÇÕES</span><h2>O que precisa da sua atenção</h2></div></header>
+        <div class="attention-list">
+          @for (item of attention(); track item.id) {
+            <button class="attention-row" (click)="open(item)"><span class="dot"></span><span><strong>{{ item.id }} · {{ item.title }}</strong><small>{{ item.status }} · {{ item.priority }}</small></span><nx-icon name="arrow" [size]="13"/></button>
+          }
+        </div>
+      </article>
+    </aside>
+  </section>
+
+  <section class="bottom-grid">
+    <article class="panel">
+      <header class="panel-head"><div><span class="section-kicker">RASTREABILIDADE</span><h2>Contexto conectado</h2></div><button class="text-button" (click)="go('conhecimento')">Conhecimento <nx-icon name="arrow" [size]="14"/></button></header>
+      <div class="trace">
+        @for (id of trace; track id) { <div><strong>{{ id }}</strong><span>{{ $index === 0 ? 'Demanda' : $index === 1 ? 'Requisito' : $index === 2 ? 'Versão' : $index === 3 ? 'Chamado' : 'Conhecimento' }}</span></div>@if (!$last){<nx-icon name="arrow" [size]="13"/>} }
+      </div>
+    </article>
+    <article class="panel knowledge-summary">
+      <div class="knowledge-number">{{ store.validatedKnowledge() }}</div>
+      <div><span class="section-kicker">BASE DE CONHECIMENTO</span><h2>Conhecimentos validados</h2><p>Procedimentos aprovados podem ser reutilizados no atendimento.</p></div>
+    </article>
+  </section>
+</main>
