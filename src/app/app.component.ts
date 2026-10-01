@@ -35,6 +35,7 @@ export class AppComponent {
     ['Requisitos','/requisitos','requirement'],
     ['Soluções','/solucoes-e-versoes','solution'],
     ['Chamados','/chamados','ticket'],
+    ['IA','/ia','spark'],
     ['Conhecimento','/conhecimento','knowledge'],
   ] as const;
 
