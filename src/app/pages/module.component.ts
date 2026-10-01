@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { NexusStore } from '../services/nexus.store';
 import { NxIconComponent } from '../shared/icon.component';
@@ -30,12 +30,12 @@ export class ModuleComponent {
     return all.filter(r => r.status === this.filter);
   }
 
-  readonly statusFilters = computed(() => {
+  statusFilters() {
     const base = ['Todos'];
     if (this.view === 'Chamados') return [...base, 'Pendente', 'Em análise', 'Em validação', 'Concluído'];
     if (this.view === 'Conhecimento') return [...base, 'Em validação', 'Concluído'];
     return [...base, 'Pendente', 'Em desenvolvimento', 'Em validação', 'Concluído'];
-  });
+  }
 
   title() { return this.view; }
 
