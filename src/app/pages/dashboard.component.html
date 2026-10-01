@@ -23,13 +23,13 @@
       <article class="panel context-flow">
         <header class="panel-head"><div><span class="section-kicker">CONTEXTO DO CICLO</span><h2>Fluxo do NEXUS</h2></div><button class="text-button" (click)="go('demandas')">Ver demandas <nx-icon name="arrow" [size]="14"/></button></header>
         <div class="flow">
-          <span class="done">Demanda</span><nx-icon name="arrow" [size]="13"/>
-          <span class="done">Requisito</span><nx-icon name="arrow" [size]="13"/>
-          <span class="done">Versão</span><nx-icon name="arrow" [size]="13"/>
-          <span class="current">Chamado</span><nx-icon name="arrow" [size]="13"/>
-          <span>IA sugere</span><nx-icon name="arrow" [size]="13"/>
-          <span>Humano valida</span><nx-icon name="arrow" [size]="13"/>
-          <span>Conhecimento</span>
+          <span class="done"><nx-icon name="demand" [size]="14"/> Demanda</span><nx-icon name="arrow" [size]="13"/>
+          <span class="done"><nx-icon name="requirement" [size]="14"/> Requisito</span><nx-icon name="arrow" [size]="13"/>
+          <span class="done"><nx-icon name="solution" [size]="14"/> Versão</span><nx-icon name="arrow" [size]="13"/>
+          <span class="current"><nx-icon name="ticket" [size]="14"/> Chamado</span><nx-icon name="arrow" [size]="13"/>
+          <span><nx-icon name="spark" [size]="14"/> IA sugere</span><nx-icon name="arrow" [size]="13"/>
+          <span><nx-icon name="check" [size]="14"/> Humano valida</span><nx-icon name="arrow" [size]="13"/>
+          <span><nx-icon name="knowledge" [size]="14"/> Conhecimento</span>
         </div>
         <div class="flow-note"><nx-icon name="link" [size]="17"/><div><strong>O contexto acompanha a solução.</strong><span>O suporte recupera requisitos, versão e conhecimento relacionado ao chamado antes da sugestão da IA.</span></div></div>
       </article>
@@ -54,7 +54,7 @@
         <header class="panel-head"><div><span class="section-kicker">CONTINUIDADE</span><h2>Contexto da solução</h2></div><nx-icon name="link" [size]="17"/></header>
         <div class="context-score"><strong>82%</strong><span>dos registros com contexto recuperável</span></div>
         <div class="mini-metrics"><div><strong>3</strong><span>chamados sem contexto completo</span></div><div><strong>1.2.0</strong><span>versão mais relacionada ao suporte</span></div></div>
-        <div class="mini-flow"><span>Desenvolvimento</span><b>→</b><span>Suporte</span><b>→</b><span>Conhecimento</span></div>
+        <div class="mini-flow"><span><nx-icon name="solution" [size]="14"/> Desenvolvimento</span><b>→</b><span><nx-icon name="ticket" [size]="14"/> Suporte</span><b>→</b><span><nx-icon name="knowledge" [size]="14"/> Conhecimento</span></div>
       </article>
 
       <article class="panel attention">
@@ -72,7 +72,14 @@
     <article class="panel">
       <header class="panel-head"><div><span class="section-kicker">RASTREABILIDADE</span><h2>Contexto conectado</h2></div><button class="text-button" (click)="go('conhecimento')">Conhecimento <nx-icon name="arrow" [size]="14"/></button></header>
       <div class="trace">
-        @for (id of trace; track id) { <div><strong>{{ id }}</strong><span>{{ $index === 0 ? 'Demanda' : $index === 1 ? 'Requisito' : $index === 2 ? 'Versão' : $index === 3 ? 'Chamado' : 'Conhecimento' }}</span></div>@if (!$last){<nx-icon name="arrow" [size]="13"/>} }
+        @for (id of trace; track id) {
+          <div>
+            <span class="trace-icon"><nx-icon [name]="$index === 0 ? 'demand' : $index === 1 ? 'requirement' : $index === 2 ? 'solution' : $index === 3 ? 'ticket' : 'knowledge'" [size]="15"/></span>
+            <strong>{{ id }}</strong>
+            <span>{{ $index === 0 ? 'Demanda' : $index === 1 ? 'Requisito' : $index === 2 ? 'Versão' : $index === 3 ? 'Chamado' : 'Conhecimento' }}</span>
+          </div>
+          @if (!$last){<nx-icon name="arrow" [size]="13"/>}
+        }
       </div>
     </article>
     <article class="panel knowledge-summary">
