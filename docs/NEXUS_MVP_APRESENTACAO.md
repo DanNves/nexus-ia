@@ -34,7 +34,10 @@ DEMANDA → REQUISITO → VERSÃO DA SOLUÇÃO → CHAMADO → RECUPERAÇÃO DO 
 
 6. **Chamado**
    - Abra CH-028.
-   - Mostre contexto recuperado, requisito, versão, conhecimento, sugestão da IA, possíveis causas, procedimento e evidências.
+   - Mostre a IA presente dentro do chamado.
+   - Clique em **Analisar com IA**.
+   - Mostre que o sistema recupera demanda, atividade, requisito, versão, chamados relacionados e conhecimento antes da sugestão.
+   - Mostre possíveis causas, procedimento e evidências.
 
 7. **Validação humana**
    - Explique: a IA não confirma a causa e não encerra o atendimento.
@@ -43,7 +46,8 @@ DEMANDA → REQUISITO → VERSÃO DA SOLUÇÃO → CHAMADO → RECUPERAÇÃO DO 
 
 8. **Conhecimento**
    - Clique em Registrar conhecimento.
-   - Mostre a criação automática de um novo registro KB-xxx relacionado ao chamado.
+   - Mostre a tela estruturada da Base de Conhecimento.
+   - Abra o KB criado e mostre origem, solução, versão, revisão, responsável pela validação e procedimento.
    - Explique que o conhecimento validado pode ser reutilizado.
 
 9. **Busca global**
@@ -56,7 +60,7 @@ DEMANDA → REQUISITO → VERSÃO DA SOLUÇÃO → CHAMADO → RECUPERAÇÃO DO 
 
 ## Onde a IA está no MVP
 
-A IA está concentrada no atendimento de suporte. O chamado fornece o problema e o NEXUS recupera o contexto relacionado. A camada de IA então apresenta uma sugestão de possível causa e procedimento.
+A IA está concentrada no atendimento de suporte e fica presente no próprio chamado. O chamado fornece o problema e o NEXUS recupera o contexto completo das etapas relacionadas. A camada de IA então apresenta classificação, síntese, possível causa, procedimento e evidências para validação.
 
 A validação humana é obrigatória antes de o chamado poder ser encerrado e transformado em conhecimento.
 
@@ -66,7 +70,7 @@ A validação humana é obrigatória antes de o chamado poder ser encerrado e tr
 - Cadastro de demanda e atividade com wizard.
 - Persistência local dos registros.
 - Relacionamento entre registros.
-- Recuperação de contexto por relacionamentos.
+- Recuperação de contexto por relacionamentos e por solução/versão, cobrindo demanda, atividade, requisito, solução/versão, chamados relacionados e conhecimento.
 - Sugestão de IA controlada para os chamados.
 - Aprovação/rejeição da sugestão.
 - Bloqueio da conclusão do chamado sem validação.
