@@ -128,26 +128,86 @@ export class NexusStore {
     this.flash('Atualização registrada no contexto.');
   }
 
+  aiContextFor(ticketId: string): NexusRecord[] {
+    const ticket = this.records().find(item => item.id === ticketId);
+    if (!ticket || ticket.type !== 'Chamado') return [];
+
+    const all = this.records();
+    const byId = new Map(all.map(record => [record.id, record]));
+    const visited = new Set<string>();
+    const queue = [ticket.id, ...ticket.relatedIds];
+    const collected: NexusRecord[] = [];
+
+    while (queue.length) {
+      const id = queue.shift();
+      if (!id || visited.has(id)) continue;
+      visited.add(id);
+
+      const record = byId.get(id);
+      if (!record) continue;
+
+      collected.push(record);
+      if (record.parentId) queue.push(record.parentId);
+      queue.push(...record.relatedIds);
+    }
+
+    const sameSolutionVersion = all.filter(record =>
+      record.id !== ticket.id &&
+      record.solution === ticket.solution &&
+      record.version === ticket.version &&
+      ['Demanda','Atividade','Requisito','Solução','Versão','Chamado','Conhecimento'].includes(record.type)
+    );
+
+    for (const record of sameSolutionVersion) {
+      if (!visited.has(record.id)) {
+        visited.add(record.id);
+        collected.push(record);
+      }
+    }
+
+    const order: Record<string, number> = {
+      'Demanda': 1,
+      'Atividade': 2,
+      'Requisito': 3,
+      'Solução': 4,
+      'Versão': 4,
+      'Chamado': 5,
+      'Conhecimento': 6
+    };
+
+    return collected
+      .filter(record => record.id !== ticket.id)
+      .sort((a, b) => (order[a.type] ?? 99) - (order[b.type] ?? 99) || a.id.localeCompare(b.id));
+  }
+
   analyzeAi(id: string) {
     const ticket = this.records().find(item => item.id === id);
     if (!ticket || ticket.type !== 'Chamado') return;
 
-    const related = ticket.relatedIds
-      .map(relatedId => this.records().find(record => record.id === relatedId))
-      .filter((record): record is NexusRecord => Boolean(record));
+    const related = this.aiContextFor(id);
 
+    const hasDemand = related.some(record => record.type === 'Demanda');
+    const hasActivity = related.some(record => record.type === 'Atividade');
     const hasRequirement = related.some(record => record.type === 'Requisito');
-    const hasVersion = related.some(record => record.type === 'Versão');
+    const hasVersion = related.some(record => record.type === 'Versão' || record.type === 'Solução');
+    const hasPreviousTicket = related.some(record => record.type === 'Chamado');
     const hasKnowledge = related.some(record => record.type === 'Conhecimento');
 
     this.records.update(items => items.map(record => record.id === id ? {
       ...record,
       aiStatus: 'pending' as const,
       aiCategory: hasRequirement ? 'Falha funcional / regra de negócio' : 'Incidente / diagnóstico',
-      aiConfidence: hasRequirement && hasVersion ? 86 : hasKnowledge ? 82 : 74,
-      aiSummary: `A análise considerou o problema relatado e ${related.length} registro(s) de contexto recuperado(s), incluindo ${hasRequirement ? 'requisito' : 'registros relacionados'}${hasVersion ? ', versão publicada' : ''}${hasKnowledge ? ' e conhecimento anterior' : ''}.`,
+      aiConfidence: hasDemand && hasRequirement && hasVersion ? 92 : hasRequirement && hasVersion ? 88 : hasKnowledge ? 82 : 74,
+      aiSummary: `A análise percorreu ${related.length} registro(s) do contexto do chamado, cobrindo ${[
+        hasDemand ? 'demanda' : '',
+        hasActivity ? 'atividade' : '',
+        hasRequirement ? 'requisito' : '',
+        hasVersion ? 'solução/versão' : '',
+        hasPreviousTicket ? 'chamados relacionados' : '',
+        hasKnowledge ? 'conhecimento validado' : ''
+      ].filter(Boolean).join(', ')}.`,
       nextAction: 'Validar sugestão do atendimento',
-      nextActionHint: 'A sugestão foi preparada a partir do chamado e das evidências recuperadas. A decisão continua com o responsável.'
+      nextActionHint: 'A sugestão foi preparada a partir do chamado e do contexto recuperado de todas as etapas relacionadas. A decisão continua com o responsável.'
     } : record));
 
     this.syncSelected(id);
@@ -214,6 +274,11 @@ export class NexusStore {
         date: new Date().toLocaleString('pt-BR')
       }],
       objective: 'Preservar e reutilizar o procedimento validado no suporte.',
+      procedure: ticket.aiProcedure ?? [],
+      sourceTicketId: ticket.id,
+      validatedBy: 'Tester',
+      validatedAt: new Date().toLocaleString('pt-BR'),
+      revision: 1,
       reuseCount: 0,
       nextAction: 'Reutilizar em chamados relacionados',
       nextActionHint: `Conhecimento originado do atendimento ${ticket.id}.`
@@ -249,6 +314,12 @@ export class NexusStore {
   private syncSelected(id: string) {
     const current = this.records().find(r => r.id === id);
     if (current) this.selected.set(current);
+  }
+
+  knowledgeRecords(): NexusRecord[] {
+    return this.records()
+      .filter(record => record.type === 'Conhecimento')
+      .sort((a, b) => (b.reuseCount ?? 0) - (a.reuseCount ?? 0) || b.date.localeCompare(a.date));
   }
 
   filteredRecords(view: string): NexusRecord[] {
