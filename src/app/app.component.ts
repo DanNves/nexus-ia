@@ -159,6 +159,11 @@ export class AppComponent {
     this.commentText = '';
   }
 
+  analyzeAi() {
+    const selected = this.store.selected();
+    if (selected?.type === 'Chamado') this.store.analyzeAi(selected.id);
+  }
+
   approveAi() {
     const selected = this.store.selected();
     if (selected) this.store.validateAi(selected.id, true);
