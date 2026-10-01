@@ -14,8 +14,8 @@
   <section class="stat-grid">
     <article class="stat-card"><div><span>Demandas em andamento</span><strong>{{ store.activeDemands() }}</strong><small>trabalho em desenvolvimento</small></div><div class="stat-icon blue"><nx-icon name="demand"/></div></article>
     <article class="stat-card"><div><span>Atividades em desenvolvimento</span><strong>{{ store.records().filter(r => r.type === 'Atividade' && r.status !== 'Concluído').length }}</strong><small>execuções ativas</small></div><div class="stat-icon green"><nx-icon name="activity"/></div></article>
-    <article class="stat-card"><div><span>Chamados abertos</span><strong>{{ store.openTickets() }}</strong><small>com contexto de suporte</small></div><div class="stat-icon orange"><nx-icon name="ticket"/></div></article>
-    <article class="stat-card"><div><span>Pendências de validação</span><strong>{{ store.validationCount() }}</strong><small>aguardando responsável</small></div><div class="stat-icon purple"><nx-icon name="requirement"/></div></article>
+    <article class="stat-card"><div><span>Chamados abertos</span><strong>{{ store.openTickets() }}</strong><small>aguardando análise ou validação</small></div><div class="stat-icon orange"><nx-icon name="ticket"/></div></article>
+    <article class="stat-card"><div><span>Validações humanas</span><strong>{{ store.validationCount() }}</strong><small>sugestões da IA aguardando decisão</small></div><div class="stat-icon purple"><nx-icon name="spark"/></div></article>
   </section>
 
   <section class="dashboard-grid">
@@ -40,7 +40,7 @@
           @for (item of tickets(); track item.id) {
             <button class="record-row" (click)="open(item)">
               <span class="row-icon orange"><nx-icon name="ticket" [size]="16"/></span>
-              <span class="row-content"><strong>{{ item.id }} · {{ item.title }}</strong><small>{{ item.context }} · {{ item.version }}</small></span>
+              <span class="row-content"><strong>{{ item.id }} · {{ item.title }}</strong><small>{{ item.context }} · {{ item.version }} · {{ item.aiStatus === 'pending' ? 'IA aguardando validação' : item.aiStatus === 'approved' ? 'IA validada' : 'Em análise' }}</small></span>
               <span class="status" [class]="item.status.toLowerCase().replace(' ','-')">{{ item.status }}</span>
               <nx-icon name="arrow" [size]="14"/>
             </button>
@@ -52,8 +52,11 @@
     <aside class="side-column">
       <article class="panel context-card">
         <header class="panel-head"><div><span class="section-kicker">CONTINUIDADE</span><h2>Contexto da solução</h2></div><nx-icon name="link" [size]="17"/></header>
-        <div class="context-score"><strong>82%</strong><span>dos registros com contexto recuperável</span></div>
-        <div class="mini-metrics"><div><strong>3</strong><span>chamados sem contexto completo</span></div><div><strong>1.2.0</strong><span>versão mais relacionada ao suporte</span></div></div>
+        <div class="context-score"><strong>{{ store.contextCoverage() }}%</strong><span>dos registros com contexto e relacionamento recuperáveis</span></div>
+        <div class="mini-metrics">
+          <div><strong>{{ store.records().filter(r => /parcial|Aguardando/i.test(r.context)).length }}</strong><span>registros com contexto a completar</span></div>
+          <div><strong>{{ store.records().filter(r => r.type === 'Versão').length }}</strong><span>versões rastreáveis no MVP</span></div>
+        </div>
         <div class="mini-flow"><span><nx-icon name="solution" [size]="14"/> Desenvolvimento</span><b>→</b><span><nx-icon name="ticket" [size]="14"/> Suporte</span><b>→</b><span><nx-icon name="knowledge" [size]="14"/> Conhecimento</span></div>
       </article>
 
@@ -62,8 +65,8 @@
         <div class="attention-list">
           @for (item of attention(); track item.id) {
             <button class="attention-row" (click)="open(item)">
-              <span class="attention-icon" [class.blue]="item.type === 'Demanda'" [class.orange]="item.type === 'Chamado'" [class.green]="item.type === 'Atividade'">
-                <nx-icon [name]="item.type === 'Chamado' ? 'ticket' : item.type === 'Atividade' ? 'activity' : 'demand'" [size]="15"/>
+              <span class="attention-icon" [class.blue]="item.type === 'Demanda'" [class.orange]="item.type === 'Chamado'" [class.green]="item.type === 'Atividade' || item.type === 'Requisito'">
+                <nx-icon [name]="item.type === 'Chamado' ? 'ticket' : item.type === 'Atividade' ? 'activity' : item.type === 'Requisito' ? 'requirement' : 'demand'" [size]="15"/>
               </span>
               <span class="attention-copy">
                 <strong>{{ item.nextAction || (item.type === 'Chamado' ? 'Analisar chamado' : 'Revisar registro') }}</strong>
@@ -71,6 +74,8 @@
               </span>
               <nx-icon name="arrow" [size]="14"/>
             </button>
+          } @empty {
+            <div class="attention-empty"><nx-icon name="check" [size]="18"/><span>Nenhuma pendência prioritária.</span></div>
           }
         </div>
       </article>
@@ -78,17 +83,20 @@
       @if (nextAction(); as action) {
         <article class="panel next-action">
           <header class="panel-head">
-            <div><span class="section-kicker">PRÓXIMA AÇÃO</span><h2>{{ action.nextAction || 'Defina quem assume e avance o registro' }}</h2></div>
+            <div><span class="section-kicker">PRÓXIMA AÇÃO</span><h2>{{ action.nextAction || 'Avance o registro' }}</h2></div>
             <span class="next-action-id">{{ action.id }}</span>
           </header>
           <div class="next-action-body">
             <div class="next-action-copy">
               <strong>{{ action.title }}</strong>
-              <span>{{ action.nextActionHint || 'O status representa a etapa atual do trabalho e precisa ficar visível para os envolvidos.' }}</span>
+              <span>{{ action.nextActionHint || 'O status representa a etapa atual do trabalho e fica visível para os envolvidos.' }}</span>
             </div>
             <div class="next-action-buttons">
               <button class="btn secondary" (click)="open(action)"><nx-icon name="activity" [size]="15"/> Abrir registro</button>
-              <button class="btn primary" (click)="advance(action)"><nx-icon name="check" [size]="15"/> {{ action.type === 'Chamado' && action.aiValidated !== true ? 'Validar e concluir' : 'Avançar registro' }}</button>
+              <button class="btn primary" (click)="advance(action)">
+                <nx-icon [name]="action.type === 'Chamado' && action.aiStatus === 'approved' ? 'knowledge' : 'check'" [size]="15"/>
+                {{ action.type === 'Chamado' ? (action.aiStatus === 'pending' ? 'Validar sugestão' : action.aiStatus === 'approved' ? 'Registrar conhecimento' : 'Revisar sugestão') : 'Avançar registro' }}
+              </button>
             </div>
           </div>
         </article>
@@ -101,18 +109,18 @@
       <header class="panel-head"><div><span class="section-kicker">RASTREABILIDADE</span><h2>Contexto conectado</h2></div><button class="text-button" (click)="go('conhecimento')">Conhecimento <nx-icon name="arrow" [size]="14"/></button></header>
       <div class="trace">
         @for (id of trace; track id) {
-          <div>
+          <button class="trace-node" (click)="openTrace(id)" [title]="traceRecord(id)?.title || id">
             <span class="trace-icon"><nx-icon [name]="$index === 0 ? 'demand' : $index === 1 ? 'requirement' : $index === 2 ? 'solution' : $index === 3 ? 'ticket' : 'knowledge'" [size]="15"/></span>
             <strong>{{ id }}</strong>
-            <span>{{ $index === 0 ? 'Demanda' : $index === 1 ? 'Requisito' : $index === 2 ? 'Versão' : $index === 3 ? 'Chamado' : 'Conhecimento' }}</span>
-          </div>
+            <span>{{ traceLabel(id) }}</span>
+          </button>
           @if (!$last){<nx-icon name="arrow" [size]="13"/>}
         }
       </div>
     </article>
     <article class="panel knowledge-summary">
       <div class="knowledge-number">{{ store.validatedKnowledge() }}</div>
-      <div><span class="section-kicker">BASE DE CONHECIMENTO</span><h2>Conhecimentos validados</h2><p>Procedimentos aprovados podem ser reutilizados no atendimento.</p></div>
+      <div><span class="section-kicker">BASE DE CONHECIMENTO</span><h2>Conhecimentos validados</h2><p>Procedimentos aprovados podem ser reutilizados no atendimento.</p><button class="text-button" (click)="go('conhecimento')">Abrir base <nx-icon name="arrow" [size]="14"/></button></div>
     </article>
   </section>
 </main>
