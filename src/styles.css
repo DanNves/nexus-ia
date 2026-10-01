@@ -518,3 +518,103 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
   .drawer-footer{gap:8px!important}
   .drawer-footer .btn{min-width:0!important;flex:1!important}
 }
+
+
+/* --- NEXUS MVP presentation pass: actions, relationships, feedback --- */
+.notification-wrap{position:relative}
+.icon-btn.active{background:#eef5ff;border-color:#bdd7f5;color:var(--blue)}
+.notification-wrap>.notification-menu{
+  position:absolute;right:0;top:calc(100% + 10px);width:330px;z-index:80;
+  background:#fff;border:1px solid var(--border);border-radius:14px;
+  box-shadow:0 18px 45px rgba(15,38,65,.16);overflow:hidden;
+}
+.notification-menu header{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:14px 15px;border-bottom:1px solid #edf1f5;
+}
+.notification-menu header strong{display:block;font-size:12px;color:#203b56;margin-top:3px}
+.notification-menu header>span{min-width:23px;height:23px;display:grid;place-items:center;border-radius:7px;background:#fff3df;color:#b76c0d;font-size:10px;font-weight:800}
+.notification-menu>button{
+  width:100%;display:grid;grid-template-columns:30px minmax(0,1fr);gap:10px;
+  align-items:center;text-align:left;padding:12px 14px;border:0;border-bottom:1px solid #f0f3f6;background:#fff;cursor:pointer;
+}
+.notification-menu>button:hover{background:#f8fbff}
+.notification-icon{width:28px;height:28px;display:grid;place-items:center;border-radius:8px}
+.notification-icon.orange{background:#fff3df;color:#c27a16}
+.notification-icon.blue{background:#eaf3ff;color:#0878ff}
+.notification-menu button strong{display:block;font-size:11px;color:#243e58;line-height:1.35}
+.notification-menu button small{display:block;margin-top:3px;font-size:9.5px;color:#7b899a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.notification-empty{padding:20px 15px;color:#7b899a;font-size:11px;text-align:center}
+
+.toast{
+  position:fixed;right:22px;bottom:22px;z-index:120;
+  display:flex;align-items:center;gap:8px;max-width:min(420px,calc(100vw - 30px));
+  padding:12px 15px;border:1px solid #cce7dc;border-radius:10px;background:#f5fcf8;color:#176a4e;
+  box-shadow:0 12px 32px rgba(20,50,75,.14);font-size:11px;font-weight:750;
+}
+
+.relationship-block{margin-top:18px;padding-top:15px;border-top:1px solid #edf1f5}
+.relation-list{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}
+.relation-chip,.knowledge-source button{
+  display:inline-flex;align-items:center;gap:5px;min-height:28px;padding:0 9px;
+  border:1px solid #d9e5f0;border-radius:7px;background:#f8fbff;color:#2f638e;
+  font-size:10px;font-weight:800;cursor:pointer;
+}
+.relation-chip:hover,.knowledge-source button:hover{border-color:#a9c9e9;background:#edf6ff;color:#086fda}
+.relation-empty{font-size:10.5px;color:#8a98a8}
+.knowledge-source{display:flex;align-items:center;flex-wrap:wrap;gap:7px;margin-top:15px}
+.knowledge-source>span{font-size:9px;font-weight:800;letter-spacing:.08em;color:#8593a3;margin-right:3px}
+
+.flow-lock{
+  display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:0 9px;
+  color:#65788d;background:#f6f8fa;border:1px solid #e1e7ed;border-radius:8px;
+  font-size:10px;font-weight:750;
+}
+.ai-approved-note{
+  display:flex;align-items:flex-start;gap:8px;margin:0 17px 16px;padding:10px 11px;
+  border:1px solid #cce9dd;border-radius:9px;background:#f3fbf7;color:#2d6954;font-size:10.5px;line-height:1.5;
+}
+.ai-approved-note nx-icon{flex:0 0 auto;color:#159b70}
+.ai-approved-note strong{font-weight:800}
+
+.trace{align-items:center}
+.trace-node{
+  min-width:76px;display:flex;flex-direction:column;align-items:center;gap:4px;
+  border:0;background:transparent;padding:0;cursor:pointer;color:inherit;
+}
+.trace-node:hover .trace-icon{border-color:#b9d7f5;background:#e8f3ff;transform:translateY(-1px)}
+.trace-node strong{font-size:12px;color:#263f59}
+.trace-node span:last-child{font-size:10px;color:#8492a4}
+.trace-icon{transition:.16s ease;border:1px solid transparent}
+
+.attention-empty{display:flex;align-items:center;justify-content:center;gap:8px;padding:22px 15px;color:#6b8094;font-size:11px}
+.attention-empty nx-icon{color:var(--green)}
+
+.participant-selector{margin-top:16px}
+.field-label{display:block;color:#405972;font-size:12px;font-weight:750;margin-bottom:8px}
+.participant-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.participant-option{
+  display:flex;align-items:center;gap:9px;min-height:52px;padding:8px 10px;
+  border:1px solid #dce5ee;border-radius:9px;background:#fff;text-align:left;cursor:pointer;
+}
+.participant-option:hover{border-color:#b9d4ee;background:#f8fbff}
+.participant-option.selected{border-color:#9fc8ef;background:#f1f8ff}
+.check-box{width:19px;height:19px;display:grid;place-items:center;flex:0 0 19px;border:1px solid #c9d5e1;border-radius:5px;background:#fff;color:#fff}
+.participant-option.selected .check-box{border-color:#0878ff;background:#0878ff}
+.participant-option strong{display:block;color:#29435c;font-size:10.5px;line-height:1.35}
+.participant-option small{display:block;color:#7b899a;font-size:9px;margin-top:2px}
+.wizard-error{
+  display:flex;align-items:center;gap:7px;margin:0 26px 18px;padding:10px 12px;
+  border:1px solid #f1d5b4;border-radius:8px;background:#fff8ee;color:#9a5b16;font-size:10.5px;font-weight:700;
+}
+.wizard-error nx-icon{flex:0 0 auto}
+
+@media(max-width:760px){
+  .notification-wrap>.notification-menu{position:fixed;right:15px;top:68px;width:min(330px,calc(100vw - 30px))}
+  .participant-options{grid-template-columns:1fr}
+  .toast{right:15px;bottom:15px}
+}
+@media(max-width:620px){
+  .drawer-footer{align-items:stretch!important;flex-wrap:wrap}
+  .flow-lock{width:100%;justify-content:center}
+}
