@@ -3,8 +3,6 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { NexusStore } from './services/nexus.store';
 import { NxIconComponent } from './shared/icon.component';
-import { DashboardComponent } from './pages/dashboard.component';
-import { ModuleComponent } from './pages/module.component';
 import { NexusRecord, WizardDraft } from './models/nexus.models';
 
 @Component({
