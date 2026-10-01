@@ -63,7 +63,7 @@
         <article class="panel ai-analysis-card">
           <header class="panel-head">
             <div><span class="section-kicker">03 · O QUE A IA FAZ</span><h2>Análise generativa do chamado</h2><p>Combina o problema informado com o contexto recuperado e produz uma orientação para validação.</p></div>
-            <span class="ai-status-pill" [class.approved]="ticket.aiStatus === 'approved'">{{ ticket.aiStatus === 'approved' ? 'Validada' : 'Aguardando decisão' }}</span>
+            <div class="ai-header-actions"><span class="ai-status-pill" [class.approved]="ticket.aiStatus === 'approved'">{{ ticket.aiStatus === 'approved' ? 'Validada' : 'Aguardando decisão' }}</span><button class="btn primary ai-run-btn" (click)="analyze(ticket)"><nx-icon name="spark" [size]="14"/> Analisar com IA</button></div>
           </header>
           <div class="analysis-body">
             <div class="analysis-summary"><span class="analysis-icon"><nx-icon name="spark" [size]="20"/></span><div><span class="section-kicker">SÍNTESE DA ANÁLISE</span><strong>{{ ticket.aiSummary || 'A IA analisa o chamado a partir do contexto recuperado e prepara uma sugestão.' }}</strong></div></div>
