@@ -1,5 +1,5 @@
 import { Injectable, computed, signal } from '@angular/core';
-import { seedRecords, people } from '../data/nexus.data';
+import { seedRecords, people, team } from '../data/nexus.data';
 import { NexusRecord, Status, WizardDraft, WizardType } from '../models/nexus.models';
 
 @Injectable({ providedIn: 'root' })
@@ -52,7 +52,7 @@ export class NexusStore {
       priority: draft.priority,
       requester,
       assignee,
-      participants: [],
+      participants: team.filter(person => draft.participants.toLowerCase().includes(person.name.toLowerCase())),
       relatedIds: [],
       comments: [],
       objective: draft.objective,
