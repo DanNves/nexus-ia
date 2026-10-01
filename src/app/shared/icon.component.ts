@@ -11,6 +11,8 @@ import { Component, input } from '@angular/core';
         @case ('activity') { <circle cx="5" cy="12" r="2"/><circle cx="19" cy="7" r="2"/><path d="M7 12h3l2-5 3 9 2-4h2"/> }
         @case ('requirement') { <rect x="4" y="4" width="16" height="16" rx="2"/><path d="m8 12 2.5 2.5L16 9"/> }
         @case ('solution') { <path d="m12 3 8 4-8 4-8-4z"/><path d="m4 12 8 4 8-4M4 17l8 4 8-4"/> }
+        @case ('layers') { <path d="m12 3 8 4-8 4-8-4z"/><path d="m4 12 8 4 8-4"/><path d="m4 17 8 4 8-4"/> }
+        @case ('filter') { <path d="M4 5h16l-6 7v5l-4 2v-7z"/> }
         @case ('ticket') { <path d="M5 5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v3a2.5 2.5 0 0 0 0 5v3a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-3a2.5 2.5 0 0 0 0-5z"/><path d="M9 7h6M9 12h4M9 16h6"/> }
         @case ('knowledge') { <path d="M5 5a3 3 0 0 1 3-2h11v18H8a3 3 0 0 1-3-3z"/><path d="M8 3v18"/><path d="M11 8h5M11 12h5M11 16h3"/> }
         @case ('chart') { <path d="M4 19V5M4 19h16"/><path d="M8 16v-4M12 16V8M16 16v-7"/> }
