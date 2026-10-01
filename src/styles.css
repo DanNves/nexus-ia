@@ -795,3 +795,8 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
   .knowledge-flow-steps{grid-template-columns:1fr}
   .ai-context-overview{grid-template-columns:1fr 1fr}
 }
+
+.requirement-section{margin-top:13px;padding-top:12px;border-top:1px solid #edf1f5}
+.requirement-section>span{font-size:8.5px;letter-spacing:.07em;color:#8795a6;font-weight:800}
+.requirement-section ul{margin:7px 0 0;padding-left:19px}
+.requirement-section li{font-size:10px;line-height:1.5;color:#526a82;padding:2px 0}
