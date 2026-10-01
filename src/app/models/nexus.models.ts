@@ -34,7 +34,7 @@ export interface WizardDraft {
   description: string;
   requester: string;
   assignee: string;
-  participants: string[];
+  participants: string;
   context: string;
   solution: string;
   version: string;
