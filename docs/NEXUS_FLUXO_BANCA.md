@@ -22,16 +22,16 @@ O contexto fica associado à solução e à versão em que a mudança foi implem
 Após a entrega, uma ocorrência de suporte é registrada e relacionada à solução/versão.
 
 ### Recuperação do contexto
-O NEXUS recupera informações relacionadas ao chamado, como requisito, versão e conhecimento anterior.
+O NEXUS recupera o contexto de todas as etapas relacionadas ao chamado: demanda, atividades, requisitos, solução/versão, chamados relacionados e conhecimentos validados. A recuperação percorre os vínculos registrados e também considera registros da mesma solução e versão.
 
 ### IA generativa
-A IA utiliza o chamado e o contexto recuperado para sugerir possíveis causas e procedimentos. No protótipo atual, a sugestão é controlada para demonstrar o fluxo de validação.
+A IA está ativa dentro do atendimento dos chamados. Ela recebe o problema relatado e utiliza o contexto completo recuperado para classificar o chamado, sintetizar as evidências, sugerir possíveis causas e procedimentos e apontar conhecimentos relacionados. A tela de IA funciona como uma área de demonstração/inspeção, mas a IA também aparece diretamente no chamado. No protótipo atual, a geração é uma simulação controlada.
 
 ### Validação humana
 O responsável pode aprovar ou rejeitar a sugestão. A IA não confirma a causa nem executa ação crítica de forma autônoma.
 
 ### Conhecimento
-Uma solução validada pode ser registrada como conhecimento reutilizável.
+Uma solução validada pode ser registrada como conhecimento reutilizável. O item mantém origem no chamado, solução, versão, responsável pela validação, data/revisão e procedimento validado.
 
 ## 4. Demonstração para a banca
 1. Criar uma demanda pelo passo a passo.
@@ -52,6 +52,6 @@ Uma solução validada pode ser registrada como conhecimento reutilizável.
 > O NEXUS não trata o suporte como uma etapa isolada. Ele preserva o contexto produzido durante o desenvolvimento e o leva para o atendimento. A IA utiliza esse contexto para sugerir caminhos, mas a decisão continua com o profissional.
 
 ## 6. MVP e evolução
-- Implementado: Angular standalone, Router, dashboard, demandas, atividades, requisitos, soluções/versões, chamados, conhecimento, busca, wizard com salvamento por etapa, contexto, pessoas, comunicação, sugestão de IA controlada e validação humana.
+- Implementado: Angular standalone, Router, dashboard, demandas, atividades, requisitos com regras/critério de aceitação, soluções/versões, chamados com IA ativa, recuperação de contexto por múltiplas etapas, workspace de IA, base de conhecimento estruturada, busca, wizard com salvamento por etapa, contexto, pessoas, comunicação, sugestão controlada e validação humana.
 - Persistência atual: localStorage para demonstração.
 - Evolução: API REST, PostgreSQL, autenticação, LLM real, RAG/busca semântica, armazenamento de documentos, auditoria e avaliação experimental.
