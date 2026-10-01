@@ -23,9 +23,11 @@ export class AiComponent {
   });
 
   contextFor(ticket: NexusRecord) {
-    return ticket.relatedIds
-      .map(id => this.store.records().find(record => record.id === id))
-      .filter((record): record is NexusRecord => Boolean(record));
+    return this.store.aiContextFor(ticket.id);
+  }
+
+  contextCount(ticket: NexusRecord, types: string[]) {
+    return this.contextFor(ticket).filter(record => types.includes(record.type)).length;
   }
 
   analyze(ticket: NexusRecord) {
