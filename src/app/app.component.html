@@ -24,9 +24,27 @@
       <div class="nav-actions">
         <button class="nav-create" (click)="openWizard('demanda')" title="Nova demanda"><nx-icon name="plus" [size]="17"/><span>Nova demanda</span></button>
         <button class="icon-btn" (click)="openSearch()" title="Pesquisar"><nx-icon name="search" [size]="18"/></button>
-        <button class="icon-btn notify" title="Notificações"><nx-icon name="bell" [size]="18"/><i></i></button>
+        <div class="notification-wrap">
+          <button class="icon-btn notify" [class.active]="notificationOpen" (click)="notificationOpen=!notificationOpen; userOpen=false" title="Notificações">
+            <nx-icon name="bell" [size]="18"/>
+            @if (store.pendingNotifications() > 0) { <i>{{ store.pendingNotifications() > 9 ? '9+' : store.pendingNotifications() }}</i> }
+          </button>
+          @if (notificationOpen) {
+            <div class="notification-menu">
+              <header><div><span class="section-kicker">ATENÇÃO</span><strong>O que precisa de revisão</strong></div><span>{{ store.pendingNotifications() }}</span></header>
+              @for (item of notifications(); track item.id) {
+                <button (click)="openRecord(item)">
+                  <span class="notification-icon" [class.orange]="item.type === 'Chamado'" [class.blue]="item.type !== 'Chamado'"><nx-icon [name]="item.type === 'Chamado' ? 'ticket' : 'check'" [size]="14"/></span>
+                  <span><strong>{{ item.nextAction || 'Revisar registro' }}</strong><small>{{ item.id }} · {{ item.title }}</small></span>
+                </button>
+              } @empty {
+                <div class="notification-empty">Nenhuma pendência no momento.</div>
+              }
+            </div>
+          }
+        </div>
         <div class="user-wrap">
-          <button class="user-button" (click)="userOpen=!userOpen"><span class="avatar">T</span><span class="user-copy"><strong>Tester</strong><small>USUÁRIO</small></span><nx-icon name="arrow" [size]="11"/></button>
+          <button class="user-button" (click)="userOpen=!userOpen; notificationOpen=false"><span class="avatar">T</span><span class="user-copy"><strong>Tester</strong><small>USUÁRIO</small></span><nx-icon name="arrow" [size]="11"/></button>
           @if (userOpen) { <div class="user-menu"><strong>Tester</strong><button (click)="navigate('/configuracoes')"><nx-icon name="settings" [size]="14"/> Configurações</button></div> }
         </div>
       </div>
@@ -43,6 +61,10 @@
 
   <div class="content"><router-outlet /></div>
 
+  @if (store.feedback(); as message) {
+    <div class="toast" role="status"><nx-icon name="check" [size]="15"/>{{ message }}</div>
+  }
+
   @if (searchOpen) {
     <div class="overlay search-overlay" (click)="closeSearch()">
       <section class="search-dialog" (click)="$event.stopPropagation()">
@@ -50,7 +72,10 @@
         <div class="search-input"><nx-icon name="search"/><input autofocus [(ngModel)]="globalQuery" placeholder="Digite código, título, solução, versão..."><kbd>ESC</kbd></div>
         <div class="search-results">
           @if (!globalQuery.trim()) { <div class="search-empty"><nx-icon name="search" [size]="24"/><span>Pesquise demandas, requisitos, versões, chamados e conhecimentos.</span></div> }
-          @for (item of searchResults(); track item.id) { <button (click)="openRecord(item)"><span class="row-icon blue"><nx-icon [name]="item.type === 'Chamado' ? 'ticket' : item.type === 'Conhecimento' ? 'knowledge' : 'demand'"/></span><span><strong>{{ item.id }} · {{ item.title }}</strong><small>{{ item.type }} · {{ item.solution }} · {{ item.version }}</small></span><nx-icon name="arrow" [size]="14"/></button> }
+          @for (item of searchResults(); track item.id) { <button (click)="openRecord(item)"><span class="row-icon blue"><nx-icon [name]="item.type === 'Chamado' ? 'ticket' : item.type === 'Conhecimento' ? 'knowledge' : item.type === 'Requisito' ? 'requirement' : 'demand'"/></span><span><strong>{{ item.id }} · {{ item.title }}</strong><small>{{ item.type }} · {{ item.solution }} · {{ item.version }}</small></span><nx-icon name="arrow" [size]="14"/></button> }
+          @empty {
+            @if (globalQuery.trim()) { <div class="search-empty"><nx-icon name="search" [size]="24"/><span>Nenhum registro encontrado para “{{ globalQuery }}”.</span></div> }
+          }
         </div>
       </section>
     </div>
@@ -59,48 +84,99 @@
   @if (store.selected(); as item) {
     <div class="overlay" (click)="store.closeDetail()">
       <aside class="drawer" (click)="$event.stopPropagation()">
-        <header class="drawer-head"><div><span class="eyebrow">{{ item.type.toUpperCase() }} · {{ item.id }}</span><h2>{{ item.title }}</h2><p>{{ item.description }}</p></div><button class="close-btn" (click)="store.closeDetail()"><nx-icon name="close"/></button></header>
-        <div class="context-strip"><div><span>SOLUÇÃO</span><strong>{{ item.solution }}</strong></div><nx-icon name="arrow" [size]="13"/><div><span>VERSÃO</span><strong>{{ item.version }}</strong></div><nx-icon name="arrow" [size]="13"/><div><span>CONTEXTO</span><strong>{{ item.context }}</strong></div></div>
+        <header class="drawer-head">
+          <div><span class="eyebrow">{{ item.type.toUpperCase() }} · {{ item.id }}</span><h2>{{ item.title }}</h2><p>{{ item.description }}</p></div>
+          <button class="close-btn" (click)="store.closeDetail()"><nx-icon name="close"/></button>
+        </header>
+
+        <div class="context-strip">
+          <div><span>SOLUÇÃO</span><strong>{{ item.solution }}</strong></div><nx-icon name="arrow" [size]="13"/>
+          <div><span>VERSÃO</span><strong>{{ item.version }}</strong></div><nx-icon name="arrow" [size]="13"/>
+          <div><span>CONTEXTO</span><strong>{{ item.context }}</strong></div>
+        </div>
+
         <div class="drawer-body">
-          <section class="detail-card"><header><div><span class="section-kicker">INFORMAÇÕES</span><h3>Dados do registro</h3></div><span class="status" [class]="item.status.toLowerCase().replace(' ','-')">{{ item.status }}</span></header>
+          <section class="detail-card">
+            <header><div><span class="section-kicker">INFORMAÇÕES</span><h3>Dados do registro</h3></div><span class="status" [class]="item.status.toLowerCase().replace(' ','-')">{{ item.status }}</span></header>
             <div class="detail-grid">
-              <div><span>Prioridade</span><strong>{{ item.priority }}</strong></div><div><span>Responsável</span><strong>{{ item.assignee.name }}</strong></div>
-              <div><span>Solicitante</span><strong>{{ item.requester.name }}</strong></div><div><span>Registro</span><strong>{{ item.date }}</strong></div>
-              <div><span>Objetivo</span><strong>{{ item.objective || 'Acompanhamento do registro no ciclo NEXUS.' }}</strong></div><div><span>Relacionamentos</span><strong>{{ item.relatedIds.length ? item.relatedIds.join(' · ') : 'Ainda não relacionados' }}</strong></div>
+              <div><span>Prioridade</span><strong>{{ item.priority }}</strong></div>
+              <div><span>Responsável</span><strong>{{ item.assignee.name }}</strong></div>
+              <div><span>Solicitante</span><strong>{{ item.requester.name }}</strong></div>
+              <div><span>Registro</span><strong>{{ item.date }}</strong></div>
+              <div><span>Objetivo</span><strong>{{ item.objective || 'Acompanhamento do registro no ciclo NEXUS.' }}</strong></div>
+              <div><span>Prazo</span><strong>{{ item.dueDate || 'Não definido' }}</strong></div>
+            </div>
+            <div class="relationship-block">
+              <span class="section-kicker">CONTEXTO RELACIONADO</span>
+              <div class="relation-list">
+                @for (related of item.relatedIds; track related) {
+                  <button class="relation-chip" (click)="openRelated(related)"><nx-icon name="link" [size]="12"/>{{ related }}</button>
+                } @empty { <span class="relation-empty">Nenhum relacionamento registrado.</span> }
+              </div>
             </div>
           </section>
 
-          <section class="detail-card"><header><div><span class="section-kicker">ENVOLVIDOS</span><h3>Pessoas relacionadas</h3></div><nx-icon name="users" [size]="17"/></header>
-            <div class="people-list"><div class="person"><span class="person-avatar">{{ item.requester.name.charAt(0) }}</span><span><strong>{{ item.requester.name }}</strong><small>Solicitante · {{ item.requester.role }}</small></span></div><div class="person"><span class="person-avatar">{{ item.assignee.name.charAt(0) }}</span><span><strong>{{ item.assignee.name }}</strong><small>Responsável · {{ item.assignee.role }}</small></span></div>@for (person of item.participants; track person.name){<div class="person"><span class="person-avatar">{{ person.name.charAt(0) }}</span><span><strong>{{ person.name }}</strong><small>Participante · {{ person.role }}</small></span></div>}</div>
+          <section class="detail-card">
+            <header><div><span class="section-kicker">ENVOLVIDOS</span><h3>Pessoas relacionadas</h3></div><nx-icon name="users" [size]="17"/></header>
+            <div class="people-list">
+              <div class="person"><span class="person-avatar">{{ item.requester.name.charAt(0) }}</span><span><strong>{{ item.requester.name }}</strong><small>Solicitante · {{ item.requester.role }}</small></span></div>
+              <div class="person"><span class="person-avatar">{{ item.assignee.name.charAt(0) }}</span><span><strong>{{ item.assignee.name }}</strong><small>Responsável · {{ item.assignee.role }}</small></span></div>
+              @for (person of item.participants; track person.name){<div class="person"><span class="person-avatar">{{ person.name.charAt(0) }}</span><span><strong>{{ person.name }}</strong><small>Participante · {{ person.role }}</small></span></div>}
+            </div>
           </section>
 
           @if (item.type === 'Chamado') {
             <section class="ai-card">
-              <header><span><nx-icon name="spark" [size]="15"/> APOIO DA IA GENERATIVA</span><em>{{ item.aiValidated === true ? 'Validada' : item.aiValidated === false ? 'Rejeitada' : 'Aguardando validação' }}</em></header>
+              <header><span><nx-icon name="spark" [size]="15"/> APOIO DA IA GENERATIVA</span><em>{{ item.aiStatus === 'approved' ? 'Validada' : item.aiStatus === 'rejected' ? 'Rejeitada' : 'Aguardando validação' }}</em></header>
               <div class="ai-title-row"><div><span class="section-kicker">ANÁLISE DO CHAMADO</span><h3>Sugestão baseada no contexto recuperado</h3></div><span class="ai-context"><nx-icon name="link" [size]="13"/> {{ item.context }}</span></div>
               <p>A IA utiliza o chamado, a solução, a versão e os registros relacionados para sugerir um caminho de análise. A sugestão não confirma a causa e não substitui a decisão do responsável.</p>
               <div class="suggestion">
                 <div class="ai-block"><strong>Possível causa</strong><span>{{ item.aiCause || 'Não há evidências suficientes para sugerir uma causa com segurança.' }}</span></div>
                 <div class="ai-block"><strong>Procedimento sugerido</strong><ol>@for (step of (item.aiProcedure || []); track step){<li>{{ step }}</li>} @empty {<li>Completar o contexto do chamado antes de executar o procedimento.</li>}</ol></div>
               </div>
-              <div class="evidence"><span>EVIDÊNCIAS RECUPERADAS</span>@for (evidence of (item.aiEvidence || item.relatedIds); track evidence){<button>{{ evidence }}</button>}</div>
+              <div class="evidence"><span>EVIDÊNCIAS RECUPERADAS</span>@for (evidence of (item.aiEvidence || item.relatedIds); track evidence){<button (click)="openRelated(evidence)">{{ evidence }}</button>}</div>
               <div class="validation">
                 <strong><nx-icon name="check" [size]="15"/> Validação humana obrigatória</strong>
-                <div><button class="btn secondary" (click)="rejectAi()" [disabled]="item.aiValidated === true">Rejeitar sugestão</button><button class="btn primary" (click)="approveAi()" [disabled]="item.aiValidated === true">Aprovar sugestão</button></div>
+                <div>
+                  <button class="btn secondary" (click)="rejectAi()" [disabled]="item.aiStatus === 'approved'">Rejeitar sugestão</button>
+                  <button class="btn primary" (click)="approveAi()" [disabled]="item.aiStatus === 'approved'">Aprovar sugestão</button>
+                </div>
               </div>
+              @if (item.aiStatus === 'approved') {
+                <div class="ai-approved-note"><nx-icon name="check" [size]="15"/><span><strong>Decisão registrada.</strong> O próximo passo é transformar o procedimento validado em conhecimento reutilizável.</span></div>
+              }
             </section>
           }
 
           @if (item.type === 'Conhecimento') {
-            <section class="detail-card knowledge-detail"><header><div><span class="section-kicker">REUTILIZAÇÃO</span><h3>Conhecimento validado</h3></div><span class="reuse">{{ item.reuseCount || 0 }} usos</span></header><p>Este conhecimento nasceu de um atendimento validado e pode ser recuperado em novos chamados relacionados à mesma solução.</p></section>
+            <section class="detail-card knowledge-detail">
+              <header><div><span class="section-kicker">REUTILIZAÇÃO</span><h3>Conhecimento validado</h3></div><span class="reuse">{{ item.reuseCount || 0 }} usos</span></header>
+              <p>Este conhecimento nasceu de um atendimento validado e pode ser recuperado em novos chamados relacionados à mesma solução.</p>
+              <div class="knowledge-source"><span>ORIGEM</span>@for (related of item.relatedIds; track related){<button (click)="openRelated(related)">{{ related }}</button>}</div>
+            </section>
           }
 
-          <section class="detail-card"><header><div><span class="section-kicker">COMUNICAÇÃO</span><h3>Atualizações do registro</h3></div><nx-icon name="message" [size]="17"/></header>
-            <div class="comments">@for (comment of item.comments; track comment.id){<div class="comment"><span class="person-avatar">{{ comment.author.charAt(0) }}</span><span><strong>{{ comment.author }}</strong><small>{{ comment.date }}@if(comment.recipient){ · para {{comment.recipient}}}</small><p>{{ comment.text }}</p></span></div>}@empty{<div class="empty-inline">Nenhuma atualização registrada.</div>}</div>
+          <section class="detail-card">
+            <header><div><span class="section-kicker">COMUNICAÇÃO</span><h3>Atualizações do registro</h3></div><nx-icon name="message" [size]="17"/></header>
+            <div class="comments">
+              @for (comment of item.comments; track comment.id){<div class="comment"><span class="person-avatar">{{ comment.author.charAt(0) }}</span><span><strong>{{ comment.author }}</strong><small>{{ comment.date }}@if(comment.recipient){ · para {{comment.recipient}}}</small><p>{{ comment.text }}</p></span></div>}
+              @empty{<div class="empty-inline">Nenhuma atualização registrada.</div>}
+            </div>
             <div class="compose"><textarea [(ngModel)]="commentText" placeholder="Escreva uma atualização para manter o contexto do registro..."></textarea><button class="btn primary" [disabled]="!commentText.trim()" (click)="addComment()"><nx-icon name="message" [size]="15"/> Enviar</button></div>
           </section>
         </div>
-        <footer class="drawer-footer"><button class="btn secondary" (click)="store.changeStatus(item.id, 'Em desenvolvimento')">Em desenvolvimento</button><button class="btn primary" (click)="store.changeStatus(item.id, 'Concluído')"><nx-icon name="check"/> Concluir</button></footer>
+
+        <footer class="drawer-footer">
+          @if (item.type === 'Chamado') {
+            <span class="flow-lock"><nx-icon name="link" [size]="14"/> {{ item.aiStatus === 'approved' ? 'IA validada · ciclo pronto para conhecimento' : 'Validação humana obrigatória antes da conclusão' }}</span>
+            @if (item.aiStatus === 'approved') {
+              <button class="btn primary" (click)="registerKnowledge()"><nx-icon name="knowledge"/> Registrar conhecimento</button>
+            }
+          } @else {
+            <button class="btn secondary" (click)="store.changeStatus(item.id, 'Em desenvolvimento')">Em desenvolvimento</button>
+            <button class="btn primary" (click)="store.changeStatus(item.id, 'Concluído')"><nx-icon name="check"/> Concluir</button>
+          }
+        </footer>
       </aside>
     </div>
   }
@@ -108,16 +184,49 @@
   @if (store.wizard(); as wizard) {
     <div class="overlay" (click)="closeWizard()">
       <section class="wizard" (click)="$event.stopPropagation()">
-        <header class="wizard-head"><div><span class="eyebrow">{{ wizard === 'demanda' ? 'NOVA DEMANDA' : 'NOVA ATIVIDADE' }}</span><h2>Registrar {{ wizard === 'demanda' ? 'uma nova demanda' : 'uma nova atividade' }}</h2><p>O registro é salvo a cada etapa para preservar o contexto desde o início.</p></div><button class="close-btn" (click)="closeWizard()"><nx-icon name="close"/></button></header>
+        <header class="wizard-head">
+          <div><span class="eyebrow">{{ wizard === 'demanda' ? 'NOVA DEMANDA' : 'NOVA ATIVIDADE' }}</span><h2>Registrar {{ wizard === 'demanda' ? 'uma nova demanda' : 'uma nova atividade' }}</h2><p>O registro é salvo a cada etapa. Se fechar agora, o rascunho poderá ser retomado.</p></div>
+          <button class="close-btn" (click)="closeWizard()"><nx-icon name="close"/></button>
+        </header>
+
         <div class="stepper">@for (step of [1,2,3,4,5]; track step){<div [class.active]="wizardStep === step" [class.done]="wizardStep > step"><span>{{ step }}</span><small>{{ ['Identificação','Pessoas','Contexto','Objetivo','Revisão'][step-1] }}</small></div>@if(step < 5){<i></i>}}</div>
+
         <div class="wizard-body">
-          @if(wizardStep === 1){<div class="form-block"><span class="section-kicker">01 · IDENTIFICAÇÃO</span><h3>O que precisa ser registrado?</h3><label>Título<input [(ngModel)]="draft.title" placeholder="Ex.: Implementar autenticação de dois fatores"></label><label>Descrição<textarea [(ngModel)]="draft.description" placeholder="Descreva a necessidade de forma objetiva."></textarea></label><div class="form-grid"><label>Prioridade<select [(ngModel)]="draft.priority"><option>Alta</option><option>Média</option><option>Baixa</option><option>Normal</option></select></label><label>Prazo<input type="date" [(ngModel)]="draft.dueDate"></label></div></div>}
-          @if(wizardStep === 2){<div class="form-block"><span class="section-kicker">02 · PESSOAS</span><h3>Quem participa deste registro?</h3><div class="form-grid"><label>Solicitante<select [(ngModel)]="draft.requester"><option>Marina Costa</option><option>Carlos Lima</option></select></label><label>Responsável<select [(ngModel)]="draft.assignee"><option>Carlos Lima</option><option>João Silva</option><option>Ana Souza</option></select></label></div><label>Participantes<input [(ngModel)]="draft.participants" placeholder="Ex.: Rafael Mendes"></label><p class="helper">As pessoas relacionadas acompanham o contexto e podem receber atualizações do registro.</p></div>}
-          @if(wizardStep === 3){<div class="form-block"><span class="section-kicker">03 · CONTEXTO</span><h3>Onde este registro se encaixa?</h3><label>Contexto<textarea [(ngModel)]="draft.context" placeholder="Informe origem, sistema, processo ou contexto conhecido."></textarea></label><div class="form-grid"><label>Solução<input [(ngModel)]="draft.solution" placeholder="Ex.: Portal de Atendimento"></label><label>Versão<input [(ngModel)]="draft.version" placeholder="Ex.: v1.2.0"></label></div></div>}
-          @if(wizardStep === 4){<div class="form-block"><span class="section-kicker">04 · OBJETIVO</span><h3>Qual resultado esperamos?</h3><label>Objetivo<textarea [(ngModel)]="draft.objective" placeholder="Defina o resultado esperado para esta demanda ou atividade."></textarea></label><div class="save-callout"><nx-icon name="link"/><div><strong>Contexto preservado</strong><span>As informações desta etapa serão associadas ao registro criado.</span></div></div></div>}
-          @if(wizardStep === 5){<div class="review"><span class="section-kicker">05 · REVISÃO</span><h3>Confira antes de registrar</h3><p>Revise as informações. Depois de criar, o registro poderá ser relacionado a requisitos, versões e chamados.</p><div class="review-grid"><span>Título</span><strong>{{ draft.title || 'Não informado' }}</strong><span>Descrição</span><strong>{{ draft.description || 'Não informado' }}</strong><span>Responsável</span><strong>{{ draft.assignee }}</strong><span>Contexto</span><strong>{{ draft.context || 'A completar' }}</strong><span>Solução / versão</span><strong>{{ draft.solution || 'A definir' }} · {{ draft.version || 'A definir' }}</strong><span>Objetivo</span><strong>{{ draft.objective || 'Não informado' }}</strong></div></div>}
+          @if(wizardStep === 1){
+            <div class="form-block"><span class="section-kicker">01 · IDENTIFICAÇÃO</span><h3>O que precisa ser registrado?</h3>
+              <label>Título<input [(ngModel)]="draft.title" placeholder="Ex.: Implementar autenticação de dois fatores"></label>
+              <label>Descrição<textarea [(ngModel)]="draft.description" placeholder="Descreva a necessidade de forma objetiva."></textarea></label>
+              <div class="form-grid"><label>Prioridade<select [(ngModel)]="draft.priority"><option>Alta</option><option>Média</option><option>Baixa</option><option>Normal</option></select></label><label>Prazo<input type="date" [(ngModel)]="draft.dueDate"></label></div>
+            </div>
+          }
+          @if(wizardStep === 2){
+            <div class="form-block"><span class="section-kicker">02 · PESSOAS</span><h3>Quem participa deste registro?</h3>
+              <div class="form-grid"><label>Solicitante<select [(ngModel)]="draft.requester">@for (person of team; track person.name){<option [value]="person.name">{{ person.name }}</option>}</select></label><label>Responsável<select [(ngModel)]="draft.assignee">@for (person of team; track person.name){<option [value]="person.name">{{ person.name }}</option>}</select></label></div>
+              <div class="participant-selector"><span class="field-label">Participantes</span><div class="participant-options">@for (person of team; track person.name){<button type="button" class="participant-option" [class.selected]="isParticipantSelected(person.name)" (click)="toggleParticipant(person.name)"><span class="check-box">@if(isParticipantSelected(person.name)){<nx-icon name="check" [size]="12"/>}</span><span><strong>{{ person.name }}</strong><small>{{ person.role }}</small></span></button>}</div></div>
+              <p class="helper">Selecione quem precisa acompanhar o contexto. Solicitante e responsável ficam registrados separadamente.</p>
+            </div>
+          }
+          @if(wizardStep === 3){
+            <div class="form-block"><span class="section-kicker">03 · CONTEXTO</span><h3>Onde este registro se encaixa?</h3>
+              <label>Contexto<textarea [(ngModel)]="draft.context" placeholder="Informe origem, sistema, processo ou contexto conhecido."></textarea></label>
+              <div class="form-grid"><label>Solução<input [(ngModel)]="draft.solution" placeholder="Ex.: Portal de Atendimento"></label><label>Versão<input [(ngModel)]="draft.version" placeholder="Ex.: v1.2.0"></label></div>
+            </div>
+          }
+          @if(wizardStep === 4){
+            <div class="form-block"><span class="section-kicker">04 · OBJETIVO</span><h3>Qual resultado esperamos?</h3>
+              <label>Objetivo<textarea [(ngModel)]="draft.objective" placeholder="Defina o resultado esperado para esta demanda ou atividade."></textarea></label>
+              <div class="save-callout"><nx-icon name="link"/><div><strong>Contexto preservado</strong><span>As informações desta etapa serão associadas ao registro criado e ficarão disponíveis no suporte.</span></div></div>
+            </div>
+          }
+          @if(wizardStep === 5){
+            <div class="review"><span class="section-kicker">05 · REVISÃO</span><h3>Confira antes de registrar</h3><p>Revise as informações. Depois de criar, o registro poderá ser relacionado a requisitos, versões e chamados.</p>
+              <div class="review-grid"><span>Título</span><strong>{{ draft.title || 'Não informado' }}</strong><span>Descrição</span><strong>{{ draft.description || 'Não informado' }}</strong><span>Solicitante</span><strong>{{ draft.requester }}</strong><span>Responsável</span><strong>{{ draft.assignee }}</strong><span>Participantes</span><strong>{{ draft.participants || 'Nenhum selecionado' }}</strong><span>Contexto</span><strong>{{ draft.context || 'A completar' }}</strong><span>Solução / versão</span><strong>{{ draft.solution || 'A definir' }} · {{ draft.version || 'A definir' }}</strong><span>Objetivo</span><strong>{{ draft.objective || 'Não informado' }}</strong></div>
+            </div>
+          }
+          @if(wizardError){<div class="wizard-error"><nx-icon name="close" [size]="14"/>{{ wizardError }}</div>}
         </div>
-        <footer class="wizard-footer"><span class="save-status">@if(saved){<nx-icon name="check" [size]="13"/> Salvo agora}@else{Salvamento por etapa}</span><div><button class="btn secondary" (click)="previousStep()" [disabled]="wizardStep===1">Voltar</button>@if(wizardStep < 5){<button class="btn primary" (click)="nextStep()" [disabled]="wizardStep===1 && (!draft.title.trim() || !draft.description.trim())">Salvar e continuar <nx-icon name="arrow" [size]="14"/></button>}@else{<button class="btn primary" (click)="finishWizard()" [disabled]="!draft.title.trim() || !draft.description.trim()"><nx-icon name="check"/> Criar registro</button>}</div></footer>
+
+        <footer class="wizard-footer"><span class="save-status">@if(saved){<nx-icon name="check" [size]="13"/> Rascunho salvo}@else{Salvamento por etapa}</span><div><button class="btn secondary" (click)="previousStep()" [disabled]="wizardStep===1">Voltar</button>@if(wizardStep < 5){<button class="btn primary" (click)="nextStep()">Salvar e continuar <nx-icon name="arrow" [size]="14"/></button>}@else{<button class="btn primary" (click)="finishWizard()"><nx-icon name="check"/> Criar registro</button>}</div></footer>
       </section>
     </div>
   }
