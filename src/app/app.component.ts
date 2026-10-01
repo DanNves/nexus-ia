@@ -4,6 +4,7 @@ import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/rou
 import { NexusStore } from './services/nexus.store';
 import { NxIconComponent } from './shared/icon.component';
 import { NexusRecord, WizardDraft } from './models/nexus.models';
+import { team } from './data/nexus.data';
 
 @Component({
   selector: 'nx-root',
@@ -14,14 +15,17 @@ import { NexusRecord, WizardDraft } from './models/nexus.models';
 export class AppComponent {
   readonly store = inject(NexusStore);
   readonly router = inject(Router);
+  readonly team = team;
   mobileOpen = false;
   moreOpen = false;
   userOpen = false;
   searchOpen = false;
+  notificationOpen = false;
   globalQuery = '';
   commentText = '';
   wizardStep = 1;
   saved = false;
+  wizardError = '';
   draft: WizardDraft = this.emptyDraft();
 
   readonly primary = [
@@ -42,47 +46,109 @@ export class AppComponent {
   readonly searchResults = computed(() => {
     const q = this.globalQuery.trim().toLowerCase();
     if (!q) return [];
-    return this.store.records().filter(r => [r.id,r.title,r.description,r.solution,r.version].join(' ').toLowerCase().includes(q)).slice(0,6);
+    return this.store.records()
+      .filter(r => [r.id,r.title,r.description,r.solution,r.version].join(' ').toLowerCase().includes(q))
+      .slice(0,6);
   });
+
+  readonly notifications = computed(() => this.store.records()
+    .filter(r => (r.type === 'Chamado' && r.aiStatus === 'pending') || r.status === 'Em validação')
+    .slice(0,5));
 
   navigate(path: string) {
     this.router.navigateByUrl(path);
     this.mobileOpen = false;
     this.moreOpen = false;
+    this.userOpen = false;
   }
 
-  openSearch() { this.searchOpen = true; this.globalQuery = ''; }
+  openSearch() {
+    this.notificationOpen = false;
+    this.searchOpen = true;
+    this.globalQuery = '';
+  }
+
   closeSearch() { this.searchOpen = false; this.globalQuery = ''; }
-  openRecord(item: NexusRecord) { this.store.select(item); this.closeSearch(); }
+
+  openRecord(item: NexusRecord) {
+    this.store.select(item);
+    this.closeSearch();
+    this.notificationOpen = false;
+  }
+
   openWizard(type: 'demanda'|'atividade') {
-    this.draft = this.emptyDraft();
+    this.notificationOpen = false;
+    const key = this.draftKey(type);
+    const savedDraft = this.readDraft(key);
+    this.draft = savedDraft ?? this.emptyDraft(type);
     this.wizardStep = 1;
-    this.saved = false;
+    this.saved = Boolean(savedDraft);
+    this.wizardError = '';
     this.store.openWizard(type);
     this.mobileOpen = false;
   }
-  closeWizard() { this.store.closeWizard(); }
+
+  closeWizard() {
+    this.store.closeWizard();
+    this.wizardError = '';
+  }
 
   nextStep() {
+    if (!this.isStepValid()) return;
     this.saveDraft();
-    if (this.wizardStep < 5) this.wizardStep++;
+    if (this.wizardStep < 5) {
+      this.wizardStep++;
+      this.wizardError = '';
+      this.saveDraft();
+    }
   }
-  previousStep() { if (this.wizardStep > 1) this.wizardStep--; }
+
+  previousStep() {
+    if (this.wizardStep > 1) {
+      this.wizardStep--;
+      this.wizardError = '';
+    }
+  }
+
   saveDraft() {
-    const key = this.store.wizard() === 'demanda' ? 'nexus-angular-demanda-draft' : 'nexus-angular-atividade-draft';
-    localStorage.setItem(key, JSON.stringify(this.draft));
+    const wizard = this.store.wizard();
+    if (!wizard) return;
+    localStorage.setItem(this.draftKey(wizard), JSON.stringify(this.draft));
     this.saved = true;
-    setTimeout(() => this.saved = false, 1200);
+    window.setTimeout(() => this.saved = false, 1200);
   }
+
   finishWizard() {
-    if (!this.draft.title.trim() || !this.draft.description.trim()) return;
-    this.saveDraft();
-    this.store.addRecord(this.draft, this.store.wizard() ?? 'demanda');
-    this.draft = this.emptyDraft();
+    if (!this.isStepValid()) return;
+    const wizard = this.store.wizard() ?? 'demanda';
+    this.store.addRecord(this.draft, wizard);
+    localStorage.removeItem(this.draftKey(wizard));
+    this.draft = this.emptyDraft(wizard);
     this.wizardStep = 1;
+    this.wizardError = '';
   }
-  private emptyDraft(): WizardDraft {
-    return { title:'', description:'', requester:'Marina Costa', assignee:'Carlos Lima', participants:'', context:'', solution:'', version:'', priority:'Média', objective:'', dueDate:'' };
+
+  isStepValid(): boolean {
+    const errors: Record<number,string> = {
+      1: !this.draft.title.trim() || !this.draft.description.trim() ? 'Informe título e descrição para continuar.' : '',
+      2: !this.draft.requester || !this.draft.assignee ? 'Defina solicitante e responsável.' : '',
+      3: !this.draft.context.trim() ? 'Explique o contexto conhecido para preservar a origem do registro.' : '',
+      4: !this.draft.objective.trim() ? 'Informe o objetivo ou resultado esperado.' : '',
+      5: !this.draft.title.trim() || !this.draft.description.trim() || !this.draft.requester || !this.draft.assignee || !this.draft.context.trim() || !this.draft.objective.trim() ? 'Complete os campos obrigatórios antes de criar o registro.' : '',
+    };
+    this.wizardError = errors[this.wizardStep] ?? '';
+    return !this.wizardError;
+  }
+
+  toggleParticipant(name: string) {
+    const current = this.draft.participants.split(',').map(value => value.trim()).filter(Boolean);
+    const exists = current.some(value => value === name);
+    this.draft.participants = exists ? current.filter(value => value !== name).join(', ') : [...current, name].join(', ');
+    this.saveDraft();
+  }
+
+  isParticipantSelected(name: string) {
+    return this.draft.participants.split(',').map(value => value.trim()).includes(name);
   }
 
   addComment() {
@@ -96,8 +162,47 @@ export class AppComponent {
     const selected = this.store.selected();
     if (selected) this.store.validateAi(selected.id, true);
   }
+
   rejectAi() {
     const selected = this.store.selected();
     if (selected) this.store.validateAi(selected.id, false);
+  }
+
+  registerKnowledge() {
+    const selected = this.store.selected();
+    if (selected) this.store.registerKnowledge(selected.id);
+  }
+
+  openRelated(id: string) {
+    this.store.selectById(id);
+  }
+
+  private draftKey(type: 'demanda'|'atividade') {
+    return type === 'demanda' ? 'nexus-angular-demanda-draft' : 'nexus-angular-atividade-draft';
+  }
+
+  private readDraft(key: string): WizardDraft | null {
+    try {
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) as WizardDraft : null;
+    } catch {
+      return null;
+    }
+  }
+
+  private emptyDraft(type: 'demanda'|'atividade' = 'demanda'): WizardDraft {
+    return {
+      title:'',
+      description:'',
+      requester:'Marina Costa',
+      assignee:type === 'atividade' ? 'João Silva' : 'Carlos Lima',
+      participants:'',
+      context:'',
+      solution:'',
+      version:'',
+      priority:'Média',
+      objective:'',
+      dueDate:''
+    };
   }
 }
