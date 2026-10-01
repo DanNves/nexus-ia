@@ -19,7 +19,12 @@ export class NexusStore {
   private load(): NexusRecord[] {
     try {
       const raw = localStorage.getItem(this.storageKey);
-      if (raw) return JSON.parse(raw) as NexusRecord[];
+      if (raw) {
+        const saved = JSON.parse(raw) as NexusRecord[];
+        const savedById = new Map(saved.map(record => [record.id, record]));
+        return seedRecords.map(seed => ({ ...seed, ...(savedById.get(seed.id) ?? {}) }))
+          .concat(saved.filter(record => !seedRecords.some(seed => seed.id === record.id)));
+      }
     } catch { /* use seed */ }
     return seedRecords;
   }
