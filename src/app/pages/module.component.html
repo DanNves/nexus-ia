@@ -1,0 +1,42 @@
+<main class="page module-page">
+  <section class="page-intro">
+    <div><span class="breadcrumb">Início <b>›</b> {{ title() }}</span><h1>{{ title() }}</h1><p>{{ description() }}</p></div>
+    <div class="intro-actions">
+      @if (view === 'Demandas' || view === 'Atividades') { <button class="btn primary" (click)="create()"><nx-icon name="plus"/> {{ view === 'Demandas' ? 'Nova demanda' : 'Nova atividade' }}</button> }
+      @if (view === 'Chamados') { <button class="btn secondary" (click)="store.setSearch('CH-')"><nx-icon name="ticket"/> Atender chamado</button> }
+    </div>
+  </section>
+
+  <section class="module-summary">
+    <article><span>Registros</span><strong>{{ items.length }}</strong><small>neste módulo</small></article>
+    <article><span>Em validação</span><strong>{{ items.filter(r => r.status === 'Em validação').length }}</strong><small>aguardando responsável</small></article>
+    <article><span>Com contexto</span><strong>{{ items.filter(r => !r.context.includes('Aguardando')).length }}</strong><small>informações relacionadas</small></article>
+    <article><span>Concluídos</span><strong>{{ items.filter(r => r.status === 'Concluído').length }}</strong><small>finalizados</small></article>
+  </section>
+
+  <section class="panel module-panel">
+    <div class="toolbar">
+      <div class="search-box"><nx-icon name="search" [size]="16"/><input [value]="store.search()" (input)="store.setSearch($any($event.target).value)" placeholder="Pesquisar por código, título, solução ou versão..."></div>
+      <div class="filters">
+        @for (f of ['Todos','Pendente','Em análise','Em desenvolvimento','Em validação','Concluído']; track f) {
+          <button [class.active]="filter === f" (click)="setFilter(f)">{{ f }}</button>
+        }
+      </div>
+    </div>
+
+    <div class="list-head"><span>Registro</span><span>Contexto</span><span>Status</span><span></span></div>
+    <div class="module-list">
+      @for (item of items; track item.id) {
+        <button class="module-row" (click)="open(item)">
+          <span class="row-icon blue"><nx-icon [name]="item.type === 'Chamado' ? 'ticket' : item.type === 'Conhecimento' ? 'knowledge' : item.type === 'Requisito' ? 'requirement' : 'demand'" [size]="17"/></span>
+          <span class="module-main"><strong>{{ item.id }} · {{ item.title }}</strong><small>{{ item.description }}</small></span>
+          <span class="module-context"><strong>{{ item.context }}</strong><small>{{ item.solution }} · {{ item.version }}</small></span>
+          <span class="status" [class]="item.status.toLowerCase().replace(' ','-')">{{ item.status }}</span>
+          <nx-icon name="arrow" [size]="15"/>
+        </button>
+      } @empty {
+        <div class="empty-state"><nx-icon name="search" [size]="24"/><strong>Nenhum registro encontrado</strong><span>Ajuste a pesquisa ou o filtro para localizar outro item.</span></div>
+      }
+    </div>
+  </section>
+</main>
