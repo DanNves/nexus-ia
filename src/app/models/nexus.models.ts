@@ -37,6 +37,13 @@ export interface NexusRecord {
   nextAction?: string;
   nextActionHint?: string;
   reuseCount?: number;
+  businessRules?: string[];
+  acceptanceCriteria?: string[];
+  procedure?: string[];
+  sourceTicketId?: string;
+  validatedBy?: string;
+  validatedAt?: string;
+  revision?: number;
 }
 export interface WizardDraft {
   title: string;
