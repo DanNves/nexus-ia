@@ -45,8 +45,7 @@ export class NexusStore {
     const legacy = record as NexusRecord & { aiValidated?: boolean };
     const aiStatus: AiValidationStatus | undefined = record.aiStatus
       ?? (legacy.aiValidated === true ? 'approved' : legacy.aiValidated === false ? 'rejected' : undefined);
-    const { aiValidated: _legacy, ...clean } = legacy;
-    return { ...clean, aiStatus };
+    return { ...record, aiStatus };
   }
 
   private persist() {
