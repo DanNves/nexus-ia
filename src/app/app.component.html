@@ -125,6 +125,33 @@
             </div>
           </section>
 
+          @if (item.type === 'Requisito') {
+            <section class="detail-card requirement-detail">
+              <header><div><span class="section-kicker">ESPECIFICAÇÃO</span><h3>Regras e critérios de aceitação</h3></div><nx-icon name="requirement" [size]="17"/></header>
+              <div class="requirement-section">
+                <span>REGRAS DE NEGÓCIO</span>
+                <ul>@for (rule of (item.businessRules || []); track rule){<li>{{ rule }}</li>} @empty {<li>Nenhuma regra registrada neste requisito.</li>}</ul>
+              </div>
+              <div class="requirement-section">
+                <span>CRITÉRIOS DE ACEITAÇÃO</span>
+                <ul>@for (criterion of (item.acceptanceCriteria || []); track criterion){<li>{{ criterion }}</li>} @empty {<li>Nenhum critério registrado neste requisito.</li>}</ul>
+              </div>
+            </section>
+          }
+
+          @if (item.type === 'Versão' || item.type === 'Solução') {
+            <section class="detail-card">
+              <header><div><span class="section-kicker">BASELINE DA SOLUÇÃO</span><h3>Contexto publicado</h3></div><nx-icon name="solution" [size]="17"/></header>
+              <p>Esta referência conecta o que foi produzido no desenvolvimento ao suporte da solução publicada.</p>
+              <div class="detail-grid">
+                <div><span>Solução</span><strong>{{ item.solution }}</strong></div>
+                <div><span>Versão</span><strong>{{ item.version }}</strong></div>
+                <div><span>Publicação</span><strong>{{ item.date }}</strong></div>
+                <div><span>Estado</span><strong>{{ item.context }}</strong></div>
+              </div>
+            </section>
+          }
+
           @if (item.type === 'Chamado') {
             <section class="ai-card">
               <header><span><nx-icon name="spark" [size]="15"/> APOIO DA IA GENERATIVA</span><em>{{ item.aiStatus === 'approved' ? 'Validada' : item.aiStatus === 'rejected' ? 'Rejeitada' : 'Aguardando validação' }}</em></header>
