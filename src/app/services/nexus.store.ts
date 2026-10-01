@@ -128,6 +128,33 @@ export class NexusStore {
     this.flash('Atualização registrada no contexto.');
   }
 
+  analyzeAi(id: string) {
+    const ticket = this.records().find(item => item.id === id);
+    if (!ticket || ticket.type !== 'Chamado') return;
+
+    const related = ticket.relatedIds
+      .map(relatedId => this.records().find(record => record.id === relatedId))
+      .filter((record): record is NexusRecord => Boolean(record));
+
+    const hasRequirement = related.some(record => record.type === 'Requisito');
+    const hasVersion = related.some(record => record.type === 'Versão');
+    const hasKnowledge = related.some(record => record.type === 'Conhecimento');
+
+    this.records.update(items => items.map(record => record.id === id ? {
+      ...record,
+      aiStatus: 'pending' as const,
+      aiCategory: hasRequirement ? 'Falha funcional / regra de negócio' : 'Incidente / diagnóstico',
+      aiConfidence: hasRequirement && hasVersion ? 86 : hasKnowledge ? 82 : 74,
+      aiSummary: `A análise considerou o problema relatado e ${related.length} registro(s) de contexto recuperado(s), incluindo ${hasRequirement ? 'requisito' : 'registros relacionados'}${hasVersion ? ', versão publicada' : ''}${hasKnowledge ? ' e conhecimento anterior' : ''}.`,
+      nextAction: 'Validar sugestão do atendimento',
+      nextActionHint: 'A sugestão foi preparada a partir do chamado e das evidências recuperadas. A decisão continua com o responsável.'
+    } : record));
+
+    this.syncSelected(id);
+    this.persist();
+    this.flash(`IA analisou ${id} usando o contexto recuperado.`);
+  }
+
   validateAi(id: string, accepted: boolean) {
     const record = this.records().find(item => item.id === id);
     if (!record || record.type !== 'Chamado') return;
