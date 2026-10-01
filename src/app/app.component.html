@@ -128,18 +128,18 @@
           @if (item.type === 'Chamado') {
             <section class="ai-card">
               <header><span><nx-icon name="spark" [size]="15"/> APOIO DA IA GENERATIVA</span><em>{{ item.aiStatus === 'approved' ? 'Validada' : item.aiStatus === 'rejected' ? 'Rejeitada' : 'Aguardando validação' }}</em></header>
-              <div class="ai-title-row"><div><span class="section-kicker">ANÁLISE DO CHAMADO</span><h3>Sugestão baseada no contexto recuperado</h3></div><span class="ai-context"><nx-icon name="link" [size]="13"/> {{ item.context }}</span></div>
-              <p>A IA utiliza o chamado, a solução, a versão e os registros relacionados para sugerir um caminho de análise. A sugestão não confirma a causa e não substitui a decisão do responsável.</p>
+              <div class="ai-title-row"><div><span class="section-kicker">IA ATIVA NO CHAMADO</span><h3>Análise assistida pelo contexto completo</h3></div><div class="ai-header-actions"><span class="ai-context"><nx-icon name="link" [size]="13"/> {{ store.aiContextFor(item.id).length }} fontes recuperadas</span><button class="btn primary ai-run-btn" (click)="analyzeAi()"><nx-icon name="spark" [size]="13"/> Analisar com IA</button></div></div>
+              <p>A IA está presente no atendimento: lê o problema do chamado e recupera o contexto das etapas relacionadas — demanda, atividade, requisito, solução/versão, chamados relacionados e conhecimento validado. Ela sugere caminhos; o responsável decide.</p>
               <div class="suggestion">
-                <div class="ai-block"><strong>Possível causa</strong><span>{{ item.aiCause || 'Não há evidências suficientes para sugerir uma causa com segurança.' }}</span></div>
-                <div class="ai-block"><strong>Procedimento sugerido</strong><ol>@for (step of (item.aiProcedure || []); track step){<li>{{ step }}</li>} @empty {<li>Completar o contexto do chamado antes de executar o procedimento.</li>}</ol></div>
+                <div class="ai-block"><strong>Possível causa</strong><span>{{ item.aiCause || 'Execute “Analisar com IA” para gerar uma hipótese baseada nas evidências recuperadas.' }}</span></div>
+                <div class="ai-block"><strong>Procedimento sugerido</strong><ol>@for (step of (item.aiProcedure || []); track step){<li>{{ step }}</li>} @empty {<li>Aguardando a análise do chamado.</li>}</ol></div>
               </div>
-              <div class="evidence"><span>EVIDÊNCIAS RECUPERADAS</span>@for (evidence of (item.aiEvidence || item.relatedIds); track evidence){<button (click)="openRelated(evidence)">{{ evidence }}</button>}</div>
+              <div class="evidence"><span>CONTEXTO RECUPERADO</span>@for (source of store.aiContextFor(item.id); track source.id){<button (click)="openRelated(source.id)">{{ source.id }}</button>}</div>
               <div class="validation">
                 <strong><nx-icon name="check" [size]="15"/> Validação humana obrigatória</strong>
                 <div>
-                  <button class="btn secondary" (click)="rejectAi()" [disabled]="item.aiStatus === 'approved'">Rejeitar sugestão</button>
-                  <button class="btn primary" (click)="approveAi()" [disabled]="item.aiStatus === 'approved'">Aprovar sugestão</button>
+                  <button class="btn secondary" (click)="rejectAi()" [disabled]="item.aiStatus === 'approved'">Rejeitar e revisar</button>
+                  <button class="btn primary" (click)="approveAi()" [disabled]="item.aiStatus === 'approved' || !item.aiSummary">Aprovar sugestão</button>
                 </div>
               </div>
               @if (item.aiStatus === 'approved') {
@@ -150,9 +150,21 @@
 
           @if (item.type === 'Conhecimento') {
             <section class="detail-card knowledge-detail">
-              <header><div><span class="section-kicker">REUTILIZAÇÃO</span><h3>Conhecimento validado</h3></div><span class="reuse">{{ item.reuseCount || 0 }} usos</span></header>
-              <p>Este conhecimento nasceu de um atendimento validado e pode ser recuperado em novos chamados relacionados à mesma solução.</p>
-              <div class="knowledge-source"><span>ORIGEM</span>@for (related of item.relatedIds; track related){<button (click)="openRelated(related)">{{ related }}</button>}</div>
+              <header><div><span class="section-kicker">BASE DE CONHECIMENTO</span><h3>Conhecimento validado e reutilizável</h3></div><span class="reuse">{{ item.reuseCount || 0 }} usos</span></header>
+              <p>{{ item.description }}</p>
+              <div class="knowledge-meta-grid">
+                <div><span>ORIGEM</span><strong>{{ item.sourceTicketId || item.relatedIds[0] || 'Registro de origem' }}</strong></div>
+                <div><span>SOLUÇÃO</span><strong>{{ item.solution }}</strong></div>
+                <div><span>VERSÃO</span><strong>{{ item.version }}</strong></div>
+                <div><span>REVISÃO</span><strong>v{{ item.revision || 1 }}</strong></div>
+                <div><span>VALIDADO POR</span><strong>{{ item.validatedBy || item.assignee.name }}</strong></div>
+                <div><span>VALIDADO EM</span><strong>{{ item.validatedAt || item.date }}</strong></div>
+              </div>
+              <div class="knowledge-procedure">
+                <span class="section-kicker">PROCEDIMENTO VALIDADO</span>
+                <ol>@for (step of (item.procedure || item.aiProcedure || []); track step){<li>{{ step }}</li>} @empty {<li>Procedimento registrado no histórico do atendimento de origem.</li>}</ol>
+              </div>
+              <div class="knowledge-source"><span>CONTEXTO DE ORIGEM</span>@for (related of item.relatedIds; track related){<button (click)="openRelated(related)">{{ related }}</button>}</div>
             </section>
           }
 
