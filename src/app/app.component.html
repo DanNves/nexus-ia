@@ -206,7 +206,7 @@
                     <strong>{{ item.aiExistingKnowledgeId }}</strong>
                   </div>
                   <p>A IA encontrou uma solução/conhecimento anterior compatível, anexou a referência ao chamado e a considerou na resolução sugerida.</p>
-                  <button class="relation-chip" (click)="openRelated(item.aiExistingKnowledgeId)"><nx-icon name="link" [size]="12"/> Abrir {{ item.aiExistingKnowledgeId }}</button>
+                  <button class="relation-chip" (click)="openRelated($any(item.aiExistingKnowledgeId))"><nx-icon name="link" [size]="12"/> Abrir {{ item.aiExistingKnowledgeId }}</button>
                 </div>
               }
 
