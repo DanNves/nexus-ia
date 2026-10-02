@@ -1,17 +1,9 @@
 <main class="page module-page">
-  <section class="page-intro">
-    <div>
+  <section class="page-intro module-page-head">
+    <div class="page-title-block">
       <span class="breadcrumb"><nx-icon name="home" [size]="13"/> Início <b>›</b> {{ title() }}</span>
       <h1>{{ title() }}</h1>
       <p>{{ description() }}</p>
-    </div>
-    <div class="module-route-nav" aria-label="Navegação entre módulos">
-      <span class="module-route-label">Módulos</span>
-      <a routerLink="/demandas" routerLinkActive="active">Demandas</a>
-      <a routerLink="/atividades" routerLinkActive="active">Atividades</a>
-      <a routerLink="/requisitos" routerLinkActive="active">Requisitos</a>
-      <a routerLink="/solucoes-e-versoes" routerLinkActive="active">Soluções e Versões</a>
-      <a routerLink="/chamados" routerLinkActive="active">Chamados</a>
     </div>
     <div class="intro-actions">
       @if (view === 'Demandas' || view === 'Atividades') {
@@ -22,6 +14,17 @@
       }
     </div>
   </section>
+
+  <nav class="module-context-nav" aria-label="Navegação do ciclo NEXUS">
+    <div class="module-context-title"><span class="module-context-dot"></span><strong>Ciclo da solução</strong><small>Desenvolvimento → suporte</small></div>
+    <div class="module-context-links">
+      <a routerLink="/demandas" routerLinkActive="active">Demandas</a>
+      <a routerLink="/atividades" routerLinkActive="active">Atividades</a>
+      <a routerLink="/requisitos" routerLinkActive="active">Requisitos</a>
+      <a routerLink="/solucoes-e-versoes" routerLinkActive="active">Soluções e versões</a>
+      <a routerLink="/chamados" routerLinkActive="active">Chamados</a>
+    </div>
+  </nav>
 
   @if (view === 'Indicadores') {
     <section class="indicator-grid">
