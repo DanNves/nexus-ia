@@ -195,10 +195,35 @@
               <div class="ai-title-row"><div><span class="section-kicker">IA ATIVA NO CHAMADO</span><h3>Análise assistida pelo contexto completo</h3></div><div class="ai-header-actions"><span class="ai-context"><nx-icon name="link" [size]="13"/> {{ store.aiContextFor(item.id).length }} fontes recuperadas</span><button class="btn primary ai-run-btn" (click)="analyzeAi()"><nx-icon name="spark" [size]="13"/> Analisar com IA</button></div></div>
               <p>A IA está presente no atendimento: lê o problema do chamado e recupera o contexto das etapas relacionadas — demanda, atividade, requisito, solução/versão, chamados relacionados e conhecimento validado. Ela sugere caminhos; o responsável decide.</p>
               <div class="suggestion">
-                <div class="ai-block"><strong>Possível causa</strong><span>{{ item.aiCause || 'Execute “Analisar com IA” para gerar uma hipótese baseada nas evidências recuperadas.' }}</span></div>
-                <div class="ai-block"><strong>Procedimento sugerido</strong><ol>@for (step of (item.aiProcedure || []); track step){<li>{{ step }}</li>} @empty {<li>Aguardando a análise do chamado.</li>}</ol></div>
+                <div class="ai-block"><strong>O que a IA identificou</strong><span>{{ item.aiSummary || 'Execute “Analisar com IA” para cruzar o chamado com o que foi projetado, desenvolvido, publicado e já solucionado.' }}</span></div>
+                <div class="ai-block"><strong>Possível causa</strong><span>{{ item.aiCause || 'Aguardando análise do contexto.' }}</span></div>
               </div>
-              <div class="evidence"><span>CONTEXTO RECUPERADO</span>@for (source of store.aiContextFor(item.id); track source.id){<button (click)="openRelated(source.id)">{{ source.id }}</button>}</div>
+
+              @if (item.aiExistingKnowledgeId) {
+                <div class="ai-match">
+                  <div class="ai-match-head">
+                    <span><nx-icon name="knowledge" [size]="14"/> SOLUÇÃO ANTERIOR ENCONTRADA</span>
+                    <strong>{{ item.aiExistingKnowledgeId }}</strong>
+                  </div>
+                  <p>A IA encontrou uma solução/conhecimento anterior compatível, anexou a referência ao chamado e a considerou na resolução sugerida.</p>
+                  <button class="relation-chip" (click)="openRelated(item.aiExistingKnowledgeId)"><nx-icon name="link" [size]="12"/> Abrir {{ item.aiExistingKnowledgeId }}</button>
+                </div>
+              }
+
+              @if (item.aiFindings?.length) {
+                <div class="ai-findings">
+                  <span class="section-kicker">O QUE FOI CONSIDERADO</span>
+                  <ul>@for (finding of item.aiFindings; track finding){<li>{{ finding }}</li>}</ul>
+                </div>
+              }
+
+              <div class="ai-resolution">
+                <div class="ai-resolution-head"><span><nx-icon name="check" [size]="14"/> RESOLUÇÃO SUGERIDA</span><small>aguarda validação humana</small></div>
+                <p>{{ item.aiResolution || 'A resolução será apresentada após a análise do chamado.' }}</p>
+                <ol>@for (step of (item.aiProcedure || []); track step){<li>{{ step }}</li>} @empty {<li>Aguardando a análise do chamado.</li>}</ol>
+              </div>
+
+              <div class="evidence"><span>CONTEXTO RECUPERADO E ANEXADO</span>@for (source of store.aiContextFor(item.id); track source.id){<button (click)="openRelated(source.id)">{{ source.id }}</button>}</div>
               <div class="validation">
                 <strong><nx-icon name="check" [size]="15"/> Validação humana obrigatória</strong>
                 <div>
