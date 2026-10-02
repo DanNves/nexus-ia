@@ -2367,3 +2367,124 @@ button,a{ -webkit-tap-highlight-color:transparent; }
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}
 }
+
+
+/* =========================================================
+   NEXUS · IA DENTRO DO CHAMADO
+   A leitura visual acompanha o raciocínio do atendimento:
+   contexto → achados → solução anterior → resolução → validação.
+   ========================================================= */
+.ai-match,
+.ai-findings,
+.ai-resolution{
+  margin-top:14px;
+  border:1px solid var(--nexus-line);
+  border-radius:14px;
+  background:#fff;
+}
+
+.ai-match{
+  padding:14px;
+  border-color:#cfe1ff;
+  background:#f5f9ff;
+}
+
+.ai-match-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:7px;
+}
+
+.ai-match-head span,
+.ai-resolution-head span{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  color:var(--nexus-blue);
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.08em;
+}
+
+.ai-match-head strong{
+  font-size:12px;
+  color:var(--nexus-ink);
+}
+
+.ai-match p{
+  margin:0 0 10px;
+  color:var(--nexus-body);
+  font-size:12px;
+  line-height:1.55;
+}
+
+.ai-findings{
+  padding:14px 16px;
+}
+
+.ai-findings ul{
+  margin:9px 0 0;
+  padding-left:18px;
+  display:grid;
+  gap:7px;
+}
+
+.ai-findings li{
+  color:var(--nexus-body);
+  font-size:12px;
+  line-height:1.5;
+}
+
+.ai-resolution{
+  padding:15px;
+  border-color:#d7eadf;
+  background:#f8fcfa;
+}
+
+.ai-resolution-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:9px;
+}
+
+.ai-resolution-head span{
+  color:var(--nexus-success);
+}
+
+.ai-resolution-head small{
+  color:var(--nexus-muted);
+  font-size:10px;
+  font-weight:700;
+}
+
+.ai-resolution p{
+  margin:0 0 10px;
+  color:var(--nexus-body);
+  font-size:12px;
+  line-height:1.58;
+}
+
+.ai-resolution ol{
+  margin:0;
+  padding-left:20px;
+  display:grid;
+  gap:7px;
+}
+
+.ai-resolution li{
+  color:var(--nexus-ink);
+  font-size:12px;
+  line-height:1.5;
+}
+
+@media (max-width:760px){
+  .ai-match-head,
+  .ai-resolution-head{
+    align-items:flex-start;
+    flex-direction:column;
+  }
+}
