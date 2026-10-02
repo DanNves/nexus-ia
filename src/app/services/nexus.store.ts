@@ -215,19 +215,44 @@ export class NexusStore {
     const hasPreviousTicket = related.some(record => record.type === 'Chamado');
     const hasKnowledge = related.some(record => record.type === 'Conhecimento');
 
+    const requirement = related.find(record => record.type === 'Requisito');
+    const knowledge = related.find(record => record.type === 'Conhecimento');
+    const previousTicket = related.find(record => record.type === 'Chamado' && record.id !== id);
+    const cause = knowledge?.aiCause
+      || knowledge?.description
+      || requirement?.description
+      || (ticket.title.toLowerCase().includes('acesso') ? 'Possível inconsistência de permissão ou autenticação associada ao contexto da solução.' : 'Possível falha funcional relacionada ao contexto registrado para a solução.');
+    const procedure = knowledge?.procedure?.length
+      ? knowledge.procedure
+      : knowledge?.aiProcedure?.length
+        ? knowledge.aiProcedure
+        : [
+            'Conferir o cenário relatado e reproduzir o comportamento na versão informada.',
+            'Validar o requisito e as regras relacionadas ao chamado.',
+            'Comparar o comportamento com o procedimento ou conhecimento validado disponível.',
+            'Registrar a conclusão após a validação do responsável.'
+          ];
+    const evidence = Array.from(new Set([
+      ticket.id,
+      ...related.filter(record => record.id !== ticket.id).slice(0, 5).map(record => record.id)
+    ]));
+
     this.records.update(items => items.map(record => record.id === id ? {
       ...record,
       aiStatus: 'pending' as const,
       aiCategory: hasRequirement ? 'Falha funcional / regra de negócio' : 'Incidente / diagnóstico',
       aiConfidence: hasDemand && hasRequirement && hasVersion ? 92 : hasRequirement && hasVersion ? 88 : hasKnowledge ? 82 : 74,
-      aiSummary: `A análise percorreu ${related.length} registro(s) do contexto do chamado, cobrindo ${[
-        hasDemand ? 'demanda' : '',
-        hasActivity ? 'atividade' : '',
-        hasRequirement ? 'requisito' : '',
-        hasVersion ? 'solução/versão' : '',
+      aiSummary: `A análise percorreu ${related.length} registro(s) e combinou o chamado com ${[
+        hasDemand ? 'a demanda' : '',
+        hasActivity ? 'as atividades' : '',
+        hasRequirement ? 'os requisitos' : '',
+        hasVersion ? 'a solução/versão' : '',
         hasPreviousTicket ? 'chamados relacionados' : '',
-        hasKnowledge ? 'conhecimento validado' : ''
-      ].filter(Boolean).join(', ')}.`,
+        hasKnowledge ? 'o conhecimento validado' : ''
+      ].filter(Boolean).join(', ')}. A orientação abaixo é uma sugestão para validação humana.`,
+      aiCause: cause,
+      aiProcedure: procedure,
+      aiEvidence: evidence,
       nextAction: 'Validar sugestão do atendimento',
       nextActionHint: 'A sugestão foi preparada a partir do chamado e do contexto recuperado de todas as etapas relacionadas. A decisão continua com o responsável.'
     } : record));
