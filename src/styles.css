@@ -1266,3 +1266,146 @@ router-outlet{display:block}
   .module-route-label{display:none}
   .module-route-nav a{flex:0 0 auto}
 }
+
+
+/* =========================================================
+   NEXUS — NAVEGAÇÃO FINAL
+   Links planos, hierarquia clara e sem aparência de botões
+   ========================================================= */
+.nav-links{
+  align-items:stretch;
+  gap:0;
+  overflow:visible;
+}
+.nav-area{
+  display:contents;
+}
+.nav-area-links{
+  display:contents;
+}
+.nav-area-label{
+  display:none;
+}
+.nav-area a{
+  height:44px;
+  padding:0 9px;
+  border:0;
+  border-bottom:2px solid transparent;
+  border-radius:0;
+  background:transparent;
+  color:#5f7085;
+  font-size:10.5px;
+  font-weight:750;
+  box-shadow:none;
+}
+.nav-area a:hover{
+  background:#f6f9fc;
+  color:#0b6fe8;
+  box-shadow:none;
+}
+.nav-area a.active{
+  background:#eef5ff;
+  color:#086fe9;
+  border-bottom-color:#0878ff;
+  box-shadow:none;
+}
+.nav-area a.active nx-icon{
+  color:#0878ff;
+}
+.nav-actions{
+  gap:6px;
+}
+
+/* Navegação entre módulos: barra secundária, não uma sequência de botões */
+.module-route-nav{
+  width:100%;
+  max-width:none;
+  margin:-5px 0 20px;
+  padding:0;
+  display:flex;
+  align-items:center;
+  gap:0;
+  flex-wrap:wrap;
+  border:0;
+  border-bottom:1px solid #dfe7ef;
+  border-radius:0;
+  background:transparent;
+}
+.module-route-label{
+  min-height:35px;
+  display:flex;
+  align-items:center;
+  padding:0 13px 0 2px;
+  color:#9aa7b5;
+  font-size:8px;
+  font-weight:850;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+.module-route-nav a{
+  min-height:35px;
+  position:relative;
+  display:inline-flex;
+  align-items:center;
+  padding:0 11px;
+  border:0;
+  border-bottom:2px solid transparent;
+  border-radius:0;
+  color:#687a8e;
+  font-size:10px;
+  font-weight:750;
+  background:transparent;
+}
+.module-route-nav a:hover{
+  background:#f7faff;
+  color:#126bdc;
+}
+.module-route-nav a.active{
+  color:#0878ff;
+  background:#f1f6ff;
+  border-bottom-color:#0878ff;
+  box-shadow:none;
+}
+
+@media(max-width:1180px){
+  .nav-inner{gap:6px}
+  .brand{min-width:138px}
+  .brand img{width:36px;height:36px}
+  .brand strong{font-size:16px}
+  .nav-area a{
+    height:42px;
+    padding:0 7px;
+    gap:5px;
+    font-size:9.5px;
+  }
+  .nav-area a nx-icon{width:14px}
+  .nav-create{width:40px;padding:0;justify-content:center}
+  .nav-create span{display:none}
+  .user-copy{display:none}
+  .icon-btn{width:36px}
+}
+@media(max-width:940px){
+  .nav-area a{
+    padding:0 6px;
+    gap:4px;
+    font-size:9px;
+  }
+  .nav-area a span{display:none}
+  .nav-area a{width:34px;justify-content:center}
+  .module-route-nav{
+    overflow-x:auto;
+    flex-wrap:nowrap;
+    scrollbar-width:none;
+  }
+  .module-route-nav::-webkit-scrollbar{display:none}
+  .module-route-nav a{flex:0 0 auto}
+}
+@media(max-width:760px){
+  .module-route-nav{
+    width:100%;
+    margin:-3px 0 14px;
+    border-bottom-color:#e1e8f0;
+  }
+  .module-route-label{display:none}
+  .module-route-nav a{min-height:34px}
+}
