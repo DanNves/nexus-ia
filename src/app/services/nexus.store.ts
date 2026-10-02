@@ -45,7 +45,29 @@ export class NexusStore {
     const legacy = record as NexusRecord & { aiValidated?: boolean };
     const aiStatus: AiValidationStatus | undefined = record.aiStatus
       ?? (legacy.aiValidated === true ? 'approved' : legacy.aiValidated === false ? 'rejected' : undefined);
-    return { ...record, aiStatus };
+
+    // Protege o MVP contra dados antigos/incompletos salvos no navegador.
+    // Isso evita que uma informação ausente quebre a abertura do detalhe de um registro.
+    const fallbackPerson = team[0] ?? people.marina;
+    const requester = record.requester ?? { ...fallbackPerson, kind: 'Solicitante' as const };
+    const assignee = record.assignee ?? { ...fallbackPerson, kind: 'Responsável' as const };
+    const participants = Array.isArray(record.participants) ? record.participants : [];
+    const relatedIds = Array.isArray(record.relatedIds) ? record.relatedIds : [];
+    const comments = Array.isArray(record.comments) ? record.comments : [];
+
+    return {
+      ...record,
+      requester,
+      assignee,
+      participants,
+      relatedIds,
+      comments,
+      context: record.context || 'Contexto não informado',
+      solution: record.solution || 'A definir',
+      version: record.version || 'A definir',
+      description: record.description || 'Sem descrição registrada.',
+      aiStatus
+    };
   }
 
   private persist() {
