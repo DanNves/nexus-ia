@@ -17,6 +17,7 @@ export class AppComponent {
   readonly router = inject(Router);
   readonly team = team;
   mobileOpen = false;
+  developmentOpen = false;
   moreOpen = false;
   userOpen = false;
   searchOpen = false;
@@ -31,12 +32,16 @@ export class AppComponent {
   readonly primary = [
     ['Dashboard','/dashboard','home'],
     ['Demandas','/demandas','demand'],
-    ['Atividades','/atividades','activity'],
-    ['Requisitos','/requisitos','requirement'],
-    ['Soluções','/solucoes-e-versoes','solution'],
+    ['Desenvolvimento','#','layers'],
     ['Chamados','/chamados','ticket'],
     ['IA','/ia','spark'],
     ['Conhecimento','/conhecimento','knowledge'],
+  ] as const;
+
+  readonly development = [
+    ['Atividades','/atividades','activity'],
+    ['Requisitos','/requisitos','requirement'],
+    ['Soluções e Versões','/solucoes-e-versoes','solution'],
   ] as const;
 
   readonly secondary = [
@@ -60,6 +65,7 @@ export class AppComponent {
     this.router.navigateByUrl(path);
     this.mobileOpen = false;
     this.moreOpen = false;
+    this.developmentOpen = false;
     this.userOpen = false;
   }
 
