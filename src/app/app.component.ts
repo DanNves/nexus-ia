@@ -17,7 +17,6 @@ export class AppComponent {
   readonly router = inject(Router);
   readonly team = team;
   mobileOpen = false;
-  developmentOpen = false;
   moreOpen = false;
   userOpen = false;
   searchOpen = false;
@@ -29,24 +28,37 @@ export class AppComponent {
   wizardError = '';
   draft: WizardDraft = this.emptyDraft();
 
-  readonly primary = [
-    ['Dashboard','/dashboard','home'],
-    ['Demandas','/demandas','demand'],
-    ['Desenvolvimento','#','layers'],
-    ['Chamados','/chamados','ticket'],
-    ['IA','/ia','spark'],
-    ['Conhecimento','/conhecimento','knowledge'],
-  ] as const;
-
-  readonly development = [
-    ['Atividades','/atividades','activity'],
-    ['Requisitos','/requisitos','requirement'],
-    ['Soluções e Versões','/solucoes-e-versoes','solution'],
-  ] as const;
-
-  readonly secondary = [
-    ['Indicadores','/indicadores','chart'],
-    ['Configurações','/configuracoes','settings'],
+  readonly navGroups = [
+    {
+      label: 'Operação',
+      items: [
+        ['Dashboard','/dashboard','home'],
+        ['Demandas','/demandas','demand'],
+        ['Chamados','/chamados','ticket'],
+      ],
+    },
+    {
+      label: 'Desenvolvimento',
+      items: [
+        ['Atividades','/atividades','activity'],
+        ['Requisitos','/requisitos','requirement'],
+        ['Soluções e Versões','/solucoes-e-versoes','solution'],
+      ],
+    },
+    {
+      label: 'Inteligência',
+      items: [
+        ['IA','/ia','spark'],
+        ['Conhecimento','/conhecimento','knowledge'],
+      ],
+    },
+    {
+      label: 'Gestão',
+      items: [
+        ['Indicadores','/indicadores','chart'],
+        ['Configurações','/configuracoes','settings'],
+      ],
+    },
   ] as const;
 
   readonly searchResults = computed(() => {
@@ -65,7 +77,6 @@ export class AppComponent {
     this.router.navigateByUrl(path);
     this.mobileOpen = false;
     this.moreOpen = false;
-    this.developmentOpen = false;
     this.userOpen = false;
   }
 
