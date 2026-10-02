@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink, RouterLinkActive } from '@angular/router';
 import { NexusStore } from '../services/nexus.store';
 import { NxIconComponent } from '../shared/icon.component';
 import { View, NexusRecord } from '../models/nexus.models';
@@ -7,7 +7,7 @@ import { View, NexusRecord } from '../models/nexus.models';
 @Component({
   selector: 'nx-module',
   standalone: true,
-  imports: [NxIconComponent],
+  imports: [NxIconComponent, RouterLink, RouterLinkActive],
   templateUrl: './module.component.html',
 })
 export class ModuleComponent {
