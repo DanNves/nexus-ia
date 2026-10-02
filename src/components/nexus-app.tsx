@@ -7,8 +7,8 @@ import { team } from '../lib/nexus-data';
 import type { NexusRecord, WizardDraft, WizardType } from '../lib/nexus-models';
 
 export const routeViews:Record<string,string>={dashboard:'Visão geral',demandas:'Demandas',atividades:'Atividades',requisitos:'Requisitos','solucoes-e-versoes':'Soluções e Versões',chamados:'Chamados',ia:'IA',conhecimento:'Conhecimento',indicadores:'Indicadores',configuracoes:'Configurações'};
-const primary=[['dashboard','Visão geral','home'],['demandas','Demandas','demand'],['atividades','Atividades','activity'],['requisitos','Requisitos','requirement'],['solucoes-e-versoes','Soluções','solution'],['chamados','Chamados','ticket'],['ia','IA','spark'],['conhecimento','Conhecimento','knowledge']];
-const secondary=[['indicadores','Indicadores','chart'],['configuracoes','Configurações','settings']];
+const primary=[['dashboard','Visão geral','home'],['demandas','Demandas','demand'],['atividades','Atividades','activity'],['requisitos','Requisitos','requirement'],['solucoes-e-versoes','Soluções','solution'],['chamados','Chamados','ticket'],['ia','IA','spark'],['conhecimento','Conhecimento','knowledge']] as const;
+const secondary=[['indicadores','Indicadores','chart'],['configuracoes','Configurações','settings']] as const;
 const statusClass=(status:string)=>status.toLowerCase().replace(' ','-');
 const coverage=(records:NexusRecord[])=>{const relevant=records.filter(r=>['Demanda','Requisito','Versão','Chamado','Conhecimento'].includes(r.type));return relevant.length?Math.round(relevant.filter(r=>r.context&&!/Aguardando|parcial/i.test(r.context)&&r.relatedIds.length).length/relevant.length*100):0};
 function Btn({children,onClick,className='',disabled,title}: {children:React.ReactNode,onClick?:()=>void,className?:string,disabled?:boolean,title?:string}){return <Button type="button" variant="ghost" className={className} onClick={onClick} disabled={disabled} title={title}>{children}</Button>}
