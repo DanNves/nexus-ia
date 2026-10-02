@@ -37,12 +37,15 @@ export class AppComponent {
     ['Chamados','/chamados','ticket'],
     ['IA','/ia','spark'],
     ['Conhecimento','/conhecimento','knowledge'],
+    ['Indicadores','/indicadores','chart'],
+    ['Configurações','/configuracoes','settings'],
   ] as const;
 
   readonly mobileSections = [
     { label: 'Operação', items: this.navItems.slice(0, 2) },
     { label: 'Desenvolvimento', items: this.navItems.slice(2, 5) },
-    { label: 'Suporte e inteligência', items: this.navItems.slice(5) },
+    { label: 'Suporte e inteligência', items: this.navItems.slice(5, 8) },
+    { label: 'Gestão', items: this.navItems.slice(8) },
   ] as const;
 
   readonly searchResults = computed(() => {
