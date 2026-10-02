@@ -28,37 +28,21 @@ export class AppComponent {
   wizardError = '';
   draft: WizardDraft = this.emptyDraft();
 
-  readonly navGroups = [
-    {
-      label: 'Operação',
-      items: [
-        ['Dashboard','/dashboard','home'],
-        ['Demandas','/demandas','demand'],
-        ['Chamados','/chamados','ticket'],
-      ],
-    },
-    {
-      label: 'Desenvolvimento',
-      items: [
-        ['Atividades','/atividades','activity'],
-        ['Requisitos','/requisitos','requirement'],
-        ['Soluções e Versões','/solucoes-e-versoes','solution'],
-      ],
-    },
-    {
-      label: 'Inteligência',
-      items: [
-        ['IA','/ia','spark'],
-        ['Conhecimento','/conhecimento','knowledge'],
-      ],
-    },
-    {
-      label: 'Gestão',
-      items: [
-        ['Indicadores','/indicadores','chart'],
-        ['Configurações','/configuracoes','settings'],
-      ],
-    },
+  readonly navItems = [
+    ['Visão geral','/dashboard','home'],
+    ['Demandas','/demandas','demand'],
+    ['Atividades','/atividades','activity'],
+    ['Requisitos','/requisitos','requirement'],
+    ['Soluções','/solucoes-e-versoes','solution'],
+    ['Chamados','/chamados','ticket'],
+    ['IA','/ia','spark'],
+    ['Conhecimento','/conhecimento','knowledge'],
+  ] as const;
+
+  readonly mobileSections = [
+    { label: 'Operação', items: this.navItems.slice(0, 2) },
+    { label: 'Desenvolvimento', items: this.navItems.slice(2, 5) },
+    { label: 'Suporte e inteligência', items: this.navItems.slice(5) },
   ] as const;
 
   readonly searchResults = computed(() => {
