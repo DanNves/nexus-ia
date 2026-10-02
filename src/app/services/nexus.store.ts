@@ -207,59 +207,97 @@ export class NexusStore {
     if (!ticket || ticket.type !== 'Chamado') return;
 
     const related = this.aiContextFor(id);
-
-    const hasDemand = related.some(record => record.type === 'Demanda');
-    const hasActivity = related.some(record => record.type === 'Atividade');
-    const hasRequirement = related.some(record => record.type === 'Requisito');
-    const hasVersion = related.some(record => record.type === 'Versão' || record.type === 'Solução');
-    const hasPreviousTicket = related.some(record => record.type === 'Chamado');
-    const hasKnowledge = related.some(record => record.type === 'Conhecimento');
+    const all = this.records();
 
     const requirement = related.find(record => record.type === 'Requisito');
-    const knowledge = related.find(record => record.type === 'Conhecimento');
-    const previousTicket = related.find(record => record.type === 'Chamado' && record.id !== id);
-    const cause = knowledge?.aiCause
-      || knowledge?.description
-      || requirement?.description
-      || (ticket.title.toLowerCase().includes('acesso') ? 'Possível inconsistência de permissão ou autenticação associada ao contexto da solução.' : 'Possível falha funcional relacionada ao contexto registrado para a solução.');
-    const procedure = knowledge?.procedure?.length
-      ? knowledge.procedure
-      : knowledge?.aiProcedure?.length
-        ? knowledge.aiProcedure
+    const version = related.find(record => record.type === 'Versão' || record.type === 'Solução');
+    const demand = related.find(record => record.type === 'Demanda');
+    const activity = related.find(record => record.type === 'Atividade');
+    const previousTickets = related.filter(record => record.type === 'Chamado' && record.id !== id);
+    const knowledge = related.filter(record => record.type === 'Conhecimento');
+
+    const terms = this.contextTerms(ticket);
+    const score = (record: NexusRecord) => {
+      const text = this.contextTerms(record);
+      const overlap = text.filter(term => terms.includes(term)).length;
+      return overlap + (record.solution === ticket.solution ? 2 : 0) + (record.version === ticket.version ? 2 : 0);
+    };
+
+    const matchedKnowledge = knowledge.slice().sort((a,b) => score(b) - score(a)).find(record => score(record) >= 3);
+    const matchedTicket = previousTickets.slice().sort((a,b) => score(b) - score(a)).find(record => score(record) >= 3);
+
+    const procedure = matchedKnowledge?.procedure?.length
+      ? matchedKnowledge.procedure
+      : matchedKnowledge?.aiProcedure?.length
+        ? matchedKnowledge.aiProcedure
         : [
-            'Conferir o cenário relatado e reproduzir o comportamento na versão informada.',
-            'Validar o requisito e as regras relacionadas ao chamado.',
-            'Comparar o comportamento com o procedimento ou conhecimento validado disponível.',
-            'Registrar a conclusão após a validação do responsável.'
+            `Reproduzir o comportamento relatado na versão ${ticket.version}.`,
+            `Conferir ${requirement?.id ?? 'o requisito relacionado'} e as regras registradas.`,
+            `Comparar o comportamento encontrado com o que foi projetado e publicado na versão ${ticket.version}.`,
+            'Registrar a causa confirmada e a correção somente após a validação humana.'
           ];
-    const evidence = Array.from(new Set([
-      ticket.id,
-      ...related.filter(record => record.id !== ticket.id).slice(0, 5).map(record => record.id)
-    ]));
+
+    const resolution = matchedKnowledge
+      ? `Já existe uma solução validada em ${matchedKnowledge.id}. A orientação é partir desse procedimento, confirmar se o cenário atual corresponde à versão ${ticket.version} e registrar qualquer diferença encontrada.`
+      : requirement
+        ? `Não foi encontrado conhecimento validado específico. A resolução sugerida é reproduzir o problema, conferir ${requirement.id}, comparar com a versão publicada e validar a correção antes de concluir.`
+        : `Não foi encontrada uma solução anterior específica. A orientação é reproduzir o problema, comparar com o contexto recuperado e validar a causa antes de concluir.`;
+
+    const findings = [
+      demand ? `Demanda: ${demand.id} — ${demand.title}.` : 'Demanda relacionada: não identificada.',
+      activity ? `Atividade: ${activity.id} — ${activity.title}.` : 'Atividade relacionada: não identificada.',
+      requirement ? `Requisito: ${requirement.id} — ${requirement.title}.` : 'Requisito relacionado: não identificado.',
+      version ? `Publicado em: ${version.id} — ${version.version}.` : `Versão informada: ${ticket.version}.`,
+      matchedKnowledge ? `Solução anterior encontrada e anexada: ${matchedKnowledge.id}.` : 'Solução anterior específica: não encontrada.',
+      matchedTicket ? `Chamado anterior semelhante: ${matchedTicket.id}.` : 'Chamado anterior semelhante: não identificado.'
+    ];
+
+    const attachments = [
+      ...(matchedKnowledge ? [matchedKnowledge.id] : []),
+      ...(matchedTicket ? [matchedTicket.id] : [])
+    ];
 
     this.records.update(items => items.map(record => record.id === id ? {
       ...record,
+      relatedIds: Array.from(new Set([...record.relatedIds, ...attachments])),
       aiStatus: 'pending' as const,
-      aiCategory: hasRequirement ? 'Falha funcional / regra de negócio' : 'Incidente / diagnóstico',
-      aiConfidence: hasDemand && hasRequirement && hasVersion ? 92 : hasRequirement && hasVersion ? 88 : hasKnowledge ? 82 : 74,
-      aiSummary: `A análise percorreu ${related.length} registro(s) e combinou o chamado com ${[
-        hasDemand ? 'a demanda' : '',
-        hasActivity ? 'as atividades' : '',
-        hasRequirement ? 'os requisitos' : '',
-        hasVersion ? 'a solução/versão' : '',
-        hasPreviousTicket ? 'chamados relacionados' : '',
-        hasKnowledge ? 'o conhecimento validado' : ''
-      ].filter(Boolean).join(', ')}. A orientação abaixo é uma sugestão para validação humana.`,
-      aiCause: cause,
+      aiCategory: matchedKnowledge ? 'Incidente com solução anterior identificada' : requirement ? 'Falha funcional / regra de negócio' : 'Incidente / diagnóstico',
+      aiConfidence: matchedKnowledge && requirement && version ? 96 : matchedKnowledge ? 90 : requirement && version ? 84 : 72,
+      aiSummary: matchedKnowledge
+        ? `A IA leu o chamado e recuperou ${related.length} registros do ciclo. Ela identificou ${matchedKnowledge.id} como solução anterior compatível e anexou a referência ao próprio chamado.`
+        : `A IA leu o chamado e recuperou ${related.length} registros do ciclo. Não encontrou uma solução anterior específica e montou uma orientação com base no que foi projetado e publicado.`,
+      aiCause: matchedKnowledge?.aiCause || requirement?.description || 'Possível falha funcional relacionada ao contexto da solução publicada.',
       aiProcedure: procedure,
-      aiEvidence: evidence,
-      nextAction: 'Validar sugestão do atendimento',
-      nextActionHint: 'A sugestão foi preparada a partir do chamado e do contexto recuperado de todas as etapas relacionadas. A decisão continua com o responsável.'
+      aiEvidence: Array.from(new Set([record.id, ...related.slice(0,8).map(item => item.id), ...attachments])),
+      aiFindings: findings,
+      aiExistingKnowledgeId: matchedKnowledge?.id,
+      aiExistingTicketId: matchedTicket?.id,
+      aiResolution: resolution,
+      nextAction: matchedKnowledge ? `Validar a solução existente ${matchedKnowledge.id}` : 'Validar diagnóstico e resolução sugerida',
+      nextActionHint: matchedKnowledge
+        ? `A referência ${matchedKnowledge.id} foi anexada automaticamente porque pertence ao mesmo contexto e apresenta correspondência com o problema.`
+        : 'A IA não encontrou uma solução anterior específica. O responsável precisa validar a causa e o procedimento.'
     } : record));
 
     this.syncSelected(id);
     this.persist();
-    this.flash(`IA analisou ${id} usando o contexto recuperado.`);
+    this.flash(
+      matchedKnowledge
+        ? `IA analisou ${id} e anexou ${matchedKnowledge.id} como solução anterior.`
+        : `IA analisou ${id} usando o contexto completo do ciclo.`
+    );
+  }
+
+  private contextTerms(record: NexusRecord): string[] {
+    const stopwords = new Set(['para','com','sem','uma','uns','das','dos','que','por','nao','não','sobre','este','esta','esse','essa','isso','como','deve','de','da','do','e','em','no','na','o','a','os','as','um','ao','aos','se','ou','mais']);
+    return [record.title, record.description, record.solution, record.version, record.context]
+      .join(' ')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9\s]/g, ' ')
+      .split(/\s+/)
+      .filter(term => term.length >= 4 && !stopwords.has(term));
   }
 
   validateAi(id: string, accepted: boolean) {
