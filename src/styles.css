@@ -986,3 +986,238 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
   .mobile-toggle{display:grid;place-items:center;margin-left:auto;width:40px;height:40px}
   .mobile-panel{top:64px;padding:8px 9px 10px}
 }
+
+
+/* =========================================================
+   NEXUS — SISTEMA DE NAVEGAÇÃO E LAYOUT
+   Última camada: grupos visuais, rotas legíveis e páginas estáveis.
+   ========================================================= */
+html{scroll-behavior:smooth}
+body{overflow-x:hidden}
+.content{display:block;min-height:calc(100vh - 69px);width:100%;position:relative}
+router-outlet{display:block}
+
+/* Navbar: áreas reais em vez de uma sequência solta de links */
+.nav-inner{max-width:1680px;height:72px;padding:0 24px;gap:14px}
+.navbar{height:72px}
+.brand{min-width:170px;height:46px}
+.brand img{width:40px;height:40px}
+.brand strong{font-size:17px}
+.brand small{font-size:8px}
+.nav-divider{height:34px;margin:0 3px}
+.nav-links{
+  display:flex;
+  align-items:stretch;
+  gap:6px;
+  flex:1;
+  min-width:0;
+  overflow:visible;
+}
+.nav-area{
+  display:flex;
+  align-items:center;
+  gap:3px;
+  min-width:0;
+  padding:4px;
+  border:1px solid #e6ecf2;
+  border-radius:12px;
+  background:#f8fafc;
+}
+.nav-area-label{
+  display:none;
+  padding:0 6px;
+  color:#91a0b0;
+  font-size:8px;
+  font-weight:850;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  white-space:nowrap;
+}
+.nav-area-links{display:flex;align-items:center;gap:2px;min-width:0}
+.nav-area a{
+  height:38px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  padding:0 10px;
+  border:0;
+  border-radius:9px;
+  background:transparent;
+  color:#60718a;
+  font-size:11px;
+  font-weight:750;
+  white-space:nowrap;
+}
+.nav-area a:hover{background:#fff;color:#126bdc;box-shadow:0 1px 3px rgba(20,43,70,.06)}
+.nav-area a.active{
+  background:#e8f2ff;
+  color:#0b6fe8;
+  box-shadow:inset 0 0 0 1px #cfe2fa,0 2px 6px rgba(8,120,255,.08);
+}
+.nav-area a.active nx-icon{color:#0878ff}
+.nav-actions{gap:7px}
+.nav-create{height:40px;border-radius:10px;padding:0 14px}
+.icon-btn{height:40px;width:40px}
+.user-button{height:40px}
+
+/* Todas as páginas partem do mesmo eixo visual */
+.page{
+  width:100%;
+  max-width:1540px;
+  margin:0 auto;
+  padding:32px 34px 52px;
+}
+.page-intro{
+  align-items:flex-end;
+  margin-bottom:22px;
+}
+.page-intro h1{
+  font-size:34px;
+  line-height:1.1;
+  font-weight:850;
+  color:#102943;
+}
+.page-intro p{max-width:800px;color:#64788f;font-size:13px;line-height:1.65}
+.page-intro>div:first-child{min-width:0}
+.intro-actions{flex-wrap:wrap}
+
+/* Módulos: cabeçalho, resumo, pesquisa e lista formam uma única tela */
+.module-page .page-intro{
+  padding-bottom:20px;
+  border-bottom:1px solid #e6edf3;
+}
+.module-summary{
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:12px;
+  margin-bottom:14px;
+}
+.module-summary article{
+  min-height:108px;
+  padding:16px 18px;
+  border-radius:13px;
+  background:#fff;
+}
+.module-summary article span{font-size:10px;font-weight:750}
+.module-summary article strong{font-size:27px;line-height:1;margin-top:3px}
+.module-summary article small{font-size:10px;line-height:1.4}
+.module-panel{
+  border-radius:14px;
+  box-shadow:0 2px 8px rgba(20,43,70,.035);
+}
+.toolbar{
+  min-height:67px;
+  padding:12px 16px;
+  gap:10px;
+  flex-wrap:wrap;
+}
+.search-box{min-width:260px;flex:1 1 360px}
+.filter-label{padding-left:3px}
+.filters{flex:0 1 auto}
+.list-head,.module-row{
+  grid-template-columns:38px minmax(260px,1.65fr) minmax(190px,.9fr) max-content 18px;
+}
+.list-head{padding:11px 18px}
+.module-row{
+  min-height:82px;
+  padding:12px 18px;
+}
+.module-row:focus-visible{outline:3px solid rgba(8,120,255,.18);outline-offset:-3px}
+.module-main strong{font-size:12.5px}
+.module-context strong{font-size:11.5px}
+.module-main small,.module-context small{font-size:10.5px}
+
+/* Títulos de seção sempre maiores que os textos auxiliares */
+.panel-head h2,.indicator-purpose h2,.settings-note h2{font-size:18px;font-weight:800;line-height:1.25}
+.section-kicker,.eyebrow{font-size:9px;font-weight:850}
+.panel-head .section-kicker{margin-bottom:3px}
+
+/* Mobile menu também respeita as mesmas áreas */
+.mobile-panel{
+  top:72px;
+  padding:10px;
+  gap:7px;
+  background:#f7f9fc;
+}
+.mobile-nav-group{
+  padding:7px;
+  border:1px solid #e1e8f0;
+  border-radius:12px;
+  background:#fff;
+}
+.mobile-nav-label{
+  display:block;
+  padding:5px 8px 7px;
+  color:#8a99aa;
+  font-size:9px;
+  font-weight:850;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+}
+.mobile-nav-group a{
+  min-height:43px;
+  border:0;
+  border-radius:8px;
+  padding:0 10px;
+  background:#fff;
+  color:#53667c;
+  font-size:11px;
+  font-weight:750;
+}
+.mobile-nav-group a.active{background:#eaf3ff;color:#0b6fe8}
+.mobile-create{min-height:45px!important;border-radius:9px!important}
+
+/* Tablets: reduz texto antes de quebrar o layout */
+@media(max-width:1280px){
+  .nav-inner{padding:0 16px;gap:8px}
+  .brand{min-width:145px}
+  .nav-area{padding:3px}
+  .nav-area a{padding:0 8px;font-size:10px}
+  .nav-area a span{display:none}
+  .nav-area a{width:34px}
+  .nav-area-label{display:none}
+  .nav-create span{display:none}
+  .nav-create{width:40px;padding:0;justify-content:center}
+  .user-copy{display:none}
+}
+@media(max-width:980px){
+  .nav-links{gap:4px}
+  .nav-area{border-color:transparent;background:transparent;padding:0}
+  .nav-area a{background:#f7f9fc;border:1px solid #e4eaf1}
+  .nav-area a.active{background:#eaf3ff;border-color:#cfe2fa}
+  .page{padding:28px 22px 44px}
+  .module-summary{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:760px){
+  .navbar,.nav-inner{height:64px}
+  .nav-inner{padding:0 14px}
+  .brand{min-width:0}
+  .brand img{width:35px;height:35px}
+  .brand strong{font-size:15px}
+  .brand small,.nav-divider,.nav-links,.nav-actions{display:none}
+  .mobile-toggle{display:grid;place-items:center;margin-left:auto;width:40px;height:40px}
+  .mobile-panel{top:64px}
+  .content{min-height:calc(100vh - 64px)}
+  .page{padding:22px 14px 34px}
+  .page-intro{align-items:flex-start;flex-direction:column;gap:14px}
+  .page-intro h1{font-size:29px}
+  .page-intro p{font-size:12px}
+  .intro-actions{width:100%}
+  .intro-actions .btn{flex:1}
+  .module-summary{grid-template-columns:1fr 1fr;gap:8px}
+  .module-summary article{min-height:92px;padding:13px}
+  .toolbar{padding:11px}
+  .search-box{min-width:100%;flex-basis:100%}
+  .filter-label{display:none}
+  .filters{width:100%;overflow:auto}
+  .list-head{display:none}
+  .module-row{grid-template-columns:34px minmax(0,1fr) 16px;min-height:74px;padding:11px 12px;gap:9px}
+  .module-context,.module-row>.status{display:none}
+  .module-main strong{font-size:11.5px}
+  .module-main small{font-size:9.5px}
+}
+@media(max-width:520px){
+  .module-summary{grid-template-columns:1fr 1fr}
+  .page{padding-left:12px;padding-right:12px}
+  .page-intro h1{font-size:26px}
+}
