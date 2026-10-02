@@ -1,23 +1,40 @@
 <div class="app-shell">
-  <header class="navbar">
-    <div class="nav-inner">
-      <button class="brand" (click)="navigate('/dashboard')" aria-label="NEXUS Dashboard">
+  <header class="navbar nexus-navbar">
+    <div class="nav-inner nexus-nav-inner">
+      <button class="brand nexus-brand" (click)="navigate('/dashboard')" aria-label="NEXUS Dashboard">
         <img src="/nexus-logo.svg" alt="NEXUS">
         <span><strong>NEXUS</strong><small>CONEXÃO DE CONTEXTO</small></span>
       </button>
-      <div class="nav-divider"></div>
-      <nav class="nav-links" aria-label="Navegação principal">
+
+      <div class="nexus-nav-divider" aria-hidden="true"></div>
+
+      <nav class="nav-links nexus-primary-nav" aria-label="Navegação principal">
         @for (item of navItems; track item[0]) {
-          <a class="nav-item" [routerLink]="item[1]" routerLinkActive="active" [routerLinkActiveOptions]="{exact: item[1] === '/dashboard'}" (click)="mobileOpen=false">
-            <nx-icon [name]="item[2]" [size]="15"/><span>{{ item[0] }}</span>
+          <a class="nav-item nexus-nav-item"
+             [routerLink]="item[1]"
+             routerLinkActive="active"
+             [routerLinkActiveOptions]="{exact: item[1] === '/dashboard'}"
+             (click)="mobileOpen=false">
+            <nx-icon [name]="item[2]" [size]="16"/>
+            <span>{{ item[0] }}</span>
           </a>
         }
       </nav>
-      <div class="nav-actions">
-        <button class="nav-create" (click)="openWizard('demanda')" title="Nova demanda"><nx-icon name="plus" [size]="17"/><span>Nova demanda</span></button>
-        <button class="icon-btn" (click)="openSearch()" title="Pesquisar"><nx-icon name="search" [size]="18"/></button>
-        <div class="notification-wrap">
-          <button class="icon-btn notify" [class.active]="notificationOpen" (click)="notificationOpen=!notificationOpen; userOpen=false" title="Notificações">
+
+      <div class="nav-actions nexus-actions">
+        <button class="nav-create nexus-create" (click)="openWizard('demanda')" title="Nova demanda">
+          <nx-icon name="plus" [size]="16"/><span>Nova demanda</span>
+        </button>
+
+        <button class="icon-btn nexus-action-btn" (click)="openSearch()" title="Pesquisar" aria-label="Pesquisar">
+          <nx-icon name="search" [size]="18"/>
+        </button>
+
+        <div class="notification-wrap nexus-notification-wrap">
+          <button class="icon-btn nexus-action-btn notify"
+                  [class.active]="notificationOpen"
+                  (click)="notificationOpen=!notificationOpen; userOpen=false"
+                  title="Notificações" aria-label="Notificações">
             <nx-icon name="bell" [size]="18"/>
             @if (store.pendingNotifications() > 0) { <i>{{ store.pendingNotifications() > 9 ? '9+' : store.pendingNotifications() }}</i> }
           </button>
@@ -35,20 +52,40 @@
             </div>
           }
         </div>
-        <div class="user-wrap">
-          <button class="user-button" (click)="userOpen=!userOpen; notificationOpen=false"><span class="avatar">T</span><span class="user-copy"><strong>Tester</strong><small>USUÁRIO</small></span><nx-icon name="arrow" [size]="11"/></button>
-          @if (userOpen) { <div class="user-menu"><strong>Tester</strong><button (click)="navigate('/configuracoes')"><nx-icon name="settings" [size]="14"/> Configurações</button></div> }
+
+        <div class="user-wrap nexus-user-wrap">
+          <button class="user-button nexus-user" (click)="userOpen=!userOpen; notificationOpen=false" aria-label="Menu do usuário">
+            <span class="avatar">T</span>
+            <span class="user-copy"><strong>Tester</strong><small>USUÁRIO</small></span>
+            <nx-icon name="arrow" [size]="11"/>
+          </button>
+          @if (userOpen) {
+            <div class="user-menu">
+              <strong>Tester</strong>
+              <button (click)="navigate('/configuracoes')"><nx-icon name="settings" [size]="14"/> Configurações</button>
+            </div>
+          }
         </div>
       </div>
-      <button class="mobile-toggle" (click)="mobileOpen=!mobileOpen"><nx-icon [name]="mobileOpen ? 'close' : 'menu'" [size]="20"/></button>
+
+      <button class="mobile-toggle nexus-mobile-toggle"
+              (click)="mobileOpen=!mobileOpen"
+              [attr.aria-expanded]="mobileOpen"
+              aria-label="Abrir menu">
+        <nx-icon [name]="mobileOpen ? 'close' : 'menu'" [size]="20"/>
+      </button>
     </div>
+
     @if (mobileOpen) {
-      <div class="mobile-panel">
+      <div class="mobile-panel nexus-mobile-panel">
         @for (section of mobileSections; track section.label) {
           <section class="mobile-nav-group">
             <span class="mobile-nav-label">{{ section.label }}</span>
             @for (item of section.items; track item[0]) {
-              <a [routerLink]="item[1]" routerLinkActive="active" [routerLinkActiveOptions]="{exact: item[1] === '/dashboard'}" (click)="mobileOpen=false">
+              <a [routerLink]="item[1]"
+                 routerLinkActive="active"
+                 [routerLinkActiveOptions]="{exact: item[1] === '/dashboard'}"
+                 (click)="mobileOpen=false">
                 <nx-icon [name]="item[2]" [size]="17"/><span>{{ item[0] }}</span>
               </a>
             }
