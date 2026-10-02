@@ -1700,3 +1700,26 @@ router-outlet{display:block}
   .nexus-brand strong{font-size:14px}
   .nexus-mobile-panel{padding:8px}
 }
+
+/* --- Navbar items rendered as buttons (TanStack preview) --- */
+.nav-links>button{height:38px;display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:0 8px;border:0;border-radius:8px;background:transparent;color:#60718a;font-size:12px;font-weight:700;white-space:nowrap;box-shadow:none}
+.nav-links>button:hover{background:#f3f7fc;color:#126bdc}
+.nav-links>button.active{background:#eaf3ff;color:#126bdc;box-shadow:inset 0 -2px 0 var(--blue)}
+.mobile-panel button{width:100%;height:44px;border:0;border-radius:8px;background:transparent;color:#33475f;display:flex;align-items:center;gap:9px;padding:0 10px;font-size:13px;font-weight:700;text-align:left}
+.mobile-panel button:hover{background:#f3f7fc;color:#126bdc}
+
+/* --- Detail / wizard modal --- */
+.modal-backdrop{position:fixed;inset:0;z-index:100;background:rgba(6,16,32,.45);display:flex;justify-content:flex-end;animation:nx-fade .15s ease}
+.detail-panel{width:min(560px,94vw);height:100%;overflow-y:auto;background:#fff;border-left:1px solid var(--border);box-shadow:-18px 0 48px rgba(17,39,65,.18);padding:20px 22px 28px;display:flex;flex-direction:column;gap:16px}
+.detail-panel .panel-head{min-height:0;padding:0 0 12px;border-bottom:1px solid #edf1f5}
+.detail-panel h2{margin:4px 0 0;font-size:19px;color:#1d3450}
+.detail-panel>p{margin:0;color:#5d7189;font-size:12px;line-height:1.55}
+.detail-grid{display:grid;grid-template-columns:max-content 1fr;gap:7px 14px;font-size:12px;margin:0}
+.detail-grid dt{color:#718198;font-weight:700}
+.detail-grid dd{margin:0;color:#22374f}
+.detail-panel section>p{margin:0 0 10px;color:#5d7189;font-size:12px;line-height:1.55}
+.detail-panel textarea{width:100%;min-height:70px;margin:8px 0;border:1px solid var(--border);border-radius:8px;padding:9px;font:inherit;font-size:12px;color:#22374f;background:#fff}
+.detail-panel label{display:flex;flex-direction:column;gap:5px;font-size:11px;font-weight:700;color:#53657b}
+.detail-panel label input,.detail-panel label textarea,.detail-panel label select{min-height:36px;border:1px solid #dfe7ef;border-radius:8px;padding:8px;font:inherit;font-size:12px;color:#22374f;background:#fff}
+.detail-panel .btn{align-self:flex-start}
+@keyframes nx-fade{from{opacity:0}to{opacity:1}}
