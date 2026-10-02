@@ -1723,3 +1723,5 @@ router-outlet{display:block}
 .detail-panel label input,.detail-panel label textarea,.detail-panel label select{min-height:36px;border:1px solid #dfe7ef;border-radius:8px;padding:8px;font:inherit;font-size:12px;color:#22374f;background:#fff}
 .detail-panel .btn{align-self:flex-start}
 @keyframes nx-fade{from{opacity:0}to{opacity:1}}
+
+.list-head span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
