@@ -23,6 +23,8 @@ import { Component, input } from '@angular/core';
         @case ('menu') { <path d="M4 6h16M4 12h16M4 18h16"/> }
         @case ('more') { <circle cx="5" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.4" fill="currentColor" stroke="none"/> }
         @case ('arrow') { <path d="M5 12h14M13 6l6 6-6 6"/> }
+        @case ('chevron-down') { <path d="m6 9 6 6 6-6"/> }
+        @case ('refresh') { <path d="M20 11a8 8 0 0 0-14.8-4L4 9"/><path d="M4 4v5h5"/><path d="M4 13a8 8 0 0 0 14.8 4L20 15"/><path d="M20 20v-5h-5"/> }
         @case ('close') { <path d="m6 6 12 12M18 6 6 18"/> }
         @case ('check') { <circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16.5 9"/> }
         @case ('spark') { <path d="m12 3 1.7 5.3L19 10l-5.3 1.7L12 17l-1.7-5.3L5 10l5.3-1.7z"/><path d="m19 16 .6 1.9L21.5 18l-1.9.6L19 20.5l-.6-1.9-1.9-.6 1.9-.6z"/> }
