@@ -5,6 +5,14 @@
       <h1>{{ title() }}</h1>
       <p>{{ description() }}</p>
     </div>
+    <div class="module-route-nav" aria-label="Navegação entre módulos">
+      <span class="module-route-label">Módulos</span>
+      <a routerLink="/demandas" routerLinkActive="active">Demandas</a>
+      <a routerLink="/atividades" routerLinkActive="active">Atividades</a>
+      <a routerLink="/requisitos" routerLinkActive="active">Requisitos</a>
+      <a routerLink="/solucoes-e-versoes" routerLinkActive="active">Soluções e Versões</a>
+      <a routerLink="/chamados" routerLinkActive="active">Chamados</a>
+    </div>
     <div class="intro-actions">
       @if (view === 'Demandas' || view === 'Atividades') {
         <button class="btn primary" (click)="create()"><nx-icon name="plus"/> {{ view === 'Demandas' ? 'Nova demanda' : 'Nova atividade' }}</button>
