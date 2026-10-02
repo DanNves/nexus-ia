@@ -8,12 +8,29 @@
       <div class="nav-divider"></div>
       <nav class="nav-links" aria-label="Navegação principal">
         @for (item of primary; track item[0]) {
-          <a [routerLink]="item[1]" routerLinkActive="active" [routerLinkActiveOptions]="{exact: item[0] === 'Dashboard'}" (click)="mobileOpen=false">
-            <nx-icon [name]="item[2]" [size]="16"/><span>{{ item[0] }}</span>
-          </a>
+          @if (item[0] === 'Desenvolvimento') {
+            <div class="more-wrap nav-group">
+              <button class="nav-more" [class.active]="developmentOpen" (click)="developmentOpen=!developmentOpen; moreOpen=false" aria-haspopup="true">
+                <nx-icon [name]="item[2]" [size]="16"/><span>{{ item[0] }}</span><nx-icon name="chevron-down" [size]="11"/>
+              </button>
+              @if (developmentOpen) {
+                <div class="more-menu nav-submenu">
+                  @for (child of development; track child[0]) {
+                    <button (click)="navigate(child[1])"><nx-icon [name]="child[2]" [size]="15"/>{{ child[0] }}</button>
+                  }
+                </div>
+              }
+            </div>
+          } @else {
+            <a [routerLink]="item[1]" routerLinkActive="active" [routerLinkActiveOptions]="{exact: item[0] === 'Dashboard'}" (click)="mobileOpen=false; developmentOpen=false">
+              <nx-icon [name]="item[2]" [size]="16"/><span>{{ item[0] }}</span>
+            </a>
+          }
         }
         <div class="more-wrap">
-          <button class="nav-more" [class.active]="moreOpen" (click)="moreOpen=!moreOpen"><nx-icon name="more" [size]="15"/> Mais <nx-icon name="arrow" [size]="11"/></button>
+          <button class="nav-more" [class.active]="moreOpen" (click)="moreOpen=!moreOpen; developmentOpen=false">
+            <nx-icon name="more" [size]="15"/><span>Mais</span><nx-icon name="chevron-down" [size]="11"/>
+          </button>
           @if (moreOpen) {
             <div class="more-menu">
               @for (item of secondary; track item[0]) { <button (click)="navigate(item[1])"><nx-icon [name]="item[2]" [size]="15"/>{{ item[0] }}</button> }
@@ -52,8 +69,17 @@
     </div>
     @if (mobileOpen) {
       <div class="mobile-panel">
-        @for (item of primary; track item[0]) { <a [routerLink]="item[1]" routerLinkActive="active" (click)="mobileOpen=false"><nx-icon [name]="item[2]"/>{{ item[0] }}</a> }
-        @for (item of secondary; track item[0]) { <a [routerLink]="item[1]" routerLinkActive="active" (click)="mobileOpen=false"><nx-icon [name]="item[2]"/>{{ item[0] }}</a> }
+        @for (item of primary; track item[0]) {
+          @if (item[0] === 'Desenvolvimento') {
+            <div class="mobile-section">
+              <span class="mobile-section-title"><nx-icon name="layers" [size]="16"/> Desenvolvimento</span>
+              @for (child of development; track child[0]) { <a [routerLink]="child[1]" routerLinkActive="active" (click)="mobileOpen=false"><nx-icon [name]="child[2]" [size]="17"/>{{ child[0] }}</a> }
+            </div>
+          } @else {
+            <a [routerLink]="item[1]" routerLinkActive="active" (click)="mobileOpen=false"><nx-icon [name]="item[2]" [size]="17"/>{{ item[0] }}</a>
+          }
+        }
+        @for (item of secondary; track item[0]) { <a [routerLink]="item[1]" routerLinkActive="active" (click)="mobileOpen=false"><nx-icon [name]="item[2]" [size]="17"/>{{ item[0] }}</a> }
         <button class="mobile-create" (click)="openWizard('demanda')"><nx-icon name="plus"/> Nova demanda</button>
       </div>
     }
