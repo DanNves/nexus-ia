@@ -81,7 +81,14 @@ export class NexusStore {
     }, 2600);
   }
 
-  select(record: NexusRecord) { this.selected.set(record); }
+  select(record: NexusRecord) {
+    this.selected.set(record);
+    // No chamado, a IA já entra no contexto do atendimento.
+    // Se ainda não houver uma análise produzida, ela é executada ao abrir o detalhe.
+    if (record.type === 'Chamado' && !record.aiResolution) {
+      this.analyzeAi(record.id);
+    }
+  }
   selectById(id: string) {
     const record = this.records().find(item => item.id === id);
     if (record) this.selected.set(record);
@@ -207,8 +214,6 @@ export class NexusStore {
     if (!ticket || ticket.type !== 'Chamado') return;
 
     const related = this.aiContextFor(id);
-    const all = this.records();
-
     const requirement = related.find(record => record.type === 'Requisito');
     const version = related.find(record => record.type === 'Versão' || record.type === 'Solução');
     const demand = related.find(record => record.type === 'Demanda');
