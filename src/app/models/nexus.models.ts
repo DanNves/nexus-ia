@@ -31,6 +31,10 @@ export interface NexusRecord {
   aiCause?: string;
   aiProcedure?: string[];
   aiEvidence?: string[];
+  aiFindings?: string[];
+  aiExistingKnowledgeId?: string;
+  aiExistingTicketId?: string;
+  aiResolution?: string;
   aiCategory?: string;
   aiSummary?: string;
   aiConfidence?: number;
