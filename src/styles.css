@@ -935,3 +935,54 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
   .next-action-buttons{gap:8px}
   .search-dialog{width:calc(100vw - 20px)}
 }
+
+
+/* --- Navbar final: hierarquia compacta e consistente --- */
+.nav-inner{max-width:1540px;padding:0 24px;gap:14px}
+.brand{min-width:154px}
+.nav-links{gap:3px;justify-content:flex-start}
+.nav-links>a,.nav-more{height:40px;padding:0 10px;gap:7px;font-size:12px;border-radius:9px}
+.nav-links>a nx-icon,.nav-more nx-icon:first-child{flex:0 0 auto}
+.nav-more{cursor:pointer}
+.nav-group{position:relative}
+.nav-submenu{left:0;right:auto;min-width:210px}
+.nav-submenu button{height:38px;font-size:11px}
+.nav-actions{margin-left:auto;flex:0 0 auto}
+.nav-create{height:40px}
+.icon-btn{height:40px;width:40px}
+.user-button{height:40px}
+.mobile-section{padding:4px 0 2px}
+.mobile-section-title{
+  min-height:36px;display:flex;align-items:center;gap:9px;padding:0 12px;
+  color:#8190a2;font-size:10px;font-weight:850;text-transform:uppercase;letter-spacing:.08em
+}
+.mobile-section a{padding-left:25px!important}
+
+
+@media(max-width:1180px){
+  .nav-inner{padding:0 16px;gap:8px}
+  .brand{min-width:135px}
+  .brand small{display:none}
+  .nav-links>a,.nav-more{padding:0 8px;font-size:11px}
+  .nav-links>a nx-icon,.nav-more nx-icon:first-child{width:15px}
+  .nav-create{padding:0 10px}
+  .user-copy{display:none}
+}
+@media(max-width:1020px){
+  .nav-inner{gap:6px}
+  .nav-links{gap:2px}
+  .nav-links>a,.nav-more{width:38px;padding:0;justify-content:center}
+  .nav-links>a span,.nav-more span,.nav-more>nx-icon:last-child{display:none}
+  .nav-create{width:40px;padding:0;justify-content:center}
+  .nav-create span{display:none}
+}
+@media(max-width:760px){
+  .navbar,.nav-inner{height:64px}
+  .nav-inner{padding:0 14px}
+  .brand{min-width:0}
+  .brand img{width:34px;height:34px}
+  .brand strong{font-size:15px}
+  .nav-divider,.nav-links,.nav-actions{display:none}
+  .mobile-toggle{display:grid;place-items:center;margin-left:auto;width:40px;height:40px}
+  .mobile-panel{top:64px;padding:8px 9px 10px}
+}
