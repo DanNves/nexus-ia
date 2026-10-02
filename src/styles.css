@@ -1409,3 +1409,77 @@ router-outlet{display:block}
   .module-route-label{display:none}
   .module-route-nav a{min-height:34px}
 }
+
+
+/* =========================================================
+   NEXUS — NAVEGAÇÃO PRINCIPAL / CONTRATO VISUAL
+   Esta camada sobrescreve estilos legados da navbar.
+   A navegação é uma linha de links, nunca cartões/botões.
+   ========================================================= */
+.navbar .nav-links{
+  display:flex;
+  align-items:stretch;
+  flex:1 1 auto;
+  min-width:0;
+  gap:0;
+  overflow:visible;
+}
+.navbar .nav-links .nav-item{
+  flex:0 0 auto;
+  height:44px;
+  min-width:auto;
+  width:auto;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  padding:0 9px;
+  margin:0;
+  border:0;
+  border-bottom:2px solid transparent;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+  color:#5f7085;
+  font-size:10.5px;
+  font-weight:750;
+  line-height:1;
+  text-decoration:none;
+  white-space:nowrap;
+}
+.navbar .nav-links .nav-item:hover{
+  background:#f5f8fc;
+  color:#0b6fe8;
+  box-shadow:none;
+}
+.navbar .nav-links .nav-item.active{
+  background:#eef5ff;
+  color:#086fe9;
+  border-bottom-color:#0878ff;
+  box-shadow:none;
+}
+.navbar .nav-links .nav-item.active nx-icon{color:#0878ff}
+.navbar .nav-links .nav-item + .nav-item{
+  border-left:1px solid #edf1f5;
+}
+.navbar .nav-links .nav-item.active + .nav-item{
+  border-left-color:transparent;
+}
+@media(max-width:1280px){
+  .navbar .nav-links .nav-item{
+    padding:0 7px;
+    font-size:10px;
+  }
+}
+@media(max-width:1120px){
+  .navbar .nav-links .nav-item{
+    padding:0 6px;
+    gap:4px;
+    font-size:9px;
+  }
+  .navbar .nav-links .nav-item span{display:none}
+  .navbar .nav-links .nav-item{width:34px}
+}
+@media(max-width:760px){
+  .navbar .nav-links{display:none}
+}
