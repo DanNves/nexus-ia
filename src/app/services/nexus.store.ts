@@ -21,6 +21,7 @@ export class NexusStore {
   readonly aiRejectedCount = computed(() => this.records().filter(r => r.type === 'Chamado' && r.aiStatus === 'rejected').length);
   readonly aiEditedCount = computed(() => this.records().filter(r => r.type === 'Chamado' && r.aiWasEdited === true).length);
   readonly validatedKnowledge = computed(() => this.records().filter(r => r.type === 'Conhecimento' && r.status === 'Concluído').length);
+  readonly knowledgeReuseCount = computed(() => this.records().filter(r => r.type === 'Conhecimento').reduce((total, record) => total + (record.reuseCount ?? 0), 0));
   readonly contextCoverage = computed(() => {
     const relevant = this.records().filter(r => ['Demanda','Requisito','Versão','Chamado','Conhecimento'].includes(r.type));
     if (!relevant.length) return 0;
