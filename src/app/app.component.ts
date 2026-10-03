@@ -4,7 +4,7 @@ import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/rou
 import { NexusStore } from './services/nexus.store';
 import { NxIconComponent } from './shared/icon.component';
 import { NexusRecord, WizardDraft } from './models/nexus.models';
-import { team, currentUser } from './data/nexus.data';
+import { team } from './data/nexus.data';
 
 @Component({
   selector: 'nx-root',
@@ -17,8 +17,7 @@ export class AppComponent {
   readonly router = inject(Router);
   readonly team = team;
   readonly solutions = this.store.solutions;
-  readonly solutionVersions = this.store.solutionVersions;
-  readonly currentUser = currentUser;
+  readonly versions = this.store.versions;
   mobileOpen = false;
   moreOpen = false;
   userOpen = false;
@@ -175,13 +174,6 @@ export class AppComponent {
     return !this.wizardError;
   }
 
-  onSolutionChange() {
-    if (!this.draft.versionId) return;
-    const version = this.store.versions.find(item => item.id === this.draft.versionId);
-    if (version?.solutionId !== this.draft.solutionId) this.draft.versionId = '';
-    this.saveDraft();
-  }
-
   toggleParticipant(name: string) {
     const current = this.draft.participants.split(',').map(value => value.trim()).filter(Boolean);
     const exists = current.some(value => value === name);
@@ -249,22 +241,33 @@ export class AppComponent {
     }
   }
 
+  availableVersions() {
+    return this.versions.filter(version => !this.draft.solutionId || version.solutionId === this.draft.solutionId);
+  }
+
+  onSolutionChange() {
+    if (!this.availableVersions().some(version => version.id === this.draft.versionId)) {
+      this.draft.versionId = this.availableVersions()[0]?.id ?? '';
+    }
+    this.saveDraft();
+  }
+
   private emptyDraft(type: 'demanda'|'atividade'|'chamado' = 'demanda'): WizardDraft {
     return {
       title:'',
       description:'',
-      requester:currentUser.name,
+      requester:'Marina Costa',
       assignee:type === 'atividade' ? 'João Silva' : type === 'chamado' ? 'Ana Souza' : 'Carlos Lima',
       participants:'',
+      requirementId:'',
+      solutionId:'SOL-001',
+      versionId:'VER-120',
       context:'',
       solution:'',
       version:'',
       priority:'Média',
       objective:'',
-      dueDate:'',
-      solutionId:'',
-      versionId:'',
-      relatedRequirementId:''
+      dueDate:''
     };
   }
 }
