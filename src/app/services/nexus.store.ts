@@ -307,21 +307,35 @@ export class NexusStore {
 
   validateAi(id: string, accepted: boolean) {
     const record = this.records().find(item => item.id === id);
-    if (!record || record.type !== 'Chamado') return;
+    if (!record || record.type !== 'Chamado' || !record.aiSummary) return;
 
-    const aiStatus: AiValidationStatus = accepted ? 'approved' : 'rejected';
+    const now = new Date().toLocaleString('pt-BR');
+    const note = accepted
+      ? 'Sugestão da IA aprovada pelo responsável. O procedimento pode seguir para registro de conhecimento.'
+      : 'Sugestão da IA rejeitada pelo responsável. O chamado permanece em análise para revisão humana.';
+
     this.records.update(items => items.map(r => r.id === id ? {
       ...r,
-      aiStatus,
-      status: accepted ? 'Em validação' : 'Em análise',
+      aiStatus: accepted ? 'approved' as AiValidationStatus : 'rejected' as AiValidationStatus,
+      aiValidatedBy: 'Tester',
+      aiValidatedAt: now,
+      aiValidationNote: note,
+      status: accepted ? 'Em validação' as Status : 'Em análise' as Status,
       nextAction: accepted ? 'Registrar conhecimento validado' : 'Revisar sugestão da IA',
       nextActionHint: accepted
-        ? 'A sugestão foi validada. Registre o conhecimento para fechar o ciclo e disponibilizar o procedimento para reuso.'
-        : 'A sugestão foi rejeitada. Registre a análise humana ou gere uma nova orientação antes de concluir o chamado.'
+        ? 'A decisão humana foi registrada. Registre o conhecimento para fechar o ciclo e disponibilizar o procedimento para reuso.'
+        : 'A decisão humana foi registrada como rejeição. Revise a análise ou execute uma nova análise antes de concluir.',
+      comments: [...r.comments, {
+        id: crypto.randomUUID(),
+        author: 'Tester',
+        text: note,
+        date: now
+      }]
     } : r));
+
     this.syncSelected(id);
     this.persist();
-    this.flash(accepted ? 'Sugestão aprovada. O próximo passo é registrar o conhecimento.' : 'Sugestão rejeitada. O chamado voltou para análise.');
+    this.flash(accepted ? 'Validação humana registrada. O próximo passo é registrar conhecimento.' : 'Rejeição registrada. O chamado voltou para análise.');
   }
 
   registerKnowledge(ticketId: string) {
