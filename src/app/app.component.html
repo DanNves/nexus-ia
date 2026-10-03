@@ -293,7 +293,7 @@
     <div class="overlay" (click)="closeWizard()">
       <section class="wizard" (click)="$event.stopPropagation()">
         <header class="wizard-head">
-          <div><span class="eyebrow">{{ wizard === 'demanda' ? 'NOVA DEMANDA' : 'NOVA ATIVIDADE' }}</span><h2>Registrar {{ wizard === 'demanda' ? 'uma nova demanda' : 'uma nova atividade' }}</h2><p>O registro é salvo a cada etapa. Se fechar agora, o rascunho poderá ser retomado.</p></div>
+          <div><span class="eyebrow">{{ wizard === 'demanda' ? 'NOVA DEMANDA' : wizard === 'atividade' ? 'NOVA ATIVIDADE' : 'NOVO CHAMADO' }}</span><h2>Registrar {{ wizard === 'demanda' ? 'uma nova demanda' : wizard === 'atividade' ? 'uma nova atividade' : 'um novo chamado' }}</h2><p>O registro é salvo a cada etapa. Se fechar agora, o rascunho poderá ser retomado.</p></div>
           <button class="close-btn" (click)="closeWizard()"><nx-icon name="close"/></button>
         </header>
 
@@ -303,7 +303,7 @@
           @if(wizardStep === 1){
             <div class="form-block"><span class="section-kicker">01 · IDENTIFICAÇÃO</span><h3>O que precisa ser registrado?</h3>
               <label>Título<input [(ngModel)]="draft.title" placeholder="Ex.: Implementar autenticação de dois fatores"></label>
-              <label>Descrição<textarea [(ngModel)]="draft.description" placeholder="Descreva a necessidade de forma objetiva."></textarea></label>
+              <label>Descrição<textarea [(ngModel)]="draft.description" [placeholder]="wizard === 'chamado' ? 'Descreva o problema observado, comportamento, erro ou impacto.' : 'Descreva a necessidade de forma objetiva.'"></textarea></label>
               <div class="form-grid"><label>Prioridade<select [(ngModel)]="draft.priority"><option>Alta</option><option>Média</option><option>Baixa</option><option>Normal</option></select></label><label>Prazo<input type="date" [(ngModel)]="draft.dueDate"></label></div>
             </div>
           }
@@ -323,7 +323,7 @@
           @if(wizardStep === 4){
             <div class="form-block"><span class="section-kicker">04 · OBJETIVO</span><h3>Qual resultado esperamos?</h3>
               <label>Objetivo<textarea [(ngModel)]="draft.objective" placeholder="Defina o resultado esperado para esta demanda ou atividade."></textarea></label>
-              <div class="save-callout"><nx-icon name="link"/><div><strong>Contexto preservado</strong><span>As informações desta etapa serão associadas ao registro criado e ficarão disponíveis no suporte.</span></div></div>
+              <div class="save-callout"><nx-icon name="link"/><div><strong>{{ wizard === 'chamado' ? 'Contexto pronto para a IA' : 'Contexto preservado' }}</strong><span>{{ wizard === 'chamado' ? 'O chamado será relacionado automaticamente aos registros da mesma solução e versão para apoiar a recuperação de contexto.' : 'As informações desta etapa serão associadas ao registro criado e ficarão disponíveis no suporte.' }}</span></div></div>
             </div>
           }
           @if(wizardStep === 5){
