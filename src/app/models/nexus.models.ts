@@ -4,14 +4,11 @@ export type Status = 'Pendente' | 'Em análise' | 'Em desenvolvimento' | 'Em val
 export type Priority = 'Alta' | 'Média' | 'Baixa' | 'Normal';
 export type AiValidationStatus = 'pending' | 'approved' | 'rejected';
 export type WizardType = 'demanda' | 'atividade' | 'chamado';
-
-export interface SolutionEntity { id: string; name: string; description: string; }
-export interface VersionEntity { id: string; solutionId: string; version: string; label: string; status: 'Publicado' | 'Em desenvolvimento'; }
 export type PersonKind = 'Solicitante' | 'Responsável' | 'Participante';
 
 export interface Person { name: string; role: string; kind: PersonKind; }
-export interface Solution { id: string; name: string; description: string; }
-export interface SolutionVersion { id: string; solutionId: string; version: string; status: 'Publicada' | 'Em desenvolvimento'; date: string; }
+export interface SolutionEntity { id: string; name: string; description: string; }
+export interface VersionEntity { id: string; solutionId: string; version: string; label: string; status: 'Publicado' | 'Em desenvolvimento'; }
 export interface Comment { id: string; author: string; text: string; date: string; recipient?: string; }
 export interface NexusRecord {
   id: string;
@@ -57,8 +54,6 @@ export interface NexusRecord {
   acceptanceCriteria?: string[];
   procedure?: string[];
   sourceTicketId?: string;
-  solutionId?: string;
-  versionId?: string;
   validatedBy?: string;
   validatedAt?: string;
   revision?: number;
@@ -79,7 +74,4 @@ export interface WizardDraft {
   priority: Priority;
   objective: string;
   dueDate: string;
-  solutionId: string;
-  versionId: string;
-  relatedRequirementId: string;
 }
