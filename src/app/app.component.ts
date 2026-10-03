@@ -16,6 +16,8 @@ export class AppComponent {
   readonly store = inject(NexusStore);
   readonly router = inject(Router);
   readonly team = team;
+  readonly solutions = this.store.solutions;
+  readonly solutionVersions = this.store.solutionVersions;
   readonly currentUser = currentUser;
   mobileOpen = false;
   moreOpen = false;
