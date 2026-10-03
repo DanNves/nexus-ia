@@ -244,7 +244,7 @@ export class AppComponent {
     return {
       title:'',
       description:'',
-      requester:'Marina Costa',
+      requester:currentUser.name,
       assignee:type === 'atividade' ? 'João Silva' : type === 'chamado' ? 'Ana Souza' : 'Carlos Lima',
       participants:'',
       context:'',
