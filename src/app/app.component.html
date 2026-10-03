@@ -329,7 +329,10 @@
           @if(wizardStep === 3){
             <div class="form-block"><span class="section-kicker">03 · CONTEXTO</span><h3>Onde este registro se encaixa?</h3>
               <label>Contexto<textarea [(ngModel)]="draft.context" placeholder="Informe origem, sistema, processo ou contexto conhecido."></textarea></label>
-              <div class="form-grid"><label>Solução<input [(ngModel)]="draft.solution" placeholder="Ex.: Portal de Atendimento"></label><label>Versão<input [(ngModel)]="draft.version" placeholder="Ex.: v1.2.0"></label></div>
+              <div class="form-grid">
+<label>Solução<select [(ngModel)]="draft.solutionId" (ngModelChange)="onSolutionChange()"><option value="">Selecione uma solução</option>@for (solution of solutions; track solution.id){<option [value]="solution.id">{{ solution.name }}</option>}</select></label>
+<label>Versão<select [(ngModel)]="draft.versionId" (ngModelChange)="onVersionChange()" [disabled]="!draft.solutionId"><option value="">Selecione uma versão</option>@for (version of availableVersions(); track version.id){<option [value]="version.id">{{ version.label }}</option>}</select></label>
+</div>
             </div>
           }
           @if(wizardStep === 4){
