@@ -96,7 +96,7 @@ export class AppComponent {
     this.notificationOpen = false;
   }
 
-  openWizard(type: 'demanda'|'atividade') {
+  openWizard(type: 'demanda'|'atividade'|'chamado') {
     this.notificationOpen = false;
     const key = this.draftKey(type);
     const savedDraft = this.readDraft(key);
@@ -202,8 +202,12 @@ export class AppComponent {
     this.store.selectById(id);
   }
 
-  private draftKey(type: 'demanda'|'atividade') {
-    return type === 'demanda' ? 'nexus-angular-demanda-draft' : 'nexus-angular-atividade-draft';
+  private draftKey(type: 'demanda'|'atividade'|'chamado') {
+    return type === 'demanda'
+      ? 'nexus-angular-demanda-draft'
+      : type === 'atividade'
+        ? 'nexus-angular-atividade-draft'
+        : 'nexus-angular-chamado-draft';
   }
 
   private readDraft(key: string): WizardDraft | null {
@@ -215,12 +219,12 @@ export class AppComponent {
     }
   }
 
-  private emptyDraft(type: 'demanda'|'atividade' = 'demanda'): WizardDraft {
+  private emptyDraft(type: 'demanda'|'atividade'|'chamado' = 'demanda'): WizardDraft {
     return {
       title:'',
       description:'',
       requester:'Marina Costa',
-      assignee:type === 'atividade' ? 'João Silva' : 'Carlos Lima',
+      assignee:type === 'atividade' ? 'João Silva' : type === 'chamado' ? 'Ana Souza' : 'Carlos Lima',
       participants:'',
       context:'',
       solution:'',
