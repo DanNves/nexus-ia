@@ -73,4 +73,5 @@ export interface WizardDraft {
   dueDate: string;
   solutionId: string;
   versionId: string;
+  requirementId: string;
 }
