@@ -18,6 +18,8 @@ export class AppComponent {
   readonly team = team;
   readonly solutions = solutions;
   readonly versions = versions;
+  readonly requirements = this.store.records;
+
   mobileOpen = false;
   moreOpen = false;
   userOpen = false;
@@ -191,7 +193,18 @@ export class AppComponent {
   onVersionChange() {
     const version = this.versions.find(item => item.id === this.draft.versionId);
     this.draft.version = version?.label ?? '';
+    if (!this.availableRequirements().some(requirement => requirement.id === this.draft.requirementId)) {
+      this.draft.requirementId = '';
+    }
     this.saveDraft();
+  }
+
+  availableRequirements() {
+    return this.requirements().filter(record =>
+      record.type === 'Requisito' &&
+      (!this.draft.solutionId || record.solutionId === this.draft.solutionId) &&
+      (!this.draft.versionId || record.versionId === this.draft.versionId)
+    );
   }
 
   toggleParticipant(name: string) {
@@ -273,6 +286,7 @@ export class AppComponent {
       version:'',
       solutionId:'',
       versionId:'',
+      requirementId:'',
       priority:'Média',
       objective:'',
       dueDate:''
