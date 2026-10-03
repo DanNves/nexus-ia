@@ -99,8 +99,8 @@ export class NexusStore {
   setSearch(value: string) { this.search.set(value); }
 
   addRecord(draft: WizardDraft, type: WizardType) {
-    const recordType = type === 'demanda' ? 'Demanda' : 'Atividade';
-    const prefix = type === 'demanda' ? 'DEM' : 'ATV';
+    const recordType = type === 'demanda' ? 'Demanda' : type === 'atividade' ? 'Atividade' : 'Chamado';
+    const prefix = type === 'demanda' ? 'DEM' : type === 'atividade' ? 'ATV' : 'CH';
     const maxId = this.records()
       .filter(r => r.type === recordType)
       .map(r => Number(r.id.split('-')[1]) || 0)
@@ -127,7 +127,9 @@ export class NexusStore {
       requester: { ...requester, kind: 'Solicitante' },
       assignee: { ...assignee, kind: 'Responsável' },
       participants,
-      relatedIds: [],
+      relatedIds: type === 'chamado'
+        ? this.records().filter(item => item.id !== `${prefix}-${String(maxId + 1).padStart(3, '0')}` && item.solution === (draft.solution.trim() || 'A definir') && item.version === (draft.version.trim() || 'A definir')).map(item => item.id)
+        : [],
       comments: [],
       objective: draft.objective.trim(),
       dueDate: draft.dueDate,
