@@ -14,6 +14,9 @@ export class NexusStore {
   readonly openTickets = computed(() => this.records().filter(r => r.type === 'Chamado' && r.status !== 'Concluído').length);
   readonly activeDemands = computed(() => this.records().filter(r => r.type === 'Demanda' && r.status === 'Em desenvolvimento').length);
   readonly validationCount = computed(() => this.records().filter(r => r.type === 'Chamado' && r.aiStatus === 'pending').length);
+  readonly aiAcceptedCount = computed(() => this.records().filter(r => r.type === 'Chamado' && r.aiStatus === 'approved').length);
+  readonly aiRejectedCount = computed(() => this.records().filter(r => r.type === 'Chamado' && r.aiStatus === 'rejected').length);
+  readonly aiEditedCount = computed(() => this.records().filter(r => r.type === 'Chamado' && r.aiWasEdited === true).length);
   readonly validatedKnowledge = computed(() => this.records().filter(r => r.type === 'Conhecimento' && r.status === 'Concluído').length);
   readonly contextCoverage = computed(() => {
     const relevant = this.records().filter(r => ['Demanda','Requisito','Versão','Chamado','Conhecimento'].includes(r.type));
@@ -82,12 +85,9 @@ export class NexusStore {
   }
 
   select(record: NexusRecord) {
+    // Abrir um registro é somente leitura. A análise da IA só acontece
+    // quando o profissional aciona explicitamente "Analisar com IA".
     this.selected.set(record);
-    // No chamado, a IA já entra no contexto do atendimento.
-    // Se ainda não houver uma análise produzida, ela é executada ao abrir o detalhe.
-    if (record.type === 'Chamado' && !record.aiResolution) {
-      this.analyzeAi(record.id);
-    }
   }
   selectById(id: string) {
     const record = this.records().find(item => item.id === id);
@@ -233,6 +233,27 @@ export class NexusStore {
     const ticket = this.records().find(item => item.id === id);
     if (!ticket || ticket.type !== 'Chamado') return;
 
+    const existingKnowledge = this.records().find(
+      item => item.type === 'Conhecimento' && item.sourceTicketId === id
+    );
+
+    if (existingKnowledge) {
+      this.flash(`O conhecimento ${existingKnowledge.id} já foi registrado para ${id}. A análise existente foi preservada.`);
+      return;
+    }
+
+    const hasPreviousAnalysis = Boolean(ticket.aiSummary);
+    if (hasPreviousAnalysis) {
+      const confirmed = window.confirm(
+        `Este chamado já possui uma análise da IA com decisão humana registrada. Deseja executar uma nova análise? A decisão anterior será preservada no histórico.`
+      );
+      if (!confirmed) return;
+    }
+
+    const previousDecision = ticket.aiStatus
+      ? `Análise anterior: ${ticket.aiStatus === 'approved' ? 'aprovada' : ticket.aiStatus === 'rejected' ? 'rejeitada' : 'pendente'}${ticket.aiHumanNote ? ` · observação: ${ticket.aiHumanNote}` : ''}.`
+      : null;
+
     const related = this.aiContextFor(id);
     const requirement = related.find(record => record.type === 'Requisito');
     const version = related.find(record => record.type === 'Versão' || record.type === 'Solução');
@@ -295,9 +316,22 @@ export class NexusStore {
       aiProcedure: procedure,
       aiEvidence: Array.from(new Set([record.id, ...related.slice(0,8).map(item => item.id), ...attachments])),
       aiFindings: findings,
-      ...(matchedKnowledge ? { aiExistingKnowledgeId: matchedKnowledge.id } : {}),
-      ...(matchedTicket ? { aiExistingTicketId: matchedTicket.id } : {}),
       aiResolution: resolution,
+      aiHumanNote: '',
+      aiWasEdited: false,
+      aiValidatedBy: '',
+      aiValidatedAt: '',
+      aiValidationNote: '',
+      ...(matchedKnowledge ? { aiExistingKnowledgeId: matchedKnowledge.id } : { aiExistingKnowledgeId: '' }),
+      ...(matchedTicket ? { aiExistingTicketId: matchedTicket.id } : { aiExistingTicketId: '' }),
+      comments: previousDecision
+        ? [...record.comments, {
+            id: crypto.randomUUID(),
+            author: 'Tester',
+            text: `Reanálise solicitada pelo responsável. ${previousDecision}`,
+            date: new Date().toLocaleString('pt-BR')
+          }]
+        : record.comments,
       nextAction: matchedKnowledge ? `Validar a solução existente ${matchedKnowledge.id}` : 'Validar diagnóstico e resolução sugerida',
       nextActionHint: matchedKnowledge
         ? `A referência ${matchedKnowledge.id} foi anexada automaticamente porque pertence ao mesmo contexto e apresenta correspondência com o problema.`
@@ -325,14 +359,33 @@ export class NexusStore {
       .filter(term => term.length >= 4 && !stopwords.has(term));
   }
 
-  validateAi(id: string, accepted: boolean) {
+  validateAi(id: string, accepted: boolean, humanNote = '') {
     const record = this.records().find(item => item.id === id);
     if (!record || record.type !== 'Chamado' || !record.aiSummary) return;
 
+    const cleanNote = humanNote.trim();
+    if (!accepted && !cleanNote) {
+      this.flash('Informe o motivo ou ajuste antes de rejeitar a sugestão.');
+      return;
+    }
+
+    if (accepted && record.aiStatus === 'approved') {
+      this.flash('Esta sugestão já foi aprovada. Reanalise o chamado se precisar de uma nova orientação.');
+      return;
+    }
+
+    if (!accepted && record.aiStatus === 'approved') {
+      this.flash('Uma sugestão aprovada não pode ser rejeitada sem uma nova análise.');
+      return;
+    }
+
     const now = new Date().toLocaleString('pt-BR');
+    const wasEdited = accepted && Boolean(cleanNote);
     const note = accepted
-      ? 'Sugestão da IA aprovada pelo responsável. O procedimento pode seguir para registro de conhecimento.'
-      : 'Sugestão da IA rejeitada pelo responsável. O chamado permanece em análise para revisão humana.';
+      ? wasEdited
+        ? `Sugestão da IA aprovada com ajuste humano: ${cleanNote}`
+        : 'Sugestão da IA aprovada pelo responsável. O procedimento pode seguir para registro de conhecimento.'
+      : `Sugestão da IA rejeitada pelo responsável. Motivo/ajuste: ${cleanNote}`;
 
     this.records.update(items => items.map(r => r.id === id ? {
       ...r,
@@ -340,10 +393,14 @@ export class NexusStore {
       aiValidatedBy: 'Tester',
       aiValidatedAt: now,
       aiValidationNote: note,
+      aiHumanNote: cleanNote,
+      aiWasEdited: wasEdited,
       status: accepted ? 'Em validação' as Status : 'Em análise' as Status,
       nextAction: accepted ? 'Registrar conhecimento validado' : 'Revisar sugestão da IA',
       nextActionHint: accepted
-        ? 'A decisão humana foi registrada. Registre o conhecimento para fechar o ciclo e disponibilizar o procedimento para reuso.'
+        ? wasEdited
+          ? 'A decisão humana aprovou a sugestão com ajuste registrado. O texto do ajuste permanece associado ao atendimento.'
+          : 'A decisão humana foi registrada. Registre o conhecimento para fechar o ciclo e disponibilizar o procedimento para reuso.'
         : 'A decisão humana foi registrada como rejeição. Revise a análise ou execute uma nova análise antes de concluir.',
       comments: [...r.comments, {
         id: crypto.randomUUID(),
@@ -355,7 +412,11 @@ export class NexusStore {
 
     this.syncSelected(id);
     this.persist();
-    this.flash(accepted ? 'Validação humana registrada. O próximo passo é registrar conhecimento.' : 'Rejeição registrada. O chamado voltou para análise.');
+    this.flash(
+      accepted
+        ? wasEdited ? 'Aprovação com ajuste humano registrada.' : 'Validação humana registrada. O próximo passo é registrar conhecimento.'
+        : 'Rejeição registrada com o motivo informado.'
+    );
   }
 
   registerKnowledge(ticketId: string) {

@@ -33,6 +33,9 @@
       <article class="indicator-card"><span class="indicator-icon orange"><nx-icon name="ticket" [size]="19"/></span><div><small>CHAMADOS ABERTOS</small><strong>{{ store.openTickets() }}</strong><p>Ocorrências que ainda exigem análise, validação ou atendimento.</p></div></article>
       <article class="indicator-card"><span class="indicator-icon purple"><nx-icon name="spark" [size]="19"/></span><div><small>VALIDAÇÕES PENDENTES</small><strong>{{ store.validationCount() }}</strong><p>Sugestões da IA que dependem da decisão do responsável.</p></div></article>
       <article class="indicator-card"><span class="indicator-icon green"><nx-icon name="knowledge" [size]="19"/></span><div><small>CONHECIMENTOS VALIDADOS</small><strong>{{ store.validatedKnowledge() }}</strong><p>Procedimentos aprovados e disponíveis para reutilização.</p></div></article>
+      <article class="indicator-card"><span class="indicator-icon green"><nx-icon name="check" [size]="19"/></span><div><small>IA APROVADA</small><strong>{{ store.aiAcceptedCount() }}</strong><p>Sugestões que receberam validação humana.</p></div></article>
+      <article class="indicator-card"><span class="indicator-icon orange"><nx-icon name="close" [size]="19"/></span><div><small>IA REJEITADA</small><strong>{{ store.aiRejectedCount() }}</strong><p>Sugestões rejeitadas e devolvidas para revisão.</p></div></article>
+      <article class="indicator-card"><span class="indicator-icon purple"><nx-icon name="message" [size]="19"/></span><div><small>IA COM AJUSTE</small><strong>{{ store.aiEditedCount() }}</strong><p>Aprovações em que o profissional registrou um ajuste.</p></div></article>
     </section>
 
     <section class="dashboard-grid indicator-layout">
@@ -43,6 +46,9 @@
           <div><span><b class="indicator-dot green"></b>Conhecimento reutilizável</span><strong>{{ store.validatedKnowledge() }}</strong></div>
           <div><span><b class="indicator-dot orange"></b>Chamados em atendimento</span><strong>{{ store.openTickets() }}</strong></div>
           <div><span><b class="indicator-dot purple"></b>Validação humana pendente</span><strong>{{ store.validationCount() }}</strong></div>
+          <div><span><b class="indicator-dot green"></b>Sugestões aprovadas</span><strong>{{ store.aiAcceptedCount() }}</strong></div>
+          <div><span><b class="indicator-dot orange"></b>Sugestões rejeitadas</span><strong>{{ store.aiRejectedCount() }}</strong></div>
+          <div><span><b class="indicator-dot purple"></b>Sugestões com ajuste</span><strong>{{ store.aiEditedCount() }}</strong></div>
         </div>
       </article>
       <article class="panel indicator-purpose">

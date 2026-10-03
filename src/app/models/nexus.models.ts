@@ -38,6 +38,8 @@ export interface NexusRecord {
   aiValidatedBy?: string;
   aiValidatedAt?: string;
   aiValidationNote?: string;
+  aiHumanNote?: string;
+  aiWasEdited?: boolean;
   aiCategory?: string;
   aiSummary?: string;
   aiConfidence?: number;

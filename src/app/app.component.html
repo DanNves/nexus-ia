@@ -218,7 +218,7 @@
               }
 
               <div class="ai-resolution">
-                <div class="ai-resolution-head"><span><nx-icon name="check" [size]="14"/> RESOLUÇÃO SUGERIDA</span><small>aguarda validação humana</small></div>
+                <div class="ai-resolution-head"><span><nx-icon name="check" [size]="14"/> RESOLUÇÃO SUGERIDA</span><small>{{ item.aiStatus === 'approved' ? 'validada pelo responsável' : item.aiStatus === 'rejected' ? 'rejeitada pelo responsável' : 'aguarda validação humana' }}</small></div>
                 <p>{{ item.aiResolution || 'A resolução será apresentada após a análise do chamado.' }}</p>
                 <ol>@for (step of (item.aiProcedure || []); track step){<li>{{ step }}</li>} @empty {<li>Aguardando a análise do chamado.</li>}</ol>
               </div>
@@ -226,8 +226,16 @@
               <div class="evidence"><span>CONTEXTO RECUPERADO E ANEXADO</span>@for (source of store.aiContextFor(item.id); track source.id){<button (click)="openRelated(source.id)">{{ source.id }}</button>}</div>
               <div class="validation">
                 <strong><nx-icon name="check" [size]="15"/> Validação humana obrigatória</strong>
+                <div class="validation-note">
+                  <label for="ai-human-note">Observação ou ajuste do profissional</label>
+                  <textarea id="ai-human-note"
+                            [(ngModel)]="aiHumanNote"
+                            placeholder="Registre um ajuste na sugestão ou, ao rejeitar, informe o motivo da decisão."></textarea>
+                  <small>Ao aprovar com texto, o NEXUS registra que houve ajuste humano na sugestão.</small>
+                  @if (aiValidationError) { <span class="validation-error">{{ aiValidationError }}</span> }
+                </div>
                 <div>
-                  <button class="btn secondary" (click)="rejectAi()" [disabled]="item.aiStatus === 'approved'">Rejeitar e revisar</button>
+                  <button class="btn secondary" (click)="rejectAi()" [disabled]="item.aiStatus === 'approved' || !item.aiSummary">Rejeitar e revisar</button>
                   <button class="btn primary" (click)="approveAi()" [disabled]="item.aiStatus === 'approved' || !item.aiSummary">Aprovar sugestão</button>
                 </div>
               </div>
@@ -237,6 +245,7 @@
                   <span>
                     <strong>{{ item.aiStatus === 'approved' ? 'Sugestão aprovada.' : 'Sugestão rejeitada.' }}</strong>
                     {{ item.aiValidationNote || 'Decisão humana registrada.' }}
+                    @if (item.aiHumanNote) { <small>Ajuste/observação: {{ item.aiHumanNote }}</small> }
                     <small>Decisão por {{ item.aiValidatedBy || 'responsável' }} · {{ item.aiValidatedAt || 'agora' }}</small>
                   </span>
                 </div>

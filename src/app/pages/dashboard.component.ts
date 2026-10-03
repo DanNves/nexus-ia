@@ -55,11 +55,8 @@ export class DashboardComponent {
   }
 
   advance(record: NexusRecord) {
-    if (record.type === 'Chamado') {
-      if (record.aiStatus === 'pending') this.store.validateAi(record.id, true);
-      else if (record.aiStatus === 'approved') this.store.registerKnowledge(record.id);
-      return;
-    }
-    this.store.changeStatus(record.id, 'Em desenvolvimento');
+    // O dashboard nunca toma a decisão humana sobre uma sugestão da IA.
+    // Ele apenas leva o profissional ao registro onde a decisão deve ocorrer.
+    this.store.select(record);
   }
 }
