@@ -55,13 +55,13 @@
 
         <div class="user-wrap nexus-user-wrap">
           <button class="user-button nexus-user" (click)="userOpen=!userOpen; notificationOpen=false" aria-label="Menu do usuário">
-            <span class="avatar">T</span>
-            <span class="user-copy"><strong>Tester</strong><small>USUÁRIO</small></span>
+            <span class="avatar">{{ currentUser.name.charAt(0) }}</span>
+            <span class="user-copy"><strong>{{ currentUser.name }}</strong><small>USUÁRIO</small></span>
             <nx-icon name="arrow" [size]="11"/>
           </button>
           @if (userOpen) {
             <div class="user-menu">
-              <strong>Tester</strong>
+              <strong>{{ currentUser.name }}</strong>
               <button (click)="navigate('/configuracoes')"><nx-icon name="settings" [size]="14"/> Configurações</button>
             </div>
           }
@@ -329,7 +329,7 @@
           @if(wizardStep === 3){
             <div class="form-block"><span class="section-kicker">03 · CONTEXTO</span><h3>Onde este registro se encaixa?</h3>
               <label>Contexto<textarea [(ngModel)]="draft.context" placeholder="Informe origem, sistema, processo ou contexto conhecido."></textarea></label>
-              <div class="form-grid"><label>Solução<input [(ngModel)]="draft.solution" placeholder="Ex.: Portal de Atendimento"></label><label>Versão<input [(ngModel)]="draft.version" placeholder="Ex.: v1.2.0"></label></div>
+              <div class="form-grid"><label>Solução<select [(ngModel)]="draft.solutionId"><option value="">Selecione a solução</option>@for (solution of store.solutions; track solution.id){<option [value]="solution.id">{{ solution.name }}</option>}</select></label><label>Versão<select [(ngModel)]="draft.versionId" [disabled]="!draft.solutionId"><option value="">Selecione a versão</option>@for (version of store.versions; track version.id){@if(version.solutionId === draft.solutionId){<option [value]="version.id">{{ version.version }}</option>}}</select></label></div><label>Requisito relacionado<select [(ngModel)]="draft.relatedRequirementId"><option value="">Sem requisito selecionado</option>@for (requirement of store.records(); track requirement.id){@if(requirement.type === 'Requisito'){<option [value]="requirement.id">{{ requirement.id }} · {{ requirement.title }}</option>}}</select></label>
             </div>
           }
           @if(wizardStep === 4){
