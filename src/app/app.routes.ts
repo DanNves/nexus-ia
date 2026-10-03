@@ -3,6 +3,7 @@ import { DashboardComponent } from './pages/dashboard.component';
 import { ModuleComponent } from './pages/module.component';
 import { AiComponent } from './pages/ai.component';
 import { KnowledgeComponent } from './pages/knowledge.component';
+import { NotFoundComponent } from './pages/not-found.component';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
@@ -16,5 +17,5 @@ export const routes: Routes = [
   { path: 'conhecimento', component: KnowledgeComponent, title: 'NEXUS — Conhecimento' },
   { path: 'indicadores', component: ModuleComponent, title: 'NEXUS — Indicadores', data: { view: 'Indicadores' } },
   { path: 'configuracoes', component: ModuleComponent, title: 'NEXUS — Configurações', data: { view: 'Configurações' } },
-  { path: '**', redirectTo: 'dashboard' }
+  { path: '**', component: NotFoundComponent, title: 'NEXUS — Página não encontrada' }
 ];

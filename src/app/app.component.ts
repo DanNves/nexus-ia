@@ -4,7 +4,7 @@ import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/rou
 import { NexusStore } from './services/nexus.store';
 import { NxIconComponent } from './shared/icon.component';
 import { NexusRecord, WizardDraft } from './models/nexus.models';
-import { team } from './data/nexus.data';
+import { team, solutions, versions } from './data/nexus.data';
 
 @Component({
   selector: 'nx-root',
@@ -16,6 +16,10 @@ export class AppComponent {
   readonly store = inject(NexusStore);
   readonly router = inject(Router);
   readonly team = team;
+  readonly solutions = solutions;
+  readonly versions = versions;
+  readonly requirements = this.store.records;
+
   mobileOpen = false;
   moreOpen = false;
   userOpen = false;
@@ -172,6 +176,37 @@ export class AppComponent {
     return !this.wizardError;
   }
 
+  availableVersions() {
+    return this.versions.filter(version => !this.draft.solutionId || version.solutionId === this.draft.solutionId);
+  }
+
+  onSolutionChange() {
+    const solution = this.solutions.find(item => item.id === this.draft.solutionId);
+    this.draft.solution = solution?.name ?? '';
+    if (!this.availableVersions().some(version => version.id === this.draft.versionId)) {
+      this.draft.versionId = '';
+      this.draft.version = '';
+    }
+    this.saveDraft();
+  }
+
+  onVersionChange() {
+    const version = this.versions.find(item => item.id === this.draft.versionId);
+    this.draft.version = version?.label ?? '';
+    if (!this.availableRequirements().some(requirement => requirement.id === this.draft.requirementId)) {
+      this.draft.requirementId = '';
+    }
+    this.saveDraft();
+  }
+
+  availableRequirements() {
+    return this.requirements().filter(record =>
+      record.type === 'Requisito' &&
+      (!this.draft.solutionId || record.solutionId === this.draft.solutionId) &&
+      (!this.draft.versionId || record.versionId === this.draft.versionId)
+    );
+  }
+
   toggleParticipant(name: string) {
     const current = this.draft.participants.split(',').map(value => value.trim()).filter(Boolean);
     const exists = current.some(value => value === name);
@@ -249,6 +284,9 @@ export class AppComponent {
       context:'',
       solution:'',
       version:'',
+      solutionId:'',
+      versionId:'',
+      requirementId:'',
       priority:'Média',
       objective:'',
       dueDate:''

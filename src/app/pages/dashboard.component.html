@@ -108,11 +108,11 @@
     <article class="panel">
       <header class="panel-head"><div><span class="section-kicker">RASTREABILIDADE</span><h2>Contexto conectado</h2></div><button class="text-button" (click)="go('conhecimento')">Conhecimento <nx-icon name="arrow" [size]="14"/></button></header>
       <div class="trace">
-        @for (id of trace; track id) {
-          <button class="trace-node" (click)="openTrace(id)" [title]="traceRecord(id)?.title || id">
-            <span class="trace-icon"><nx-icon [name]="$index === 0 ? 'demand' : $index === 1 ? 'requirement' : $index === 2 ? 'solution' : $index === 3 ? 'ticket' : 'knowledge'" [size]="15"/></span>
-            <strong>{{ id }}</strong>
-            <span>{{ traceLabel(id) }}</span>
+        @for (record of trace(); track record.id) {
+          <button class="trace-node" (click)="openTrace(record.id)" [title]="record.title">
+            <span class="trace-icon"><nx-icon [name]="record.type === 'Demanda' ? 'demand' : record.type === 'Requisito' ? 'requirement' : record.type === 'Versão' || record.type === 'Solução' ? 'solution' : record.type === 'Chamado' ? 'ticket' : 'knowledge'" [size]="15"/></span>
+            <strong>{{ record.id }}</strong>
+            <span>{{ record.type }}</span>
           </button>
           @if (!$last){<nx-icon name="arrow" [size]="13"/>}
         }

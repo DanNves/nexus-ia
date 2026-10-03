@@ -1,4 +1,4 @@
-import { NexusRecord, Person } from '../models/nexus.models';
+import { NexusRecord, Person, SolutionOption, VersionOption } from '../models/nexus.models';
 
 export const people = {
   marina: { name: 'Marina Costa', role: 'Área de Atendimento', kind: 'Solicitante' as const },
@@ -9,6 +9,17 @@ export const people = {
 };
 
 export const team: Person[] = [people.marina, people.carlos, people.joao, people.ana, people.rafael];
+
+
+export const solutions: SolutionOption[] = [
+  { id: 'SOL-001', name: 'Portal de Atendimento' },
+  { id: 'SOL-002', name: 'Dashboard de Relatórios' },
+];
+
+export const versions: VersionOption[] = [
+  { id: 'VER-120', solutionId: 'SOL-001', label: 'v1.2.0', status: 'Publicada' },
+  { id: 'VER-210', solutionId: 'SOL-002', label: 'v2.1.0', status: 'Publicada' },
+];
 
 export const seedRecords: NexusRecord[] = [
   { id:'DEM-012', title:'Implementar autenticação de dois fatores', description:'Adicionar segundo fator ao acesso dos usuários.', type:'Demanda', status:'Em desenvolvimento', context:'Contexto completo', solution:'Portal de Atendimento', version:'v1.2.0', date:'18/09/2026', priority:'Alta', requester:people.marina, assignee:people.joao, participants:[people.carlos,people.rafael], relatedIds:['REQ-014','VER-120','CH-028'], comments:[{id:'c1',author:'Marina Costa',text:'Precisamos reduzir os chamados de acesso sem comprometer a segurança.',date:'18/09/2026 09:10'},{id:'c2',author:'João Silva',text:'Demanda assumida. Estou trabalhando na implementação.',date:'18/09/2026 11:32'}], objective:'Permitir autenticação adicional para usuários do portal.' },
