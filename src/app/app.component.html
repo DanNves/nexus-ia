@@ -334,7 +334,7 @@
           @if(wizardError){<div class="wizard-error"><nx-icon name="close" [size]="14"/>{{ wizardError }}</div>}
         </div>
 
-        <footer class="wizard-footer"><span class="save-status">@if(saved){<nx-icon name="check" [size]="13"/> Rascunho salvo}@else{Salvamento por etapa}</span><div><button class="btn secondary" (click)="previousStep()" [disabled]="wizardStep===1">Voltar</button>@if(wizardStep < 5){<button class="btn primary" (click)="nextStep()">Salvar e continuar <nx-icon name="arrow" [size]="14"/></button>}@else{<button class="btn primary" (click)="finishWizard()"><nx-icon name="check"/> Criar registro</button>}</div></footer>
+        <footer class="wizard-footer"><span class="save-status">@if(saved()){<nx-icon name="check" [size]="13"/> Rascunho salvo}@else{Salvamento por etapa}</span><div><button class="btn secondary" (click)="previousStep()" [disabled]="wizardStep===1">Voltar</button>@if(wizardStep < 5){<button class="btn primary" (click)="nextStep()">Salvar e continuar <nx-icon name="arrow" [size]="14"/></button>}@else{<button class="btn primary" (click)="finishWizard()"><nx-icon name="check"/> Criar registro</button>}</div></footer>
       </section>
     </div>
   }
