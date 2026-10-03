@@ -247,6 +247,9 @@
           @if (item.type === 'Conhecimento') {
             <section class="detail-card knowledge-detail">
               <header><div><span class="section-kicker">BASE DE CONHECIMENTO</span><h3>Conhecimento validado e reutilizável</h3></div><span class="reuse">{{ item.reuseCount || 0 }} usos</span></header>
+              @if (item.isDemoSeed) {
+                <div class="demo-data-note"><nx-icon name="info" [size]="13"/> Reuso inicial fictício de demonstração do TCC.</div>
+              }
               <p>{{ item.description }}</p>
               <div class="knowledge-meta-grid">
                 <div><span>ORIGEM</span><strong>{{ item.sourceTicketId || item.relatedIds[0] || 'Registro de origem' }}</strong></div>
