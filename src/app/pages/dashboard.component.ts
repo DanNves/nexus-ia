@@ -3,7 +3,6 @@ import { Router } from '@angular/router';
 import { NexusStore } from '../services/nexus.store';
 import { NxIconComponent } from '../shared/icon.component';
 import { NexusRecord } from '../models/nexus.models';
-import { currentUser } from '../data/nexus.data';
 
 @Component({
   selector: 'nx-dashboard',
@@ -23,25 +22,24 @@ export class DashboardComponent {
     })
     .slice(0, 3));
 
-  readonly currentUser = currentUser;
-
   readonly attention = computed(() => {
-    const priority = { 'Alta': 0, 'Média': 1, 'Normal': 2, 'Baixa': 3 };
+    const priority = { Alta: 0, Média: 1, Normal: 2, Baixa: 3 } as const;
     return this.store.records()
       .filter(r => r.nextAction || r.status === 'Em validação' || (r.type === 'Chamado' && r.status !== 'Concluído'))
-      .sort((a, b) => (priority[a.priority] - priority[b.priority]) || a.date.localeCompare(b.date))
+      .sort((a,b) => (priority[a.priority] ?? 9) - (priority[b.priority] ?? 9) || a.date.localeCompare(b.date))
       .slice(0, 3);
   });
 
   readonly nextAction = computed(() => this.attention()[0] ?? this.tickets()[0] ?? null);
+
   readonly trace = computed(() => {
     const ticket = this.tickets()[0];
     if (!ticket) return [] as string[];
     const context = this.store.aiContextFor(ticket.id);
     const pick = (type: string) => context.find(record => record.type === type)?.id;
-    return [pick('Demanda'), pick('Requisito'), pick('Versão'), ticket.id, pick('Conhecimento')].filter((id): id is string => Boolean(id));
+    return [pick('Demanda'), pick('Requisito'), pick('Versão'), ticket.id, pick('Conhecimento')]
+      .filter((id): id is string => Boolean(id));
   });
-
 
   open(record: NexusRecord) { this.store.select(record); }
   openTrace(id: string) { this.store.selectById(id); }
