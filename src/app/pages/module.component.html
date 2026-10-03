@@ -10,7 +10,8 @@
         <button class="btn primary" (click)="create()"><nx-icon name="plus"/> {{ view === 'Demandas' ? 'Nova demanda' : 'Nova atividade' }}</button>
       }
       @if (view === 'Chamados') {
-        <button class="btn primary" (click)="openNextTicket()"><nx-icon name="ticket"/> Abrir próximo chamado</button>
+        <button class="btn secondary" (click)="openNextTicket()"><nx-icon name="ticket"/> Abrir próximo chamado</button>
+        <button class="btn primary" (click)="create()"><nx-icon name="plus"/> Novo chamado</button>
       }
     </div>
   </section>
