@@ -10,17 +10,6 @@ export const people = {
 
 export const team: Person[] = [people.marina, people.carlos, people.joao, people.ana, people.rafael];
 
-export const solutions: Solution[] = [
-  { id: 'SOL-001', name: 'Portal de Atendimento', description: 'Portal utilizado para atendimento e acesso dos usuários.' },
-  { id: 'SOL-002', name: 'Dashboard de Relatórios', description: 'Solução para relatórios e indicadores de atendimento.' },
-];
-
-export const solutionVersions: SolutionVersion[] = [
-  { id: 'VER-001', solutionId: 'SOL-001', version: 'v1.2.0', status: 'Publicada', date: '25/09/2026' },
-  { id: 'VER-002', solutionId: 'SOL-002', version: 'v2.1.0', status: 'Publicada', date: '22/09/2026' },
-];
-
-
 export const solutions: SolutionEntity[] = [
   { id: 'SOL-001', name: 'Portal de Atendimento', description: 'Portal utilizado para atendimento, acesso e suporte aos usuários.' },
   { id: 'SOL-002', name: 'Dashboard de Relatórios', description: 'Solução para relatórios e indicadores de atendimento.' },
