@@ -51,6 +51,7 @@ export interface NexusRecord {
   validatedBy?: string;
   validatedAt?: string;
   revision?: number;
+  isDemoSeed?: boolean;
 }
 export interface WizardDraft {
   title: string;
