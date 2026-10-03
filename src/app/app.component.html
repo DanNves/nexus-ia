@@ -197,6 +197,7 @@
               <div class="suggestion">
                 <div class="ai-block"><strong>O que a IA identificou</strong><span>{{ item.aiSummary || 'Execute “Analisar com IA” para cruzar o chamado com o que foi projetado, desenvolvido, publicado e já solucionado.' }}</span></div>
                 <div class="ai-block"><strong>Possível causa</strong><span>{{ item.aiCause || 'Aguardando análise do contexto.' }}</span></div>
+                <div class="ai-block"><strong>Confiança simulada</strong><span>{{ item.aiConfidence !== undefined ? item.aiConfidence + '%' : 'Aguardando análise.' }}</span></div>
               </div>
 
               @if (item.aiExistingKnowledgeId) {
