@@ -3,7 +3,7 @@ export type RecordType = 'Demanda' | 'Atividade' | 'Requisito' | 'Solução' | '
 export type Status = 'Pendente' | 'Em análise' | 'Em desenvolvimento' | 'Em validação' | 'Concluído';
 export type Priority = 'Alta' | 'Média' | 'Baixa' | 'Normal';
 export type AiValidationStatus = 'pending' | 'approved' | 'rejected';
-export type WizardType = 'demanda' | 'atividade';
+export type WizardType = 'demanda' | 'atividade' | 'chamado';
 export type PersonKind = 'Solicitante' | 'Responsável' | 'Participante';
 
 export interface Person { name: string; role: string; kind: PersonKind; }
