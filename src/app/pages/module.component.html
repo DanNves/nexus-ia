@@ -63,6 +63,10 @@
       <span class="section-kicker">LIMITE DO MVP</span>
       <h2>O que a apresentação deve demonstrar</h2>
       <p>O foco é provar a continuidade do contexto: demanda, requisito, versão, chamado, recuperação, sugestão da IA, validação humana e conhecimento. Integração com LLM real, API, banco, autenticação e RAG ficam como evolução arquitetural.</p>
+      <div class="settings-reset">
+        <div><strong>Restaurar demonstração</strong><span>Apaga apenas os dados locais do MVP e volta aos registros de exemplo do TCC. Use se o navegador estiver com um estado antigo ou inconsistente.</span></div>
+        <button class="btn secondary" (click)="store.resetDemoData()"><nx-icon name="refresh" [size]="14"/> Restaurar dados</button>
+      </div>
     </section>
   } @else {
     <section class="module-summary">
