@@ -1,6 +1,6 @@
 import { Injectable, computed, signal } from '@angular/core';
 import { seedRecords, people, team, solutions, versions } from '../data/nexus.data';
-import { AiValidationStatus, NexusRecord, Person, Status, WizardDraft, WizardType } from '../models/nexus.models';
+import { AiValidationStatus, NexusRecord, Person, RecordType, Status, WizardDraft, WizardType } from '../models/nexus.models';
 
 @Injectable({ providedIn: 'root' })
 export class NexusStore {
