@@ -61,6 +61,8 @@ export class NexusStore {
     const participants = Array.isArray(record.participants) ? record.participants : [];
     const relatedIds = Array.isArray(record.relatedIds) ? record.relatedIds : [];
     const comments = Array.isArray(record.comments) ? record.comments : [];
+    const solutionId = record.solutionId ?? solutions.find(item => item.name === record.solution)?.id;
+    const versionId = record.versionId ?? versions.find(item => item.version === record.version && item.solutionId === solutionId)?.id;
 
     return {
       ...record,
@@ -69,8 +71,8 @@ export class NexusStore {
       participants,
       relatedIds,
       comments,
-      ...(record.solutionId ?? solutions.find(item => item.name === record.solution)?.id ? { solutionId: record.solutionId ?? solutions.find(item => item.name === record.solution)?.id } : {}),
-      ...(record.versionId ?? versions.find(item => item.version === record.version && item.solutionId === (record.solutionId ?? solutions.find(item => item.name === record.solution)?.id))?.id ? { versionId: record.versionId ?? versions.find(item => item.version === record.version && item.solutionId === (record.solutionId ?? solutions.find(item => item.name === record.solution)?.id))?.id } : {}),
+      ...(solutionId ? { solutionId } : {}),
+      ...(versionId ? { versionId } : {}),
       context: record.context || 'Contexto não informado',
       solution: record.solution || 'A definir',
       version: record.version || 'A definir',
