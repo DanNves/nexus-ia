@@ -198,13 +198,29 @@ export class NexusStore {
     };
 
     const existing = this.records();
-    const related = existing.filter(item =>
-      (version && item.versionId === version.id) ||
-      (solution && item.solutionId === solution.id && item.type === 'Solução') ||
-      (type === 'chamado' && version && item.versionId === version.id)
+    const selectedRequirement = existing.find(item =>
+      item.type === 'Requisito' &&
+      item.id === draft.requirementId &&
+      (!version || item.versionId === version.id) &&
+      (!solution || item.solutionId === solution.id)
     );
 
-    if (type === 'atividade') {
+    if (selectedRequirement) {
+      if (type === 'demanda') {
+        const nextExisting = existing.map(item => item.id === selectedRequirement.id
+          ? { ...item, parentId: record.id }
+          : item);
+        this.records.set(this.rebuildRelationships([...nextExisting, record]));
+        this.persist();
+        this.closeWizard();
+        this.selectById(record.id);
+        this.flash(`${record.id} criado e requisito ${selectedRequirement.id} relacionado.`);
+        return;
+      }
+      record.parentId = selectedRequirement.id;
+    }
+
+    if (type === 'atividade' && !record.parentId) {
       const demand = existing.find(item =>
         item.type === 'Demanda' &&
         ((version && item.versionId === version.id) || (solution && item.solutionId === solution.id))
@@ -212,7 +228,7 @@ export class NexusStore {
       if (demand) record.parentId = demand.id;
     }
 
-    if (type === 'chamado') {
+    if (type === 'chamado' && !record.parentId) {
       const requirement = existing.find(item =>
         item.type === 'Requisito' &&
         ((version && item.versionId === version.id) || (solution && item.solutionId === solution.id))
