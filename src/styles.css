@@ -2488,3 +2488,25 @@ button,a{ -webkit-tap-highlight-color:transparent; }
     flex-direction:column;
   }
 }
+
+
+.ai-approved-note{
+  display:flex;
+  align-items:flex-start;
+  gap:9px;
+}
+.ai-approved-note > span{
+  display:grid;
+  gap:3px;
+}
+.ai-approved-note small{
+  color:var(--nexus-muted);
+  font-size:10px;
+}
+.ai-approved-note.rejected{
+  border-color:#ead6d6;
+  background:#fff8f8;
+}
+.ai-approved-note.rejected > svg{
+  color:#b54848;
+}
