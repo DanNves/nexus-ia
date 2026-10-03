@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NexusStore } from '../services/nexus.store';
 import { WizardDraft, WizardType } from '../models/nexus.models';
@@ -6,6 +6,7 @@ import { team } from '../data/nexus.data';
 import { NxIconComponent } from './icon.component';
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'nx-wizard',
   standalone: true,
   imports: [FormsModule, NxIconComponent],
