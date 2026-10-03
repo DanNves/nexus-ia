@@ -14,6 +14,9 @@ export class NexusStore {
   readonly openTickets = computed(() => this.records().filter(r => r.type === 'Chamado' && r.status !== 'Concluído').length);
   readonly activeDemands = computed(() => this.records().filter(r => r.type === 'Demanda' && r.status === 'Em desenvolvimento').length);
   readonly validationCount = computed(() => this.records().filter(r => r.type === 'Chamado' && r.aiStatus === 'pending').length);
+  readonly aiAcceptedCount = computed(() => this.records().filter(r => r.type === 'Chamado' && r.aiStatus === 'approved').length);
+  readonly aiRejectedCount = computed(() => this.records().filter(r => r.type === 'Chamado' && r.aiStatus === 'rejected').length);
+  readonly aiEditedCount = computed(() => this.records().filter(r => r.type === 'Chamado' && r.aiWasEdited === true).length);
   readonly validatedKnowledge = computed(() => this.records().filter(r => r.type === 'Conhecimento' && r.status === 'Concluído').length);
   readonly contextCoverage = computed(() => {
     const relevant = this.records().filter(r => ['Demanda','Requisito','Versão','Chamado','Conhecimento'].includes(r.type));
@@ -313,11 +316,14 @@ export class NexusStore {
       aiProcedure: procedure,
       aiEvidence: Array.from(new Set([record.id, ...related.slice(0,8).map(item => item.id), ...attachments])),
       aiFindings: findings,
-      ...(matchedKnowledge ? { aiExistingKnowledgeId: matchedKnowledge.id } : {}),
-      ...(matchedTicket ? { aiExistingTicketId: matchedTicket.id } : {}),
       aiResolution: resolution,
       aiHumanNote: '',
       aiWasEdited: false,
+      aiValidatedBy: '',
+      aiValidatedAt: '',
+      aiValidationNote: '',
+      ...(matchedKnowledge ? { aiExistingKnowledgeId: matchedKnowledge.id } : { aiExistingKnowledgeId: '' }),
+      ...(matchedTicket ? { aiExistingTicketId: matchedTicket.id } : { aiExistingTicketId: '' }),
       comments: previousDecision
         ? [...record.comments, {
             id: crypto.randomUUID(),
