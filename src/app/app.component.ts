@@ -16,6 +16,8 @@ export class AppComponent {
   readonly store = inject(NexusStore);
   readonly router = inject(Router);
   readonly team = team;
+  readonly solutions = this.store.solutions;
+  readonly versions = this.store.versions;
   mobileOpen = false;
   moreOpen = false;
   userOpen = false;
@@ -239,6 +241,17 @@ export class AppComponent {
     }
   }
 
+  availableVersions() {
+    return this.versions.filter(version => !this.draft.solutionId || version.solutionId === this.draft.solutionId);
+  }
+
+  onSolutionChange() {
+    if (!this.availableVersions().some(version => version.id === this.draft.versionId)) {
+      this.draft.versionId = this.availableVersions()[0]?.id ?? '';
+    }
+    this.saveDraft();
+  }
+
   private emptyDraft(type: 'demanda'|'atividade'|'chamado' = 'demanda'): WizardDraft {
     return {
       title:'',
@@ -246,6 +259,9 @@ export class AppComponent {
       requester:'Marina Costa',
       assignee:type === 'atividade' ? 'João Silva' : type === 'chamado' ? 'Ana Souza' : 'Carlos Lima',
       participants:'',
+      requirementId:'',
+      solutionId:'SOL-001',
+      versionId:'VER-120',
       context:'',
       solution:'',
       version:'',

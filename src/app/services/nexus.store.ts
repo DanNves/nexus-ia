@@ -1,15 +1,18 @@
 import { Injectable, computed, signal } from '@angular/core';
-import { seedRecords, people, team } from '../data/nexus.data';
-import { AiValidationStatus, NexusRecord, Person, Status, WizardDraft, WizardType } from '../models/nexus.models';
+import { seedRecords, people, team, solutions, versions, currentUser } from '../data/nexus.data';
+import { AiValidationStatus, NexusRecord, Person, RecordType, Status, WizardDraft, WizardType } from '../models/nexus.models';
 
 @Injectable({ providedIn: 'root' })
 export class NexusStore {
-  private readonly storageKey = 'nexus-angular-records';
+  private readonly storageKey = 'nexus-angular-records:v2';
+  private readonly legacyStorageKey = 'nexus-angular-records';
   readonly records = signal<NexusRecord[]>(this.load());
   readonly selected = signal<NexusRecord | null>(null);
   readonly wizard = signal<WizardType | null>(null);
   readonly search = signal('');
   readonly feedback = signal<string | null>(null);
+  readonly solutions = solutions;
+  readonly versions = versions;
 
   readonly openTickets = computed(() => this.records().filter(r => r.type === 'Chamado' && r.status !== 'Concluído').length);
   readonly activeDemands = computed(() => this.records().filter(r => r.type === 'Demanda' && r.status === 'Em desenvolvimento').length);
@@ -18,6 +21,7 @@ export class NexusStore {
   readonly aiRejectedCount = computed(() => this.records().filter(r => r.type === 'Chamado' && r.aiStatus === 'rejected').length);
   readonly aiEditedCount = computed(() => this.records().filter(r => r.type === 'Chamado' && r.aiWasEdited === true).length);
   readonly validatedKnowledge = computed(() => this.records().filter(r => r.type === 'Conhecimento' && r.status === 'Concluído').length);
+  readonly knowledgeReuseCount = computed(() => this.records().filter(r => r.type === 'Conhecimento').reduce((total, record) => total + (record.reuseCount ?? 0), 0));
   readonly contextCoverage = computed(() => {
     const relevant = this.records().filter(r => ['Demanda','Requisito','Versão','Chamado','Conhecimento'].includes(r.type));
     if (!relevant.length) return 0;
@@ -32,15 +36,17 @@ export class NexusStore {
 
   private load(): NexusRecord[] {
     try {
-      const raw = localStorage.getItem(this.storageKey);
+      const raw = localStorage.getItem(this.storageKey) ?? localStorage.getItem(this.legacyStorageKey);
       if (raw) {
         const saved = JSON.parse(raw) as NexusRecord[];
         const normalized = saved.map(record => this.normalize(record));
         const savedById = new Map(normalized.map(record => [record.id, record]));
-        return seedRecords.map(seed => this.normalize({ ...seed, ...(savedById.get(seed.id) ?? {}) }))
+        const merged = seedRecords.map(seed => this.normalize({ ...seed, ...(savedById.get(seed.id) ?? {}) }))
           .concat(normalized.filter(record => !seedRecords.some(seed => seed.id === record.id)));
+        if (!localStorage.getItem(this.storageKey)) localStorage.setItem(this.storageKey, JSON.stringify(merged));
+        return merged;
       }
-    } catch { /* use seed */ }
+    } catch { /* usa o seed quando o armazenamento estiver inválido */ }
     return seedRecords.map(record => this.normalize(record));
   }
 
@@ -49,14 +55,14 @@ export class NexusStore {
     const aiStatus: AiValidationStatus | undefined = record.aiStatus
       ?? (legacy.aiValidated === true ? 'approved' : legacy.aiValidated === false ? 'rejected' : undefined);
 
-    // Protege o MVP contra dados antigos/incompletos salvos no navegador.
-    // Isso evita que uma informação ausente quebre a abertura do detalhe de um registro.
     const fallbackPerson = team[0] ?? people.marina;
     const requester = record.requester ?? { ...fallbackPerson, kind: 'Solicitante' as const };
     const assignee = record.assignee ?? { ...fallbackPerson, kind: 'Responsável' as const };
     const participants = Array.isArray(record.participants) ? record.participants : [];
     const relatedIds = Array.isArray(record.relatedIds) ? record.relatedIds : [];
     const comments = Array.isArray(record.comments) ? record.comments : [];
+    const solutionId = record.solutionId ?? solutions.find(item => item.name === record.solution)?.id;
+    const versionId = record.versionId ?? versions.find(item => item.version === record.version && item.solutionId === solutionId)?.id;
 
     return {
       ...record,
@@ -69,12 +75,19 @@ export class NexusStore {
       solution: record.solution || 'A definir',
       version: record.version || 'A definir',
       description: record.description || 'Sem descrição registrada.',
+      ...(solutionId ? { solutionId } : {}),
+      ...(versionId ? { versionId } : {}),
       ...(aiStatus !== undefined ? { aiStatus } : {})
     };
   }
 
   private persist() {
-    localStorage.setItem(this.storageKey, JSON.stringify(this.records()));
+    try {
+      localStorage.setItem(this.storageKey, JSON.stringify(this.records()));
+      localStorage.removeItem(this.legacyStorageKey);
+    } catch {
+      this.flash('Não foi possível persistir os dados locais do MVP.');
+    }
   }
 
   private flash(message: string) {
@@ -96,16 +109,20 @@ export class NexusStore {
   closeDetail() { this.selected.set(null); }
 
   resetDemoData() {
+    if (!window.confirm('Restaurar os dados de demonstração? Os dados locais criados ou alterados serão substituídos pelo estado inicial do TCC.')) return;
     const fresh = seedRecords.map(record => this.normalize(record));
     this.records.set(fresh);
     this.selected.set(null);
     this.search.set('');
+    localStorage.removeItem(this.storageKey);
+    localStorage.removeItem(this.legacyStorageKey);
     localStorage.removeItem('nexus-angular-demanda-draft');
     localStorage.removeItem('nexus-angular-atividade-draft');
     localStorage.removeItem('nexus-angular-chamado-draft');
     this.persist();
     this.flash('Dados de demonstração restaurados. O fluxo NEXUS voltou ao estado inicial.');
   }
+
   openWizard(type: WizardType) { this.wizard.set(type); }
   closeWizard() { this.wizard.set(null); }
   setSearch(value: string) { this.search.set(value); }
@@ -117,6 +134,7 @@ export class NexusStore {
       .filter(r => r.type === recordType)
       .map(r => Number(r.id.split('-')[1]) || 0)
       .reduce((max, value) => Math.max(max, value), 0);
+
     const requester = this.findPerson(draft.requester) ?? people.marina;
     const assignee = this.findPerson(draft.assignee) ?? (type === 'demanda' ? people.carlos : people.joao);
     const participantNames = draft.participants.split(',').map(name => name.trim()).filter(Boolean);
@@ -125,33 +143,55 @@ export class NexusStore {
       .filter((person): person is Person => Boolean(person))
       .map(person => ({ ...person, kind: 'Participante' as const }));
 
+    const solution = this.solutions.find(item => item.id === draft.solutionId);
+    const version = this.versions.find(item => item.id === draft.versionId);
+    const requirement = this.records().find(item => item.id === draft.requirementId && item.type === 'Requisito');
+    const versionRecord = version
+      ? this.records().find(item => item.type === 'Versão' && item.versionId === version.id)
+      : undefined;
+
+    const solutionName = solution?.name ?? 'A definir';
+    const versionName = version?.version ?? 'A definir';
+    const id = `${prefix}-${String(maxId + 1).padStart(3, '0')}`;
+    const relatedIds = [requirement?.id, versionRecord?.id].filter((value): value is string => Boolean(value));
+
     const record: NexusRecord = {
-      id: `${prefix}-${String(maxId + 1).padStart(3, '0')}`,
+      id,
       title: draft.title.trim(),
       description: draft.description.trim(),
       type: recordType,
       status: 'Pendente',
       context: draft.context.trim() || 'Contexto a completar',
-      solution: draft.solution.trim() || 'A definir',
-      version: draft.version.trim() || 'A definir',
+      solution: solutionName,
+      version: versionName,
+      ...(solution?.id ? { solutionId: solution.id } : {}),
+      ...(version?.id ? { versionId: version.id } : {}),
       date: new Date().toLocaleDateString('pt-BR'),
       priority: draft.priority,
       requester: { ...requester, kind: 'Solicitante' },
       assignee: { ...assignee, kind: 'Responsável' },
       participants,
-      relatedIds: type === 'chamado'
-        ? this.records().filter(item => item.id !== `${prefix}-${String(maxId + 1).padStart(3, '0')}` && item.solution === (draft.solution.trim() || 'A definir') && item.version === (draft.version.trim() || 'A definir')).map(item => item.id)
-        : [],
+      ...(requirement ? { parentId: requirement.id } : {}),
+      relatedIds,
       comments: [],
       objective: draft.objective.trim(),
       dueDate: draft.dueDate,
     };
 
-    this.records.update(items => [record, ...items]);
+    this.records.update(items => items.map(item => {
+      if (requirement && item.id === requirement.id) {
+        return { ...item, relatedIds: Array.from(new Set([...item.relatedIds, id])) };
+      }
+      if (versionRecord && item.id === versionRecord.id) {
+        return { ...item, relatedIds: Array.from(new Set([...item.relatedIds, id])) };
+      }
+      return item;
+    }).concat(record));
+
     this.persist();
     this.closeWizard();
     this.select(record);
-    this.flash(`${record.id} criado e contexto preservado.`);
+    this.flash(`${record.id} criado e relacionado ao contexto selecionado.`);
   }
 
   private findPerson(name: string) {
@@ -166,7 +206,7 @@ export class NexusStore {
       ...r,
       comments: [...r.comments, {
         id: crypto.randomUUID(),
-        author: 'Tester',
+        author: currentUser.name,
         text: clean,
         date: new Date().toLocaleString('pt-BR'),
         ...(recipient !== undefined ? { recipient } : {})
@@ -202,8 +242,8 @@ export class NexusStore {
 
     const sameSolutionVersion = all.filter(record =>
       record.id !== ticket.id &&
-      record.solution === ticket.solution &&
-      record.version === ticket.version &&
+      record.solutionId === ticket.solutionId &&
+      record.versionId === ticket.versionId &&
       ['Demanda','Atividade','Requisito','Solução','Versão','Chamado','Conhecimento'].includes(record.type)
     );
 
@@ -506,6 +546,21 @@ export class NexusStore {
   changeStatus(id: string, status: Status): boolean {
     const record = this.records().find(item => item.id === id);
     if (!record) return false;
+
+    const allowedByType: Record<RecordType, Status[]> = {
+      Demanda: ['Pendente', 'Em desenvolvimento', 'Em validação', 'Concluído'],
+      Atividade: ['Pendente', 'Em desenvolvimento', 'Em validação', 'Concluído'],
+      Requisito: ['Pendente', 'Em validação', 'Concluído'],
+      Solução: ['Em desenvolvimento', 'Em validação', 'Concluído'],
+      Versão: ['Em desenvolvimento', 'Em validação', 'Concluído'],
+      Chamado: ['Pendente', 'Em análise', 'Em validação', 'Concluído'],
+      Conhecimento: ['Em validação', 'Concluído']
+    };
+
+    if (!allowedByType[record.type].includes(status)) {
+      this.flash(`O status “${status}” não é válido para ${record.type.toLowerCase()}.`);
+      return false;
+    }
 
     if (record.type === 'Chamado' && status === 'Concluído' && record.aiStatus !== 'approved') {
       this.flash('O chamado só pode ser concluído após a validação humana da sugestão da IA.');

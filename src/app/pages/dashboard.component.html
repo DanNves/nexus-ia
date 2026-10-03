@@ -2,7 +2,7 @@
   <section class="page-intro">
     <div>
       <span class="eyebrow">VISÃO GERAL</span>
-      <h1>Olá, Tester.</h1>
+      <h1>Visão operacional do NEXUS.</h1>
       <p>O NEXUS conecta quem solicita, quem desenvolve e quem atende, preservando o contexto da solução.</p>
     </div>
     <div class="intro-actions">
@@ -108,7 +108,7 @@
     <article class="panel">
       <header class="panel-head"><div><span class="section-kicker">RASTREABILIDADE</span><h2>Contexto conectado</h2></div><button class="text-button" (click)="go('conhecimento')">Conhecimento <nx-icon name="arrow" [size]="14"/></button></header>
       <div class="trace">
-        @for (id of trace; track id) {
+        @for (id of trace(); track id) {
           <button class="trace-node" (click)="openTrace(id)" [title]="traceRecord(id)?.title || id">
             <span class="trace-icon"><nx-icon [name]="$index === 0 ? 'demand' : $index === 1 ? 'requirement' : $index === 2 ? 'solution' : $index === 3 ? 'ticket' : 'knowledge'" [size]="15"/></span>
             <strong>{{ id }}</strong>

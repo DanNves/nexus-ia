@@ -33,7 +33,8 @@ export class ModuleComponent {
   statusFilters() {
     const base = ['Todos'];
     if (this.view === 'Chamados') return [...base, 'Pendente', 'Em análise', 'Em validação', 'Concluído'];
-    if (this.view === 'Conhecimento') return [...base, 'Em validação', 'Concluído'];
+    if (this.view === 'Requisitos' || this.view === 'Conhecimento') return [...base, 'Pendente', 'Em validação', 'Concluído'];
+    if (this.view === 'Soluções e Versões') return [...base, 'Em desenvolvimento', 'Em validação', 'Concluído'];
     return [...base, 'Pendente', 'Em desenvolvimento', 'Em validação', 'Concluído'];
   }
 

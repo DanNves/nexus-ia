@@ -292,9 +292,12 @@
             @if (item.aiStatus === 'approved') {
               <button class="btn primary" (click)="registerKnowledge()"><nx-icon name="knowledge"/> Registrar conhecimento</button>
             }
-          } @else {
-            <button class="btn secondary" (click)="store.changeStatus(item.id, 'Em desenvolvimento')">Em desenvolvimento</button>
-            <button class="btn primary" (click)="store.changeStatus(item.id, 'Concluído')"><nx-icon name="check"/> Concluir</button>
+          } @else if (item.type === 'Demanda' || item.type === 'Atividade' || item.type === 'Solução' || item.type === 'Versão') {
+            <button class="btn secondary" [disabled]="item.status === 'Em desenvolvimento' || item.status === 'Concluído'" (click)="store.changeStatus(item.id, 'Em desenvolvimento')">Em desenvolvimento</button>
+            <button class="btn primary" [disabled]="item.status === 'Concluído'" (click)="store.changeStatus(item.id, 'Concluído')"><nx-icon name="check"/> Concluir</button>
+          } @else if (item.type === 'Requisito' || item.type === 'Conhecimento') {
+            <button class="btn secondary" [disabled]="item.status === 'Em validação' || item.status === 'Concluído'" (click)="store.changeStatus(item.id, 'Em validação')">Em validação</button>
+            <button class="btn primary" [disabled]="item.status === 'Concluído'" (click)="store.changeStatus(item.id, 'Concluído')"><nx-icon name="check"/> Concluir</button>
           }
         </footer>
       </aside>
