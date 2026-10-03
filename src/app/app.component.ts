@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { NexusStore } from './services/nexus.store';
@@ -24,7 +24,7 @@ export class AppComponent {
   globalQuery = '';
   commentText = '';
   wizardStep = 1;
-  saved = false;
+  readonly saved = signal(false);
   wizardError = '';
   draft: WizardDraft = this.emptyDraft();
 
@@ -38,7 +38,7 @@ export class AppComponent {
       const savedDraft = this.readDraft(this.draftKey(wizard));
       this.draft = savedDraft ?? this.emptyDraft(wizard);
       this.wizardStep = 1;
-      this.saved = Boolean(savedDraft);
+      this.saved.set(Boolean(savedDraft));
       this.wizardError = '';
     });
   }
@@ -102,7 +102,7 @@ export class AppComponent {
     const savedDraft = this.readDraft(key);
     this.draft = savedDraft ?? this.emptyDraft(type);
     this.wizardStep = 1;
-    this.saved = Boolean(savedDraft);
+    this.saved.set(Boolean(savedDraft));
     this.wizardError = '';
     this.store.openWizard(type);
     this.mobileOpen = false;
@@ -134,8 +134,8 @@ export class AppComponent {
     const wizard = this.store.wizard();
     if (!wizard) return;
     localStorage.setItem(this.draftKey(wizard), JSON.stringify(this.draft));
-    this.saved = true;
-    window.setTimeout(() => this.saved = false, 1200);
+    this.saved.set(true);
+    window.setTimeout(() => this.saved.set(false), 1200);
   }
 
   finishWizard() {
