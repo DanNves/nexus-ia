@@ -16,26 +16,47 @@
             "index": "src/index.html",
             "polyfills": [],
             "tsConfig": "tsconfig.app.json",
-            "assets": [{ "glob": "**/*", "input": "public" }],
+            "assets": [
+              {
+                "glob": "**/*",
+                "input": "public"
+              }
+            ],
             "styles": ["src/styles.css"]
           },
           "configurations": {
             "production": {
               "budgets": [
-                { "type": "initial", "maximumWarning": "1.5MB", "maximumError": "3MB" },
-                { "type": "anyComponentStyle", "maximumWarning": "20kB", "maximumError": "40kB" }
+                {
+                  "type": "initial",
+                  "maximumWarning": "1.5MB",
+                  "maximumError": "3MB"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "20kB",
+                  "maximumError": "40kB"
+                }
               ],
               "outputHashing": "all"
             },
-            "development": { "optimization": false, "extractLicenses": false, "sourceMap": true }
+            "development": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true
+            }
           },
           "defaultConfiguration": "production"
         },
         "serve": {
           "builder": "@angular/build:dev-server",
           "configurations": {
-            "production": { "buildTarget": "nexus-ia:build:production" },
-            "development": { "buildTarget": "nexus-ia:build:development" }
+            "production": {
+              "buildTarget": "nexus-ia:build:production"
+            },
+            "development": {
+              "buildTarget": "nexus-ia:build:development"
+            }
           },
           "defaultConfiguration": "development"
         }
