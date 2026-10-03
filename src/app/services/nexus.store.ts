@@ -1,15 +1,18 @@
 import { Injectable, computed, signal } from '@angular/core';
-import { seedRecords, people, team } from '../data/nexus.data';
+import { seedRecords, people, team, solutions, versions, currentUser } from '../data/nexus.data';
 import { AiValidationStatus, NexusRecord, Person, Status, WizardDraft, WizardType } from '../models/nexus.models';
 
 @Injectable({ providedIn: 'root' })
 export class NexusStore {
-  private readonly storageKey = 'nexus-angular-records';
+  private readonly storageKey = 'nexus-angular-records:v2';
+  private readonly legacyStorageKey = 'nexus-angular-records';
   readonly records = signal<NexusRecord[]>(this.load());
   readonly selected = signal<NexusRecord | null>(null);
   readonly wizard = signal<WizardType | null>(null);
   readonly search = signal('');
   readonly feedback = signal<string | null>(null);
+  readonly solutions = solutions;
+  readonly versions = versions;
 
   readonly openTickets = computed(() => this.records().filter(r => r.type === 'Chamado' && r.status !== 'Concluído').length);
   readonly activeDemands = computed(() => this.records().filter(r => r.type === 'Demanda' && r.status === 'Em desenvolvimento').length);
@@ -32,15 +35,16 @@ export class NexusStore {
 
   private load(): NexusRecord[] {
     try {
-      const raw = localStorage.getItem(this.storageKey);
+      const raw = localStorage.getItem(this.storageKey) ?? localStorage.getItem(this.legacyStorageKey);
       if (raw) {
         const saved = JSON.parse(raw) as NexusRecord[];
+        if (!Array.isArray(saved)) throw new Error('Formato de dados inválido');
         const normalized = saved.map(record => this.normalize(record));
         const savedById = new Map(normalized.map(record => [record.id, record]));
         return seedRecords.map(seed => this.normalize({ ...seed, ...(savedById.get(seed.id) ?? {}) }))
           .concat(normalized.filter(record => !seedRecords.some(seed => seed.id === record.id)));
       }
-    } catch { /* use seed */ }
+    } catch {}
     return seedRecords.map(record => this.normalize(record));
   }
 
@@ -65,6 +69,8 @@ export class NexusStore {
       participants,
       relatedIds,
       comments,
+      solutionId: record.solutionId ?? solutions.find(item => item.name === record.solution)?.id,
+      versionId: record.versionId ?? versions.find(item => item.version === record.version && item.solutionId === (record.solutionId ?? solutions.find(item => item.name === record.solution)?.id))?.id,
       context: record.context || 'Contexto não informado',
       solution: record.solution || 'A definir',
       version: record.version || 'A definir',
@@ -74,7 +80,10 @@ export class NexusStore {
   }
 
   private persist() {
-    localStorage.setItem(this.storageKey, JSON.stringify(this.records()));
+    try {
+      localStorage.setItem(this.storageKey, JSON.stringify(this.records()));
+      localStorage.removeItem(this.legacyStorageKey);
+    } catch { this.flash('Não foi possível persistir os dados locais do MVP.'); }
   }
 
   private flash(message: string) {
@@ -103,12 +112,23 @@ export class NexusStore {
     localStorage.removeItem('nexus-angular-demanda-draft');
     localStorage.removeItem('nexus-angular-atividade-draft');
     localStorage.removeItem('nexus-angular-chamado-draft');
+    localStorage.removeItem(this.legacyStorageKey);
     this.persist();
     this.flash('Dados de demonstração restaurados. O fluxo NEXUS voltou ao estado inicial.');
   }
   openWizard(type: WizardType) { this.wizard.set(type); }
   closeWizard() { this.wizard.set(null); }
   setSearch(value: string) { this.search.set(value); }
+
+  solutionById(id: string) { return this.solutions.find(item => item.id === id); }
+  versionById(id: string) { return this.versions.find(item => item.id === id); }
+
+  private relatedContextIds(draft: WizardDraft): string[] {
+    const ids = new Set<string>();
+    if (draft.relatedRequirementId) ids.add(draft.relatedRequirementId);
+    if (draft.versionId) ids.add(draft.versionId);
+    return [...ids];
+  }
 
   addRecord(draft: WizardDraft, type: WizardType) {
     const recordType = type === 'demanda' ? 'Demanda' : type === 'atividade' ? 'Atividade' : 'Chamado';
@@ -132,22 +152,26 @@ export class NexusStore {
       type: recordType,
       status: 'Pendente',
       context: draft.context.trim() || 'Contexto a completar',
-      solution: draft.solution.trim() || 'A definir',
-      version: draft.version.trim() || 'A definir',
+      solution: this.solutionById(draft.solutionId)?.name ?? (draft.solution.trim() || 'A definir'),
+      version: this.versionById(draft.versionId)?.version ?? (draft.version.trim() || 'A definir'),
+      solutionId: draft.solutionId || undefined,
+      versionId: draft.versionId || undefined,
       date: new Date().toLocaleDateString('pt-BR'),
       priority: draft.priority,
       requester: { ...requester, kind: 'Solicitante' },
       assignee: { ...assignee, kind: 'Responsável' },
       participants,
-      relatedIds: type === 'chamado'
-        ? this.records().filter(item => item.id !== `${prefix}-${String(maxId + 1).padStart(3, '0')}` && item.solution === (draft.solution.trim() || 'A definir') && item.version === (draft.version.trim() || 'A definir')).map(item => item.id)
-        : [],
+      relatedIds: this.relatedContextIds(draft),
       comments: [],
       objective: draft.objective.trim(),
       dueDate: draft.dueDate,
     };
 
-    this.records.update(items => [record, ...items]);
+    this.records.update(items => {
+      const next = [record, ...items];
+      const related = new Set(record.relatedIds);
+      return next.map(item => related.has(item.id) ? { ...item, relatedIds: Array.from(new Set([...item.relatedIds, record.id])) } : item);
+    });
     this.persist();
     this.closeWizard();
     this.select(record);
@@ -166,7 +190,7 @@ export class NexusStore {
       ...r,
       comments: [...r.comments, {
         id: crypto.randomUUID(),
-        author: 'Tester',
+        author: currentUser.name,
         text: clean,
         date: new Date().toLocaleString('pt-BR'),
         ...(recipient !== undefined ? { recipient } : {})
@@ -327,7 +351,7 @@ export class NexusStore {
       comments: previousDecision
         ? [...record.comments, {
             id: crypto.randomUUID(),
-            author: 'Tester',
+            author: currentUser.name,
             text: `Reanálise solicitada pelo responsável. ${previousDecision}`,
             date: new Date().toLocaleString('pt-BR')
           }]
@@ -390,7 +414,7 @@ export class NexusStore {
     this.records.update(items => items.map(r => r.id === id ? {
       ...r,
       aiStatus: accepted ? 'approved' as AiValidationStatus : 'rejected' as AiValidationStatus,
-      aiValidatedBy: 'Tester',
+      aiValidatedBy: currentUser.name,
       aiValidatedAt: now,
       aiValidationNote: note,
       aiHumanNote: cleanNote,
@@ -404,7 +428,7 @@ export class NexusStore {
         : 'A decisão humana foi registrada como rejeição. Revise a análise ou execute uma nova análise antes de concluir.',
       comments: [...r.comments, {
         id: crypto.randomUUID(),
-        author: 'Tester',
+        author: currentUser.name,
         text: note,
         date: now
       }]
@@ -459,14 +483,14 @@ export class NexusStore {
       relatedIds: [ticket.id, ...ticket.relatedIds.filter(id => id !== ticket.id)],
       comments: [{
         id: crypto.randomUUID(),
-        author: 'Tester',
+        author: currentUser.name,
         text: `Conhecimento registrado após validação humana da sugestão do atendimento ${ticket.id}.`,
         date: new Date().toLocaleString('pt-BR')
       }],
       objective: 'Preservar e reutilizar o procedimento validado no suporte.',
       procedure: ticket.aiProcedure ?? [],
       sourceTicketId: ticket.id,
-      validatedBy: 'Tester',
+      validatedBy: currentUser.name,
       validatedAt: new Date().toLocaleString('pt-BR'),
       revision: 1,
       reuseCount: 0,
