@@ -23,36 +23,24 @@ export class DashboardComponent {
     .slice(0, 3));
 
   readonly attention = computed(() => {
-    const order = ['CH-028','DEM-011','ATV-021'];
+    const priorityRank: Record<string, number> = { Alta: 0, Média: 1, Normal: 2, Baixa: 3 };
     return this.store.records()
       .filter(r => r.nextAction || r.status === 'Em validação' || (r.type === 'Chamado' && r.status !== 'Concluído'))
-      .sort((a,b) => {
-        const ai = order.indexOf(a.id);
-        const bi = order.indexOf(b.id);
-        return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
-      })
+      .sort((a,b) => (priorityRank[a.priority] ?? 9) - (priorityRank[b.priority] ?? 9) || a.date.localeCompare(b.date))
       .slice(0, 3);
   });
 
   readonly nextAction = computed(() => this.attention()[0] ?? this.tickets()[0] ?? null);
-  readonly trace = ['DEM-012','REQ-014','VER-120','CH-028','KB-007'];
+
+  readonly trace = computed(() => {
+    const ticket = this.tickets()[0];
+    if (!ticket) return [];
+    return [ticket, ...this.store.aiContextFor(ticket.id)].slice(0, 6);
+  });
 
   open(record: NexusRecord) { this.store.select(record); }
   openTrace(id: string) { this.store.selectById(id); }
   go(view: string) { this.router.navigate(['/', view]); }
-
-  traceRecord(id: string) {
-    return this.store.records().find(record => record.id === id);
-  }
-
-  traceLabel(id: string) {
-    const type = this.traceRecord(id)?.type;
-    return type === 'Demanda' ? 'Demanda'
-      : type === 'Requisito' ? 'Requisito'
-      : type === 'Versão' ? 'Versão'
-      : type === 'Chamado' ? 'Chamado'
-      : 'Conhecimento';
-  }
 
   advance(record: NexusRecord) {
     // O dashboard nunca toma a decisão humana sobre uma sugestão da IA.
