@@ -97,13 +97,7 @@
       <div class="module-list">
         @for (item of items; track item.id) {
           <button class="module-row" (click)="open(item)">
-            <span class="row-icon"
-              [class.blue]="item.type === 'Demanda' || item.type === 'Requisito' || item.type === 'Atividade'"
-              [class.green]="item.type === 'Conhecimento'"
-              [class.orange]="item.type === 'Chamado'"
-              [class.purple]="item.type === 'Solução' || item.type === 'Versão'">
-              <nx-icon [name]="item.type === 'Chamado' ? 'ticket' : item.type === 'Conhecimento' ? 'knowledge' : item.type === 'Requisito' ? 'requirement' : item.type === 'Atividade' ? 'activity' : item.type === 'Solução' || item.type === 'Versão' ? 'solution' : 'demand'" [size]="18"/>
-            </span>
+            <span class="row-icon" [class]="recordTone(item.type)"><nx-icon [name]="recordIcon(item.type)" [size]="18"/></span>
             <span class="module-main"><strong>{{ item.id }} · {{ item.title }}</strong><small>{{ item.description }}</small></span>
             <span class="module-context"><strong>{{ item.context }}</strong><small>{{ item.solution }} · {{ item.version }}</small></span>
             <span class="status" [class]="item.status.toLowerCase().replace(' ','-')">{{ item.status }}</span>
