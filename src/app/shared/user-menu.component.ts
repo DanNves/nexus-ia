@@ -1,8 +1,9 @@
-import { Component, EventEmitter, Output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, Output } from '@angular/core';
 import { Router } from '@angular/router';
 import { NxIconComponent } from './icon.component';
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'nx-user-menu',
   standalone: true,
   imports: [NxIconComponent],
