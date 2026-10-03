@@ -16,6 +16,7 @@
     </div>
   </section>
 
+  @if (view !== 'Indicadores' && view !== 'Configurações') {
   <nav class="module-context-nav" aria-label="Navegação do ciclo NEXUS">
     <div class="module-context-title"><span class="module-context-dot"></span><strong>Ciclo da solução</strong><small>Desenvolvimento → suporte</small></div>
     <div class="module-context-links">
@@ -26,6 +27,7 @@
       <a routerLink="/chamados" routerLinkActive="active">Chamados</a>
     </div>
   </nav>
+  }
 
   @if (view === 'Indicadores') {
     <section class="indicator-grid">
@@ -35,7 +37,9 @@
       <article class="indicator-card"><span class="indicator-icon green"><nx-icon name="knowledge" [size]="19"/></span><div><small>CONHECIMENTOS VALIDADOS</small><strong>{{ store.validatedKnowledge() }}</strong><p>Procedimentos aprovados e disponíveis para reutilização.</p></div></article>
       <article class="indicator-card"><span class="indicator-icon green"><nx-icon name="check" [size]="19"/></span><div><small>IA APROVADA</small><strong>{{ store.aiAcceptedCount() }}</strong><p>Sugestões que receberam validação humana.</p></div></article>
       <article class="indicator-card"><span class="indicator-icon orange"><nx-icon name="close" [size]="19"/></span><div><small>IA REJEITADA</small><strong>{{ store.aiRejectedCount() }}</strong><p>Sugestões rejeitadas e devolvidas para revisão.</p></div></article>
+      <article class="indicator-card"><span class="indicator-icon green"><nx-icon name="knowledge" [size]="19"/></span><div><small>REUSOS DE CONHECIMENTO</small><strong>{{ store.knowledgeReuseCount() }}</strong><p>Reutilizações registradas nos conhecimentos disponíveis.</p></div></article>
       <article class="indicator-card"><span class="indicator-icon purple"><nx-icon name="message" [size]="19"/></span><div><small>IA COM AJUSTE</small><strong>{{ store.aiEditedCount() }}</strong><p>Aprovações em que o profissional registrou um ajuste.</p></div></article>
+      <article class="indicator-card"><span class="indicator-icon blue"><nx-icon name="chart" [size]="19"/></span><div><small>TAXA DE APROVAÇÃO</small><strong>{{ store.aiAcceptanceRate() }}%</strong><p>Decisões humanas de aprovação entre as análises decididas.</p></div>
     </section>
 
     <section class="dashboard-grid indicator-layout">
@@ -49,6 +53,9 @@
           <div><span><b class="indicator-dot green"></b>Sugestões aprovadas</span><strong>{{ store.aiAcceptedCount() }}</strong></div>
           <div><span><b class="indicator-dot orange"></b>Sugestões rejeitadas</span><strong>{{ store.aiRejectedCount() }}</strong></div>
           <div><span><b class="indicator-dot purple"></b>Sugestões com ajuste</span><strong>{{ store.aiEditedCount() }}</strong></div>
+          <div><span><b class="indicator-dot green"></b>Reusos de conhecimento</span><strong>{{ store.knowledgeReuseCount() }}</strong></div>
+          <div><span><b class="indicator-dot blue"></b>Taxa de aprovação</span><strong>{{ store.aiAcceptanceRate() }}%</strong></div>
+          <div><span><b class="indicator-dot orange"></b>Taxa de rejeição</span><strong>{{ store.aiRejectionRate() }}%</strong></div>
         </div>
       </article>
       <article class="panel indicator-purpose">
