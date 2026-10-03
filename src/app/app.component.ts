@@ -26,6 +26,9 @@ export class AppComponent {
   wizardStep = 1;
   readonly saved = signal(false);
   wizardError = '';
+  aiHumanNote = '';
+  aiValidationError = '';
+  private validationTicketId = '';
   draft: WizardDraft = this.emptyDraft();
 
   constructor() {
@@ -40,6 +43,15 @@ export class AppComponent {
       this.wizardStep = 1;
       this.saved.set(Boolean(savedDraft));
       this.wizardError = '';
+    });
+
+    effect(() => {
+      const selected = this.store.selected();
+      if (selected?.type === 'Chamado' && selected.id !== this.validationTicketId) {
+        this.validationTicketId = selected.id;
+        this.aiHumanNote = '';
+        this.aiValidationError = '';
+      }
     });
   }
 
@@ -185,12 +197,20 @@ export class AppComponent {
 
   approveAi() {
     const selected = this.store.selected();
-    if (selected) this.store.validateAi(selected.id, true);
+    if (!selected) return;
+    this.store.validateAi(selected.id, true, this.aiHumanNote);
+    this.aiValidationError = '';
   }
 
   rejectAi() {
     const selected = this.store.selected();
-    if (selected) this.store.validateAi(selected.id, false);
+    if (!selected) return;
+    if (!this.aiHumanNote.trim()) {
+      this.aiValidationError = 'Para rejeitar, informe o motivo ou o ajuste que o profissional identificou.';
+      return;
+    }
+    this.store.validateAi(selected.id, false, this.aiHumanNote);
+    this.aiValidationError = '';
   }
 
   registerKnowledge() {
