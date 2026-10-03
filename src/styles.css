@@ -2560,3 +2560,53 @@ button,a{ -webkit-tap-highlight-color:transparent; }
 .demo-data-note strong {
   color: #304862;
 }
+
+
+/* Fase 3 — registro explícito da decisão humana */
+.validation-note{
+  width:min(100%,620px);
+  display:grid;
+  gap:5px;
+  margin-top:10px;
+}
+.validation-note label{
+  color:var(--nexus-ink);
+  font-size:9px;
+  font-weight:800;
+}
+.validation-note textarea{
+  width:100%;
+  min-height:66px;
+  padding:9px 10px;
+  resize:vertical;
+  border:1px solid #dce5ee;
+  border-radius:8px;
+  background:#fff;
+  color:var(--nexus-ink);
+  font:inherit;
+  font-size:10px;
+  line-height:1.45;
+  outline:none;
+}
+.validation-note textarea:focus{
+  border-color:#b9d5f6;
+  box-shadow:0 0 0 3px rgba(8,120,255,.08);
+}
+.validation-note small{
+  color:var(--nexus-muted);
+  font-size:8.5px;
+  line-height:1.4;
+}
+.validation-error{
+  color:#a34f43;
+  font-size:9px;
+  font-weight:700;
+}
+.validation-buttons{
+  display:flex;
+  gap:8px;
+}
+@media(max-width:760px){
+  .validation-buttons{width:100%}
+  .validation-buttons .btn{flex:1}
+}
