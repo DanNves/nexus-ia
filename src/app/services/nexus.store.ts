@@ -66,7 +66,7 @@ export class NexusStore {
       solution: record.solution || 'A definir',
       version: record.version || 'A definir',
       description: record.description || 'Sem descrição registrada.',
-      aiStatus
+      ...(aiStatus !== undefined ? { aiStatus } : {})
     };
   }
 
@@ -289,8 +289,8 @@ export class NexusStore {
       aiProcedure: procedure,
       aiEvidence: Array.from(new Set([record.id, ...related.slice(0,8).map(item => item.id), ...attachments])),
       aiFindings: findings,
-      aiExistingKnowledgeId: matchedKnowledge?.id,
-      aiExistingTicketId: matchedTicket?.id,
+      ...(matchedKnowledge ? { aiExistingKnowledgeId: matchedKnowledge.id } : {}),
+      ...(matchedTicket ? { aiExistingTicketId: matchedTicket.id } : {}),
       aiResolution: resolution,
       nextAction: matchedKnowledge ? `Validar a solução existente ${matchedKnowledge.id}` : 'Validar diagnóstico e resolução sugerida',
       nextActionHint: matchedKnowledge
