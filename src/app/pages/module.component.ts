@@ -58,6 +58,7 @@ export class ModuleComponent {
   create() {
     if (this.view === 'Demandas') this.store.openWizard('demanda');
     if (this.view === 'Atividades') this.store.openWizard('atividade');
+    if (this.view === 'Chamados') this.store.openWizard('chamado');
   }
 
   openNextTicket() {
