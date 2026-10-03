@@ -12,6 +12,8 @@ export class NexusStore {
   readonly search = signal('');
   readonly feedback = signal<string | null>(null);
   readonly solutions = solutions;
+  readonly solutionVersions = solutionVersions;
+  readonly solutions = solutions;
   readonly versions = versions;
 
   readonly openTickets = computed(() => this.records().filter(r => r.type === 'Chamado' && r.status !== 'Concluído').length);
@@ -38,23 +40,19 @@ export class NexusStore {
       const raw = localStorage.getItem(this.storageKey) ?? localStorage.getItem(this.legacyStorageKey);
       if (raw) {
         const saved = JSON.parse(raw) as NexusRecord[];
-        if (!Array.isArray(saved)) throw new Error('Formato de dados inválido');
         const normalized = saved.map(record => this.normalize(record));
         const savedById = new Map(normalized.map(record => [record.id, record]));
-        return seedRecords.map(seed => this.normalize({ ...seed, ...(savedById.get(seed.id) ?? {}) }))
+        const merged = seedRecords.map(seed => this.normalize({ ...seed, ...(savedById.get(seed.id) ?? {}) }))
           .concat(normalized.filter(record => !seedRecords.some(seed => seed.id === record.id)));
-      }
-    } catch {}
-    return seedRecords.map(record => this.normalize(record));
-  }
-
-  private normalize(record: NexusRecord): NexusRecord {
+        if (!localStorage.getItem(this.storageKey)) {
+          localStorage.setItem(this.storageKey, JSON.stringify(merged));
+        }
+        return merged;
+    private normalize(record: NexusRecord): NexusRecord {
     const legacy = record as NexusRecord & { aiValidated?: boolean };
     const aiStatus: AiValidationStatus | undefined = record.aiStatus
       ?? (legacy.aiValidated === true ? 'approved' : legacy.aiValidated === false ? 'rejected' : undefined);
 
-    // Protege o MVP contra dados antigos/incompletos salvos no navegador.
-    // Isso evita que uma informação ausente quebre a abertura do detalhe de um registro.
     const fallbackPerson = team[0] ?? people.marina;
     const requester = record.requester ?? { ...fallbackPerson, kind: 'Solicitante' as const };
     const assignee = record.assignee ?? { ...fallbackPerson, kind: 'Responsável' as const };
@@ -62,7 +60,7 @@ export class NexusStore {
     const relatedIds = Array.isArray(record.relatedIds) ? record.relatedIds : [];
     const comments = Array.isArray(record.comments) ? record.comments : [];
     const solutionId = record.solutionId ?? solutions.find(item => item.name === record.solution)?.id;
-    const versionId = record.versionId ?? versions.find(item => item.version === record.version && item.solutionId === solutionId)?.id;
+    const versionId = record.versionId ?? solutionVersions.find(item => item.version === record.version && item.solutionId === solutionId)?.id;
 
     return {
       ...record,
@@ -71,12 +69,12 @@ export class NexusStore {
       participants,
       relatedIds,
       comments,
-      ...(solutionId ? { solutionId } : {}),
-      ...(versionId ? { versionId } : {}),
       context: record.context || 'Contexto não informado',
       solution: record.solution || 'A definir',
       version: record.version || 'A definir',
       description: record.description || 'Sem descrição registrada.',
+      ...(solutionId ? { solutionId } : {}),
+      ...(versionId ? { versionId } : {}),
       ...(aiStatus !== undefined ? { aiStatus } : {})
     };
   }
@@ -111,6 +109,9 @@ export class NexusStore {
     this.records.set(fresh);
     this.selected.set(null);
     this.search.set('');
+    if (!window.confirm('Restaurar os dados de demonstração? Os registros locais criados ou alterados serão substituídos pelo estado inicial do TCC.')) return;
+    localStorage.removeItem(this.storageKey);
+    localStorage.removeItem(this.legacyStorageKey);
     localStorage.removeItem('nexus-angular-demanda-draft');
     localStorage.removeItem('nexus-angular-atividade-draft');
     localStorage.removeItem('nexus-angular-chamado-draft');
@@ -139,6 +140,7 @@ export class NexusStore {
       .filter(r => r.type === recordType)
       .map(r => Number(r.id.split('-')[1]) || 0)
       .reduce((max, value) => Math.max(max, value), 0);
+
     const requester = this.findPerson(draft.requester) ?? people.marina;
     const assignee = this.findPerson(draft.assignee) ?? (type === 'demanda' ? people.carlos : people.joao);
     const participantNames = draft.participants.split(',').map(name => name.trim()).filter(Boolean);
@@ -147,37 +149,60 @@ export class NexusStore {
       .filter((person): person is Person => Boolean(person))
       .map(person => ({ ...person, kind: 'Participante' as const }));
 
+    const solution = this.solutions.find(item => item.id === draft.solutionId);
+    const version = this.solutionVersions.find(item => item.id === draft.versionId);
+    const requirement = this.records().find(item => item.id === draft.requirementId && item.type === 'Requisito');
+    const versionRecord = version ? this.records().find(item => item.versionId === version.id || (item.type === 'Versão' && item.version === version.version && item.solution === solution?.name)) : undefined;
+    const solutionName = solution?.name ?? 'A definir';
+    const versionName = version?.version ?? 'A definir';
+    const id = `${prefix}-${String(maxId + 1).padStart(3, '0')}`;
+
+    const relatedIds = Array.from(new Set([
+      ...(requirement ? [requirement.id] : []),
+      ...(versionRecord ? [versionRecord.id] : [])
+    ]));
+
     const record: NexusRecord = {
-      id: `${prefix}-${String(maxId + 1).padStart(3, '0')}`,
+      id,
       title: draft.title.trim(),
       description: draft.description.trim(),
       type: recordType,
       status: 'Pendente',
       context: draft.context.trim() || 'Contexto a completar',
-      solution: this.solutionById(draft.solutionId)?.name ?? (draft.solution.trim() || 'A definir'),
-      version: this.versionById(draft.versionId)?.version ?? (draft.version.trim() || 'A definir'),
-      ...(draft.solutionId ? { solutionId: draft.solutionId } : {}),
-      ...(draft.versionId ? { versionId: draft.versionId } : {}),
+      solution: solutionName,
+      version: versionName,
+      ...(solution?.id ? { solutionId: solution.id } : {}),
+      ...(version?.id ? { versionId: version.id } : {}),
       date: new Date().toLocaleDateString('pt-BR'),
       priority: draft.priority,
       requester: { ...requester, kind: 'Solicitante' },
       assignee: { ...assignee, kind: 'Responsável' },
       participants,
-      relatedIds: this.relatedContextIds(draft),
+      ...(requirement ? { parentId: requirement.parentId } : {}),
+      relatedIds,
       comments: [],
       objective: draft.objective.trim(),
       dueDate: draft.dueDate,
     };
 
-    this.records.update(items => {
-      const next = [record, ...items];
-      const related = new Set(record.relatedIds);
-      return next.map(item => related.has(item.id) ? { ...item, relatedIds: Array.from(new Set([...item.relatedIds, record.id])) } : item);
-    });
+    this.records.update(items => items.map(item => {
+      if (requirement && item.id === requirement.id) {
+        return {
+          ...item,
+          relatedIds: Array.from(new Set([...item.relatedIds, id])),
+          ...(type === 'demanda' ? { parentId: id } : {})
+        };
+      }
+      if (versionRecord && item.id === versionRecord.id) {
+        return { ...item, relatedIds: Array.from(new Set([...item.relatedIds, id])) };
+      }
+      return item;
+    }).concat(record));
+
     this.persist();
     this.closeWizard();
     this.select(record);
-    this.flash(`${record.id} criado e contexto preservado.`);
+    this.flash(`${record.id} criado e relacionado ao contexto selecionado.`);
   }
 
   private findPerson(name: string) {
@@ -228,8 +253,8 @@ export class NexusStore {
 
     const sameSolutionVersion = all.filter(record =>
       record.id !== ticket.id &&
-      record.solution === ticket.solution &&
-      record.version === ticket.version &&
+      record.solutionId === ticket.solutionId &&
+      record.versionId === ticket.versionId &&
       ['Demanda','Atividade','Requisito','Solução','Versão','Chamado','Conhecimento'].includes(record.type)
     );
 
@@ -533,7 +558,7 @@ export class NexusStore {
     const record = this.records().find(item => item.id === id);
     if (!record) return false;
 
-    const allowed: Record<string, Status[]> = {
+    const allowedByType: Record<string, Status[]> = {
       Demanda: ['Pendente', 'Em desenvolvimento', 'Em validação', 'Concluído'],
       Atividade: ['Pendente', 'Em desenvolvimento', 'Em validação', 'Concluído'],
       Requisito: ['Pendente', 'Em validação', 'Concluído'],
@@ -543,8 +568,8 @@ export class NexusStore {
       Conhecimento: ['Em validação', 'Concluído']
     };
 
-    if (!allowed[record.type]?.includes(status)) {
-      this.flash(`O status “${status}” não é válido para ${record.type}.`);
+    if (!allowedByType[record.type]?.includes(status)) {
+      this.flash(`O status “${status}” não é válido para ${record.type.toLowerCase()}.`);
       return false;
     }
 
