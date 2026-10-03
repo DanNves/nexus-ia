@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { NexusStore } from './services/nexus.store';
 import { NxIconComponent } from './shared/icon.component';
@@ -10,6 +10,7 @@ import { WizardComponent } from './shared/wizard.component';
 import { NexusRecord } from './models/nexus.models';
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'nx-root',
   standalone: true,
   imports: [RouterOutlet, RouterLink, RouterLinkActive, NxIconComponent, GlobalSearchComponent, NotificationMenuComponent, UserMenuComponent, DetailDrawerComponent, WizardComponent],
