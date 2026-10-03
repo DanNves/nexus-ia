@@ -10,6 +10,8 @@ export interface VersionEntity { id: string; solutionId: string; version: string
 export type PersonKind = 'Solicitante' | 'Responsável' | 'Participante';
 
 export interface Person { name: string; role: string; kind: PersonKind; }
+export interface Solution { id: string; name: string; description: string; }
+export interface SolutionVersion { id: string; solutionId: string; version: string; status: 'Publicada' | 'Em desenvolvimento'; date: string; }
 export interface Comment { id: string; author: string; text: string; date: string; recipient?: string; }
 export interface NexusRecord {
   id: string;
@@ -20,6 +22,8 @@ export interface NexusRecord {
   context: string;
   solution: string;
   version: string;
+  solutionId?: string;
+  versionId?: string;
   date: string;
   priority: Priority;
   requester: Person;
@@ -66,6 +70,9 @@ export interface WizardDraft {
   requester: string;
   assignee: string;
   participants: string;
+  requirementId: string;
+  solutionId: string;
+  versionId: string;
   context: string;
   solution: string;
   version: string;
