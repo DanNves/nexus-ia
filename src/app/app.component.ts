@@ -173,6 +173,13 @@ export class AppComponent {
     return !this.wizardError;
   }
 
+  onSolutionChange() {
+    if (!this.draft.versionId) return;
+    const version = this.store.versions.find(item => item.id === this.draft.versionId);
+    if (version?.solutionId !== this.draft.solutionId) this.draft.versionId = '';
+    this.saveDraft();
+  }
+
   toggleParticipant(name: string) {
     const current = this.draft.participants.split(',').map(value => value.trim()).filter(Boolean);
     const exists = current.some(value => value === name);
