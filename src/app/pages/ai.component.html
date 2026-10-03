@@ -78,7 +78,7 @@
             <div class="analysis-summary"><span class="analysis-icon"><nx-icon name="spark" [size]="20"/></span><div><span class="section-kicker">SÍNTESE DA ANÁLISE</span><strong>{{ ticket.aiSummary || 'A IA analisa o chamado a partir do contexto recuperado e prepara uma sugestão.' }}</strong></div></div>
             <div class="analysis-grid">
               <div><span>Classificação</span><strong>{{ ticket.aiCategory || 'Falha funcional / acesso' }}</strong></div>
-              <div><span>Confiança da sugestão</span><strong>{{ ticket.aiConfidence || 86 }}%</strong></div>
+              <div><span>Confiança simulada</span><strong>{{ ticket.aiConfidence || 86 }}%</strong></div>
               <div><span>Possível causa</span><strong>{{ ticket.aiCause || 'Aguardando análise.' }}</strong></div>
             </div>
             <div class="procedure-box"><span>PROCEDIMENTO SUGERIDO</span><ol>@for (step of (ticket.aiProcedure || []); track step){<li>{{ step }}</li>} @empty {<li>Execute a análise para gerar o procedimento sugerido.</li>}</ol></div>
@@ -89,9 +89,29 @@
         <article class="panel ai-validation-card">
           <header class="panel-head"><div><span class="section-kicker">04 · DECISÃO HUMANA</span><h2>O profissional valida a sugestão</h2><p>A IA não encerra o chamado, não confirma a causa e não transforma conhecimento em oficial sem aprovação.</p></div><nx-icon name="check" [size]="18"/></header>
           <div class="validation-actions">
-            <button class="btn secondary" (click)="reject(ticket)" [disabled]="ticket.aiStatus === 'approved'"><nx-icon name="close"/> Rejeitar e revisar</button>
-            <button class="btn primary" (click)="approve(ticket)" [disabled]="ticket.aiStatus === 'approved'"><nx-icon name="check"/> Aprovar sugestão</button>
+            <div class="validation-note">
+              <label for="ai-workspace-note">Observação ou ajuste do profissional</label>
+              <textarea id="ai-workspace-note"
+                        [(ngModel)]="humanNote"
+                        placeholder="Ajuste a orientação ou informe o motivo da rejeição."></textarea>
+              <small>Texto preenchido e aprovado será registrado como ajuste humano.</small>
+              @if (validationError) { <span class="validation-error">{{ validationError }}</span> }
+            </div>
+            <div class="validation-buttons">
+              <button class="btn secondary" (click)="reject(ticket)" [disabled]="ticket.aiStatus === 'approved' || !ticket.aiSummary"><nx-icon name="close"/> Rejeitar e revisar</button>
+              <button class="btn primary" (click)="approve(ticket)" [disabled]="ticket.aiStatus === 'approved' || !ticket.aiSummary"><nx-icon name="check"/> Aprovar sugestão</button>
+            </div>
           </div>
+          @if(ticket.aiStatus === 'rejected'){
+            <div class="ai-approved-note rejected">
+              <nx-icon name="close" [size]="15"/>
+              <span>
+                <strong>Sugestão rejeitada.</strong>
+                {{ ticket.aiValidationNote || 'Decisão humana registrada.' }}
+                @if (ticket.aiHumanNote) { <small>Ajuste/observação: {{ ticket.aiHumanNote }}</small> }
+              </span>
+            </div>
+          }
           @if(ticket.aiStatus === 'approved'){
             <div class="ai-next-step"><nx-icon name="knowledge" [size]="17"/><div><strong>Próximo passo: registrar conhecimento</strong><span>O procedimento validado pode virar um conhecimento reutilizável no suporte.</span></div><button class="btn primary" (click)="store.registerKnowledge(ticket.id)">Registrar conhecimento</button></div>
           }
