@@ -332,6 +332,7 @@
               <div class="form-grid">
 <label>Solução<select [(ngModel)]="draft.solutionId" (ngModelChange)="onSolutionChange()"><option value="">Selecione uma solução</option>@for (solution of solutions; track solution.id){<option [value]="solution.id">{{ solution.name }}</option>}</select></label>
 <label>Versão<select [(ngModel)]="draft.versionId" (ngModelChange)="onVersionChange()" [disabled]="!draft.solutionId"><option value="">Selecione uma versão</option>@for (version of availableVersions(); track version.id){<option [value]="version.id">{{ version.label }}</option>}</select></label>
+<label>Requisito<select [(ngModel)]="draft.requirementId" (ngModelChange)="saveDraft()"><option value="">Relacionar depois</option>@for (requirement of availableRequirements(); track requirement.id){<option [value]="requirement.id">{{ requirement.id }} · {{ requirement.title }}</option>}</select></label>
 </div>
             </div>
           }
@@ -343,7 +344,7 @@
           }
           @if(wizardStep === 5){
             <div class="review"><span class="section-kicker">05 · REVISÃO</span><h3>Confira antes de registrar</h3><p>Revise as informações. Depois de criar, o registro poderá ser relacionado a requisitos, versões e chamados.</p>
-              <div class="review-grid"><span>Título</span><strong>{{ draft.title || 'Não informado' }}</strong><span>Descrição</span><strong>{{ draft.description || 'Não informado' }}</strong><span>Solicitante</span><strong>{{ draft.requester }}</strong><span>Responsável</span><strong>{{ draft.assignee }}</strong><span>Participantes</span><strong>{{ draft.participants || 'Nenhum selecionado' }}</strong><span>Contexto</span><strong>{{ draft.context || 'A completar' }}</strong><span>Solução / versão</span><strong>{{ draft.solution || 'A definir' }} · {{ draft.version || 'A definir' }}</strong><span>Objetivo</span><strong>{{ draft.objective || 'Não informado' }}</strong></div>
+              <div class="review-grid"><span>Título</span><strong>{{ draft.title || 'Não informado' }}</strong><span>Descrição</span><strong>{{ draft.description || 'Não informado' }}</strong><span>Solicitante</span><strong>{{ draft.requester }}</strong><span>Responsável</span><strong>{{ draft.assignee }}</strong><span>Participantes</span><strong>{{ draft.participants || 'Nenhum selecionado' }}</strong><span>Contexto</span><strong>{{ draft.context || 'A completar' }}</strong><span>Solução / versão</span><strong>{{ draft.solution || 'A definir' }} · {{ draft.version || 'A definir' }} · {{ draft.requirementId || 'sem requisito' }}</strong><span>Objetivo</span><strong>{{ draft.objective || 'Não informado' }}</strong></div>
             </div>
           }
           @if(wizardError){<div class="wizard-error"><nx-icon name="close" [size]="14"/>{{ wizardError }}</div>}
