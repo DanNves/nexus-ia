@@ -2510,3 +2510,31 @@ button,a{ -webkit-tap-highlight-color:transparent; }
 .ai-approved-note.rejected > svg{
   color:#b54848;
 }
+
+
+.settings-reset{
+  margin-top:20px;
+  padding-top:18px;
+  border-top:1px solid var(--nexus-line);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:20px;
+}
+.settings-reset div{
+  display:grid;
+  gap:4px;
+  max-width:680px;
+}
+.settings-reset strong{
+  color:var(--nexus-ink);
+  font-size:13px;
+}
+.settings-reset span{
+  color:var(--nexus-muted);
+  font-size:11px;
+  line-height:1.5;
+}
+@media (max-width:760px){
+  .settings-reset{align-items:flex-start;flex-direction:column;}
+}
