@@ -95,7 +95,7 @@
               <button class="btn secondary" (click)="open(action)"><nx-icon name="activity" [size]="15"/> Abrir registro</button>
               <button class="btn primary" (click)="advance(action)">
                 <nx-icon [name]="action.type === 'Chamado' && action.aiStatus === 'approved' ? 'knowledge' : 'check'" [size]="15"/>
-                {{ action.type === 'Chamado' ? (action.aiStatus === 'pending' ? 'Validar sugestão' : action.aiStatus === 'approved' ? 'Registrar conhecimento' : 'Revisar sugestão') : 'Avançar registro' }}
+                {{ action.type === 'Chamado' ? 'Abrir chamado' : 'Abrir registro' }}
               </button>
             </div>
           </div>
