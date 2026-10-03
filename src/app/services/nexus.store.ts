@@ -531,6 +531,21 @@ export class NexusStore {
     const record = this.records().find(item => item.id === id);
     if (!record) return false;
 
+    const allowed: Record<string, Status[]> = {
+      Demanda: ['Pendente', 'Em desenvolvimento', 'Em validação', 'Concluído'],
+      Atividade: ['Pendente', 'Em desenvolvimento', 'Em validação', 'Concluído'],
+      Requisito: ['Pendente', 'Em validação', 'Concluído'],
+      Solução: ['Em desenvolvimento', 'Em validação', 'Concluído'],
+      Versão: ['Em desenvolvimento', 'Em validação', 'Concluído'],
+      Chamado: ['Pendente', 'Em análise', 'Em validação', 'Concluído'],
+      Conhecimento: ['Em validação', 'Concluído']
+    };
+
+    if (!allowed[record.type]?.includes(status)) {
+      this.flash(`O status “${status}” não é válido para ${record.type}.`);
+      return false;
+    }
+
     if (record.type === 'Chamado' && status === 'Concluído' && record.aiStatus !== 'approved') {
       this.flash('O chamado só pode ser concluído após a validação humana da sugestão da IA.');
       this.syncSelected(id);
