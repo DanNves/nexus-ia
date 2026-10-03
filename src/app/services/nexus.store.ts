@@ -316,7 +316,7 @@ export class NexusStore {
       ...(matchedKnowledge ? { aiExistingKnowledgeId: matchedKnowledge.id } : {}),
       ...(matchedTicket ? { aiExistingTicketId: matchedTicket.id } : {}),
       aiResolution: resolution,
-      aiHumanNote: undefined,
+      aiHumanNote: '',
       aiWasEdited: false,
       comments: previousDecision
         ? [...record.comments, {
