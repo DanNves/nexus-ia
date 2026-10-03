@@ -365,9 +365,14 @@ export class NexusStore {
       return;
     }
 
-    const existing = this.records().find(item => item.type === 'Conhecimento' && item.relatedIds.includes(ticketId));
+    // A origem oficial de um conhecimento é sourceTicketId.
+    // relatedIds pode conter referências de contexto e, portanto, não determina
+    // se este chamado já gerou um conhecimento.
+    const existing = this.records().find(
+      item => item.type === 'Conhecimento' && item.sourceTicketId === ticketId
+    );
     if (existing) {
-      this.flash(`Conhecimento ${existing.id} já está relacionado a este chamado.`);
+      this.flash(`Conhecimento ${existing.id} já foi registrado a partir deste chamado.`);
       return;
     }
 
@@ -408,10 +413,29 @@ export class NexusStore {
       nextActionHint: `Conhecimento originado do atendimento ${ticket.id}.`
     };
 
+    const reusedKnowledgeId = ticket.aiExistingKnowledgeId;
+
     this.records.update(items => items
-      .map(r => r.id === ticketId
-        ? { ...r, status: 'Concluído' as Status, nextAction: 'Conhecimento registrado', nextActionHint: `Ciclo encerrado com ${knowledge.id}.`, relatedIds: Array.from(new Set([...r.relatedIds, knowledge.id])) }
-        : r)
+      .map(r => {
+        if (r.id === ticketId) {
+          return {
+            ...r,
+            status: 'Concluído' as Status,
+            nextAction: 'Conhecimento registrado',
+            nextActionHint: `Ciclo encerrado com ${knowledge.id}.`,
+            relatedIds: Array.from(new Set([...r.relatedIds, knowledge.id]))
+          };
+        }
+
+        if (reusedKnowledgeId && r.id === reusedKnowledgeId && r.type === 'Conhecimento') {
+          return {
+            ...r,
+            reuseCount: (r.reuseCount ?? 0) + 1
+          };
+        }
+
+        return r;
+      })
       .concat(knowledge));
     this.persist();
     this.select(knowledge);
