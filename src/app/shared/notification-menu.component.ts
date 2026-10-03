@@ -1,9 +1,10 @@
-import { Component, EventEmitter, Output, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, Output, computed, inject } from '@angular/core';
 import { NexusStore } from '../services/nexus.store';
 import { NexusRecord } from '../models/nexus.models';
 import { NxIconComponent } from './icon.component';
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'nx-notification-menu',
   standalone: true,
   imports: [NxIconComponent],
