@@ -1,0 +1,11 @@
+<div class="notification-menu">
+  <header><div><span class="section-kicker">ATENÇÃO</span><strong>O que precisa de revisão</strong></div><span>{{ store.pendingNotifications() }}</span></header>
+  @for (item of notifications(); track item.id) {
+    <button (click)="open(item)">
+      <span class="notification-icon" [class.orange]="item.type === 'Chamado'" [class.blue]="item.type !== 'Chamado'"><nx-icon [name]="item.type === 'Chamado' ? 'ticket' : 'check'" [size]="14"/></span>
+      <span><strong>{{ item.nextAction || 'Revisar registro' }}</strong><small>{{ item.id }} · {{ item.title }}</small></span>
+    </button>
+  } @empty {
+    <div class="notification-empty">Nenhuma pendência no momento.</div>
+  }
+</div>
