@@ -21,7 +21,9 @@ export class WizardComponent {
   draft: WizardDraft = this.emptyDraft();
 
   constructor() {
-    // O wizard mantém seu próprio estado local e só interage com o store ao salvar/criar.
+    effect(() => {
+      if (this.store.wizard()) this.openDraft();
+    });
   }
 
   get type(): WizardType | null { return this.store.wizard(); }
