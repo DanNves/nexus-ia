@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, effect, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { NexusStore } from './services/nexus.store';
@@ -27,6 +27,21 @@ export class AppComponent {
   saved = false;
   wizardError = '';
   draft: WizardDraft = this.emptyDraft();
+
+  constructor() {
+    effect(() => {
+      const wizard = this.store.wizard();
+      if (!wizard) return;
+
+      // O wizard pode ser aberto pelo dashboard ou por qualquer tela.
+      // Mantemos o rascunho e os valores padrão coerentes com o tipo escolhido.
+      const savedDraft = this.readDraft(this.draftKey(wizard));
+      this.draft = savedDraft ?? this.emptyDraft(wizard);
+      this.wizardStep = 1;
+      this.saved = Boolean(savedDraft);
+      this.wizardError = '';
+    });
+  }
 
   readonly navItems = [
     ['Visão geral','/dashboard','home'],
