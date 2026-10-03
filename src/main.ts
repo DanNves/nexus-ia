@@ -1,8 +1,17 @@
-// preview bootstrap
-import { provideRouter } from '@angular/router';
+import { provideBrowserGlobalErrorListeners } from '@angular/core';
+import { bootstrapApplication } from '@angular/platform-browser';
+import { provideRouter, withNavigationErrorHandler } from '@angular/router';
 import { AppComponent } from './app/app.component';
 import { routes } from './app/app.routes';
 
 bootstrapApplication(AppComponent, {
-  providers: [provideRouter(routes)]
-}).catch(error => console.error(error));
+  providers: [
+    provideBrowserGlobalErrorListeners(),
+    provideRouter(
+      routes,
+      withNavigationErrorHandler((error) => {
+        console.error('Erro de navegação do NEXUS:', error);
+      }),
+    ),
+  ],
+}).catch((error) => console.error('Erro ao inicializar o NEXUS:', error));
