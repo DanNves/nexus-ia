@@ -18,6 +18,18 @@ export class NexusStore {
   readonly aiAcceptedCount = computed(() => this.records().filter(r => r.type === 'Chamado' && r.aiStatus === 'approved').length);
   readonly aiRejectedCount = computed(() => this.records().filter(r => r.type === 'Chamado' && r.aiStatus === 'rejected').length);
   readonly aiEditedCount = computed(() => this.records().filter(r => r.type === 'Chamado' && r.aiWasEdited === true).length);
+  readonly knowledgeReuseCount = computed(() => this.records()
+    .filter(r => r.type === 'Conhecimento')
+    .reduce((sum, record) => sum + (record.reuseCount ?? 0), 0));
+  readonly aiDecisionCount = computed(() => this.aiAcceptedCount() + this.aiRejectedCount());
+  readonly aiAcceptanceRate = computed(() => {
+    const total = this.aiDecisionCount();
+    return total ? Math.round((this.aiAcceptedCount() / total) * 100) : 0;
+  });
+  readonly aiRejectionRate = computed(() => {
+    const total = this.aiDecisionCount();
+    return total ? Math.round((this.aiRejectedCount() / total) * 100) : 0;
+  });
   readonly validatedKnowledge = computed(() => this.records().filter(r => r.type === 'Conhecimento' && r.status === 'Concluído').length);
   readonly contextCoverage = computed(() => {
     const relevant = this.records().filter(r => ['Demanda','Requisito','Versão','Chamado','Conhecimento'].includes(r.type));
@@ -228,7 +240,7 @@ export class NexusStore {
       ...r,
       comments: [...r.comments, {
         id: crypto.randomUUID(),
-        author: 'Tester',
+        author: record.assignee.name,
         text: clean,
         date: new Date().toLocaleString('pt-BR'),
         ...(recipient !== undefined ? { recipient } : {})
@@ -389,7 +401,7 @@ export class NexusStore {
       comments: previousDecision
         ? [...record.comments, {
             id: crypto.randomUUID(),
-            author: 'Tester',
+            author: record.assignee.name,
             text: `Reanálise solicitada pelo responsável. ${previousDecision}`,
             date: new Date().toLocaleString('pt-BR')
           }]
@@ -521,14 +533,14 @@ export class NexusStore {
       relatedIds: [ticket.id, ...ticket.relatedIds.filter(id => id !== ticket.id)],
       comments: [{
         id: crypto.randomUUID(),
-        author: 'Tester',
+        author: ticket.assignee.name,
         text: `Conhecimento registrado após validação humana da sugestão do atendimento ${ticket.id}.`,
         date: new Date().toLocaleString('pt-BR')
       }],
       objective: 'Preservar e reutilizar o procedimento validado no suporte.',
       procedure: ticket.aiProcedure ?? [],
       sourceTicketId: ticket.id,
-      validatedBy: 'Tester',
+      validatedBy: ticket.assignee.name,
       validatedAt: new Date().toLocaleString('pt-BR'),
       revision: 1,
       reuseCount: 0,
