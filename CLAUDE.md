@@ -1062,3 +1062,107 @@ A pessoa deve perceber:
 Esse é o produto.
 
 Tudo que não reforçar essa compreensão deve ser questionado antes de entrar no MVP.
+
+---
+
+## 35. FLUXO DO CHAMADO — REGRA ATUAL
+
+O chamado é o ponto central da atuação da IA no MVP.
+
+Ao abrir um chamado, o sistema deve:
+
+1. recuperar o contexto relacionado;
+2. identificar demanda, atividade, requisito, solução/versão e histórico de suporte;
+3. procurar conhecimento validado e chamados anteriores compatíveis;
+4. anexar as referências encontradas ao próprio chamado;
+5. apresentar o que foi considerado;
+6. indicar possível causa;
+7. apresentar resolução/procedimento sugerido;
+8. deixar explícito quando não existir solução anterior suficiente;
+9. exigir validação humana;
+10. registrar a decisão humana;
+11. após aprovação, permitir registrar conhecimento.
+
+A IA nunca deve transformar uma hipótese em diagnóstico confirmado automaticamente.
+
+### Solução anterior
+
+Quando houver conhecimento validado compatível:
+
+Chamado → solução anterior encontrada → referência anexada → procedimento recuperado → humano valida
+
+Quando não houver:
+
+Chamado → contexto recuperado → análise → resolução sugerida → humano valida
+
+---
+
+## 36. ABERTURA DE CHAMADOS
+
+O MVP permite criar chamados pelo mesmo wizard usado para demandas e atividades.
+
+Ao criar um chamado:
+
+- título;
+- descrição do problema;
+- prioridade;
+- prazo;
+- solicitante;
+- responsável;
+- participantes;
+- contexto;
+- solução;
+- versão;
+- objetivo
+
+são registrados.
+
+Quando solução e versão forem informadas, o sistema procura registros existentes da mesma solução/versão e usa esses IDs como contexto inicial do chamado.
+
+---
+
+## 37. RASTREABILIDADE DA VALIDAÇÃO
+
+A validação humana deve deixar evidência no próprio chamado:
+
+- estado da IA;
+- responsável pela decisão;
+- data/hora;
+- decisão;
+- observação registrada no histórico.
+
+A aprovação não significa que a IA tomou a decisão; significa que o responsável validou a sugestão apresentada.
+
+A rejeição devolve o chamado para análise.
+
+---
+
+## 38. RECUPERAÇÃO DO MVP
+
+Como o estado é persistido em localStorage, o menu Configurações deve oferecer uma ação clara para restaurar os dados de demonstração.
+
+Essa ação deve:
+
+- restaurar os registros seed;
+- limpar rascunhos;
+- limpar seleção atual;
+- manter a aplicação funcional;
+- informar o usuário por toast.
+
+Isso é especialmente importante durante demonstrações e testes do TCC.
+
+---
+
+## 39. VALIDAÇÃO TÉCNICA
+
+O projeto possui GitHub Actions para executar:
+
+npm install
+
+seguido de:
+
+npm run build
+
+O build deve ser tratado como requisito de aceite antes de considerar uma alteração estrutural concluída.
+
+A versão Angular 22 usa o application builder oficial. A compatibilidade deve seguir a matriz oficial de Angular/Node/TypeScript.
