@@ -94,6 +94,18 @@ export class NexusStore {
     if (record) this.selected.set(record);
   }
   closeDetail() { this.selected.set(null); }
+
+  resetDemoData() {
+    const fresh = seedRecords.map(record => this.normalize(record));
+    this.records.set(fresh);
+    this.selected.set(null);
+    this.search.set('');
+    localStorage.removeItem('nexus-angular-demanda-draft');
+    localStorage.removeItem('nexus-angular-atividade-draft');
+    localStorage.removeItem('nexus-angular-chamado-draft');
+    this.persist();
+    this.flash('Dados de demonstração restaurados. O fluxo NEXUS voltou ao estado inicial.');
+  }
   openWizard(type: WizardType) { this.wizard.set(type); }
   closeWizard() { this.wizard.set(null); }
   setSearch(value: string) { this.search.set(value); }
