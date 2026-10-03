@@ -1,0 +1,27 @@
+<div class="overlay search-overlay" (click)="close()">
+  <section class="search-dialog" (click)="$event.stopPropagation()">
+    <header>
+      <div><span class="section-kicker">BUSCA GLOBAL</span><h2>Encontre qualquer contexto</h2></div>
+      <button class="close-btn" (click)="close()" aria-label="Fechar pesquisa"><nx-icon name="close"/></button>
+    </header>
+    <div class="search-input">
+      <nx-icon name="search"/>
+      <input autofocus [(ngModel)]="query" placeholder="Digite código, título, solução, versão...">
+      <kbd>ESC</kbd>
+    </div>
+    <div class="search-results">
+      @if (!query().trim()) {
+        <div class="search-empty"><nx-icon name="search" [size]="24"/><span>Pesquise demandas, requisitos, versões, chamados e conhecimentos.</span></div>
+      }
+      @for (item of results(); track item.id) {
+        <button (click)="open(item)">
+          <span class="row-icon blue"><nx-icon [name]="item.type === 'Chamado' ? 'ticket' : item.type === 'Conhecimento' ? 'knowledge' : item.type === 'Requisito' ? 'requirement' : 'demand'"/></span>
+          <span><strong>{{ item.id }} · {{ item.title }}</strong><small>{{ item.type }} · {{ item.solution }} · {{ item.version }}</small></span>
+          <nx-icon name="arrow" [size]="14"/>
+        </button>
+      } @empty {
+        @if (query().trim()) { <div class="search-empty"><nx-icon name="search" [size]="24"/><span>Nenhum registro encontrado para “{{ query() }}”.</span></div> }
+      }
+    </div>
+  </section>
+</div>
