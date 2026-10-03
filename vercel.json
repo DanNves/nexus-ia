@@ -1,7 +1,8 @@
 {
+  "framework": "angular",
+  "installCommand": "npm ci",
   "buildCommand": "npm run build",
   "outputDirectory": "dist/nexus-ia/browser",
-  "framework": "angular",
   "rewrites": [
     {
       "source": "/(.*)",

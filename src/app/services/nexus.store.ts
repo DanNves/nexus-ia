@@ -367,7 +367,7 @@ export class NexusStore {
       comments: previousDecision
         ? [...record.comments, {
             id: crypto.randomUUID(),
-            author: 'Tester',
+            author: currentUser.name,
             text: `Reanálise solicitada pelo responsável. ${previousDecision}`,
             date: new Date().toLocaleString('pt-BR')
           }]
@@ -430,7 +430,7 @@ export class NexusStore {
     this.records.update(items => items.map(r => r.id === id ? {
       ...r,
       aiStatus: accepted ? 'approved' as AiValidationStatus : 'rejected' as AiValidationStatus,
-      aiValidatedBy: 'Tester',
+      aiValidatedBy: currentUser.name,
       aiValidatedAt: now,
       aiValidationNote: note,
       aiHumanNote: cleanNote,
@@ -444,7 +444,7 @@ export class NexusStore {
         : 'A decisão humana foi registrada como rejeição. Revise a análise ou execute uma nova análise antes de concluir.',
       comments: [...r.comments, {
         id: crypto.randomUUID(),
-        author: 'Tester',
+        author: currentUser.name,
         text: note,
         date: now
       }]
@@ -499,14 +499,14 @@ export class NexusStore {
       relatedIds: [ticket.id, ...ticket.relatedIds.filter(id => id !== ticket.id)],
       comments: [{
         id: crypto.randomUUID(),
-        author: 'Tester',
+        author: currentUser.name,
         text: `Conhecimento registrado após validação humana da sugestão do atendimento ${ticket.id}.`,
         date: new Date().toLocaleString('pt-BR')
       }],
       objective: 'Preservar e reutilizar o procedimento validado no suporte.',
       procedure: ticket.aiProcedure ?? [],
       sourceTicketId: ticket.id,
-      validatedBy: 'Tester',
+      validatedBy: currentUser.name,
       validatedAt: new Date().toLocaleString('pt-BR'),
       revision: 1,
       reuseCount: 0,
