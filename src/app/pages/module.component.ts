@@ -3,6 +3,7 @@ import { ActivatedRoute, RouterLink, RouterLinkActive } from '@angular/router';
 import { NexusStore } from '../services/nexus.store';
 import { NxIconComponent } from '../shared/icon.component';
 import { View, NexusRecord } from '../models/nexus.models';
+import { recordIcon, recordTone } from '../shared/record-ui';
 
 @Component({
   selector: 'nx-module',
@@ -48,6 +49,9 @@ export class ModuleComponent {
     Indicadores:'Acompanhe contexto recuperável, validação humana, chamados e conhecimento.',
     Configurações:'Visualize as regras e limites funcionais deste MVP.'
   }[this.view()] ?? 'Acompanhe o contexto do ciclo de vida da solução.');
+
+  readonly recordIcon = recordIcon;
+  readonly recordTone = recordTone;
 
   open(item: NexusRecord) { this.store.select(item); }
 
