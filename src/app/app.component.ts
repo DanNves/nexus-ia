@@ -4,7 +4,7 @@ import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/rou
 import { NexusStore } from './services/nexus.store';
 import { NxIconComponent } from './shared/icon.component';
 import { NexusRecord, WizardDraft } from './models/nexus.models';
-import { team } from './data/nexus.data';
+import { team, currentUser } from './data/nexus.data';
 
 @Component({
   selector: 'nx-root',
@@ -16,6 +16,7 @@ export class AppComponent {
   readonly store = inject(NexusStore);
   readonly router = inject(Router);
   readonly team = team;
+  readonly currentUser = currentUser;
   mobileOpen = false;
   moreOpen = false;
   userOpen = false;
@@ -251,7 +252,10 @@ export class AppComponent {
       version:'',
       priority:'Média',
       objective:'',
-      dueDate:''
+      dueDate:'',
+      solutionId:'',
+      versionId:'',
+      relatedRequirementId:''
     };
   }
 }
