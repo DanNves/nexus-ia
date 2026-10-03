@@ -1,10 +1,11 @@
 import { Injectable, computed, signal } from '@angular/core';
-import { seedRecords, people, team } from '../data/nexus.data';
+import { seedRecords, people, team, solutions, versions } from '../data/nexus.data';
 import { AiValidationStatus, NexusRecord, Person, Status, WizardDraft, WizardType } from '../models/nexus.models';
 
 @Injectable({ providedIn: 'root' })
 export class NexusStore {
-  private readonly storageKey = 'nexus-angular-records';
+  private readonly storageKey = 'nexus-angular-records-v2';
+  private readonly legacyStorageKey = 'nexus-angular-records';
   readonly records = signal<NexusRecord[]>(this.load());
   readonly selected = signal<NexusRecord | null>(null);
   readonly wizard = signal<WizardType | null>(null);
@@ -32,16 +33,19 @@ export class NexusStore {
 
   private load(): NexusRecord[] {
     try {
-      const raw = localStorage.getItem(this.storageKey);
+      const raw = localStorage.getItem(this.storageKey) ?? localStorage.getItem(this.legacyStorageKey);
       if (raw) {
         const saved = JSON.parse(raw) as NexusRecord[];
         const normalized = saved.map(record => this.normalize(record));
         const savedById = new Map(normalized.map(record => [record.id, record]));
-        return seedRecords.map(seed => this.normalize({ ...seed, ...(savedById.get(seed.id) ?? {}) }))
+        const merged = seedRecords.map(seed => this.normalize({ ...seed, ...(savedById.get(seed.id) ?? {}) }))
           .concat(normalized.filter(record => !seedRecords.some(seed => seed.id === record.id)));
+        return this.rebuildRelationships(merged);
       }
-    } catch { /* use seed */ }
-    return seedRecords.map(record => this.normalize(record));
+    } catch {
+      // Se houver JSON inválido ou armazenamento indisponível, inicia com os dados seed.
+    }
+    return this.rebuildRelationships(seedRecords.map(record => this.normalize(record)));
   }
 
   private normalize(record: NexusRecord): NexusRecord {
@@ -68,13 +72,41 @@ export class NexusStore {
       context: record.context || 'Contexto não informado',
       solution: record.solution || 'A definir',
       version: record.version || 'A definir',
+      ...(record.solutionId || solutions.some(item => item.name === record.solution)
+        ? { solutionId: record.solutionId ?? solutions.find(item => item.name === record.solution)?.id }
+        : {}),
+      ...(record.versionId || versions.some(item => item.label === record.version)
+        ? { versionId: record.versionId ?? versions.find(item => item.label === record.version)?.id }
+        : {}),
       description: record.description || 'Sem descrição registrada.',
       ...(aiStatus !== undefined ? { aiStatus } : {})
     };
   }
 
   private persist() {
-    localStorage.setItem(this.storageKey, JSON.stringify(this.records()));
+    try {
+      localStorage.setItem(this.storageKey, JSON.stringify(this.records()));
+      localStorage.removeItem(this.legacyStorageKey);
+    } catch {
+      this.flash('Não foi possível persistir os dados neste navegador.');
+    }
+  }
+
+  private rebuildRelationships(records: NexusRecord[]): NexusRecord[] {
+    const byId = new Map(records.map(record => [record.id, record]));
+    return records.map(record => {
+      const related = new Set(record.relatedIds);
+      const parent = record.parentId ? byId.get(record.parentId) : undefined;
+      if (parent) related.add(parent.id);
+      for (const other of records) {
+        if (other.id === record.id) continue;
+        if (record.parentId === other.id || other.parentId === record.id) related.add(other.id);
+        if (record.solutionId && record.solutionId === other.solutionId && record.versionId && record.versionId === other.versionId) {
+          if (['Demanda','Atividade','Requisito','Versão','Chamado','Conhecimento'].includes(other.type)) related.add(other.id);
+        }
+      }
+      return { ...record, relatedIds: [...related].filter(id => id !== record.id) };
+    });
   }
 
   private flash(message: string) {
@@ -103,6 +135,7 @@ export class NexusStore {
     localStorage.removeItem('nexus-angular-demanda-draft');
     localStorage.removeItem('nexus-angular-atividade-draft');
     localStorage.removeItem('nexus-angular-chamado-draft');
+    localStorage.removeItem(this.legacyStorageKey);
     this.persist();
     this.flash('Dados de demonstração restaurados. O fluxo NEXUS voltou ao estado inicial.');
   }
@@ -117,41 +150,69 @@ export class NexusStore {
       .filter(r => r.type === recordType)
       .map(r => Number(r.id.split('-')[1]) || 0)
       .reduce((max, value) => Math.max(max, value), 0);
+
     const requester = this.findPerson(draft.requester) ?? people.marina;
     const assignee = this.findPerson(draft.assignee) ?? (type === 'demanda' ? people.carlos : people.joao);
-    const participantNames = draft.participants.split(',').map(name => name.trim()).filter(Boolean);
-    const participants = participantNames
+    const participants = draft.participants.split(',').map(name => name.trim()).filter(Boolean)
       .map(name => this.findPerson(name))
       .filter((person): person is Person => Boolean(person))
       .map(person => ({ ...person, kind: 'Participante' as const }));
 
+    const solution = solutions.find(item => item.id === draft.solutionId);
+    const version = versions.find(item => item.id === draft.versionId && item.solutionId === draft.solutionId);
+    const id = `${prefix}-${String(maxId + 1).padStart(3, '0')}`;
+
     const record: NexusRecord = {
-      id: `${prefix}-${String(maxId + 1).padStart(3, '0')}`,
+      id,
       title: draft.title.trim(),
       description: draft.description.trim(),
       type: recordType,
       status: 'Pendente',
       context: draft.context.trim() || 'Contexto a completar',
-      solution: draft.solution.trim() || 'A definir',
-      version: draft.version.trim() || 'A definir',
+      solution: solution?.name ?? 'A definir',
+      version: version?.label ?? 'A definir',
+      ...(solution ? { solutionId: solution.id } : {}),
+      ...(version ? { versionId: version.id } : {}),
       date: new Date().toLocaleDateString('pt-BR'),
       priority: draft.priority,
       requester: { ...requester, kind: 'Solicitante' },
       assignee: { ...assignee, kind: 'Responsável' },
       participants,
-      relatedIds: type === 'chamado'
-        ? this.records().filter(item => item.id !== `${prefix}-${String(maxId + 1).padStart(3, '0')}` && item.solution === (draft.solution.trim() || 'A definir') && item.version === (draft.version.trim() || 'A definir')).map(item => item.id)
-        : [],
+      relatedIds: [],
       comments: [],
       objective: draft.objective.trim(),
       dueDate: draft.dueDate,
     };
 
-    this.records.update(items => [record, ...items]);
+    const existing = this.records();
+    const related = existing.filter(item =>
+      (version && item.versionId === version.id) ||
+      (solution && item.solutionId === solution.id && item.type === 'Solução') ||
+      (type === 'chamado' && version && item.versionId === version.id)
+    );
+
+    if (type === 'atividade') {
+      const demand = existing.find(item =>
+        item.type === 'Demanda' &&
+        ((version && item.versionId === version.id) || (solution && item.solutionId === solution.id))
+      );
+      if (demand) record.parentId = demand.id;
+    }
+
+    if (type === 'chamado') {
+      const requirement = existing.find(item =>
+        item.type === 'Requisito' &&
+        ((version && item.versionId === version.id) || (solution && item.solutionId === solution.id))
+      );
+      if (requirement) record.parentId = requirement.id;
+    }
+
+    const next = this.rebuildRelationships([...existing, record]);
+    this.records.set(next);
     this.persist();
     this.closeWizard();
-    this.select(record);
-    this.flash(`${record.id} criado e contexto preservado.`);
+    this.selectById(record.id);
+    this.flash(`${record.id} criado e contexto preservado por relacionamento.`);
   }
 
   private findPerson(name: string) {
