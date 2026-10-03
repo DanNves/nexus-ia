@@ -1,4 +1,4 @@
-export type View = 'Dashboard' | 'Demandas' | 'Atividades' | 'Requisitos' | 'Soluções e Versões' | 'Chamados' | 'Conhecimento' | 'Indicadores' | 'Configurações';
+export type View = 'Dashboard' | 'Demandas' | 'Atividades' | 'Requisitos' | 'Soluções e Versões' | 'Chamados' | 'Conhecimento' | 'IA' | 'Indicadores' | 'Configurações';
 export type RecordType = 'Demanda' | 'Atividade' | 'Requisito' | 'Solução' | 'Versão' | 'Chamado' | 'Conhecimento';
 export type Status = 'Pendente' | 'Em análise' | 'Em desenvolvimento' | 'Em validação' | 'Concluído';
 export type Priority = 'Alta' | 'Média' | 'Baixa' | 'Normal';
