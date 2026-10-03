@@ -164,7 +164,13 @@ export class NexusStore {
     if (!clean) return;
     this.records.update(items => items.map(r => r.id === id ? {
       ...r,
-      comments: [...r.comments, { id: crypto.randomUUID(), author: 'Tester', text: clean, date: new Date().toLocaleString('pt-BR'), recipient }]
+      comments: [...r.comments, {
+        id: crypto.randomUUID(),
+        author: 'Tester',
+        text: clean,
+        date: new Date().toLocaleString('pt-BR'),
+        ...(recipient !== undefined ? { recipient } : {})
+      }]
     } : r));
     this.syncSelected(id);
     this.persist();
