@@ -231,8 +231,15 @@
                   <button class="btn primary" (click)="approveAi()" [disabled]="item.aiStatus === 'approved' || !item.aiSummary">Aprovar sugestão</button>
                 </div>
               </div>
-              @if (item.aiStatus === 'approved') {
-                <div class="ai-approved-note"><nx-icon name="check" [size]="15"/><span><strong>Decisão registrada.</strong> O próximo passo é transformar o procedimento validado em conhecimento reutilizável.</span></div>
+              @if (item.aiStatus === 'approved' || item.aiStatus === 'rejected') {
+                <div class="ai-approved-note" [class.rejected]="item.aiStatus === 'rejected'">
+                  <nx-icon [name]="item.aiStatus === 'approved' ? 'check' : 'close'" [size]="15"/>
+                  <span>
+                    <strong>{{ item.aiStatus === 'approved' ? 'Sugestão aprovada.' : 'Sugestão rejeitada.' }}</strong>
+                    {{ item.aiValidationNote || 'Decisão humana registrada.' }}
+                    <small>Decisão por {{ item.aiValidatedBy || 'responsável' }} · {{ item.aiValidatedAt || 'agora' }}</small>
+                  </span>
+                </div>
               }
             </section>
           }
