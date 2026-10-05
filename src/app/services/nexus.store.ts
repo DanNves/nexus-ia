@@ -1,6 +1,6 @@
 import { Injectable, computed, signal } from '@angular/core';
 import { seedRecords, people, team, solutions, versions, currentUser } from '../data/nexus.data';
-import { AiValidationStatus, NexusRecord, Person, RecordType, Status, WizardDraft, WizardType } from '../models/nexus.models';
+import { AiValidationStatus, NexusRecord, Person, Solution, SolutionVersion, RecordType, Status, WizardDraft, WizardType } from '../models/nexus.models';
 
 @Injectable({ providedIn: 'root' })
 export class NexusStore {
@@ -10,6 +10,8 @@ export class NexusStore {
     'nexus-angular-records:v2',
     'nexus-angular-records'
   ];
+  readonly solutions: readonly Solution[] = solutions;
+  readonly solutionVersions: readonly SolutionVersion[] = solutionVersions;
   readonly records = signal<NexusRecord[]>(this.load());
   readonly selected = signal<NexusRecord | null>(null);
   readonly wizard = signal<WizardType | null>(null);
