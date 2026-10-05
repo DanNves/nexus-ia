@@ -17,7 +17,7 @@
   </section>
 
   @if (view !== 'Indicadores' && view !== 'Configurações') {
-  <nav class="module-context-nav" aria-label="Navegação do ciclo NEXUS">
+  @if (view !== 'Indicadores' && view !== 'Configurações') {<nav class="module-context-nav" aria-label="Navegação do ciclo NEXUS">
     <div class="module-context-title"><span class="module-context-dot"></span><strong>Ciclo da solução</strong><small>Desenvolvimento → suporte</small></div>
     <div class="module-context-links">
       <a routerLink="/demandas" routerLinkActive="active">Demandas</a>
@@ -34,7 +34,7 @@
       <article class="indicator-card"><span class="indicator-icon blue"><nx-icon name="link" [size]="19"/></span><div><small>CONTEXTO RECUPERÁVEL</small><strong>{{ store.contextCoverage() }}%</strong><p>Registros com contexto e relacionamento suficientes para apoiar a recuperação.</p></div></article>
       <article class="indicator-card"><span class="indicator-icon orange"><nx-icon name="ticket" [size]="19"/></span><div><small>CHAMADOS ABERTOS</small><strong>{{ store.openTickets() }}</strong><p>Ocorrências que ainda exigem análise, validação ou atendimento.</p></div></article>
       <article class="indicator-card"><span class="indicator-icon purple"><nx-icon name="spark" [size]="19"/></span><div><small>VALIDAÇÕES PENDENTES</small><strong>{{ store.validationCount() }}</strong><p>Sugestões da IA que dependem da decisão do responsável.</p></div></article>
-      <article class="indicator-card"><span class="indicator-icon green"><nx-icon name="knowledge" [size]="19"/></span><div><small>CONHECIMENTOS VALIDADOS</small><strong>{{ store.validatedKnowledge() }}</strong><p>Procedimentos aprovados e disponíveis para reutilização.</p></div></article>
+      <article class="indicator-card"><span class="indicator-icon green"><nx-icon name="knowledge" [size]="19"/></span><div><small>CONHECIMENTOS VALIDADOS</small><strong>{{ store.validatedKnowledge() }}</strong><p>Procedimentos aprovados e disponíveis para reutilização.</p></div></article><article class="indicator-card"><span class="indicator-icon blue"><nx-icon name="link" [size]="19"/></span><div><small>REUSOS REGISTRADOS</small><strong>{{ reuseTotal() }}</strong><p>Total de reutilizações registradas nos conhecimentos.</p></div></article>
       <article class="indicator-card"><span class="indicator-icon blue"><nx-icon name="link" [size]="19"/></span><div><small>REUSOS DO CONHECIMENTO</small><strong>{{ store.knowledgeReuseCount() }}</strong><p>Soma dos reusos registrados nos conhecimentos validados.</p></div></article>
       <article class="indicator-card"><span class="indicator-icon green"><nx-icon name="check" [size]="19"/></span><div><small>IA APROVADA</small><strong>{{ store.aiAcceptedCount() }}</strong><p>Sugestões que receberam validação humana.</p></div></article>
       <article class="indicator-card"><span class="indicator-icon orange"><nx-icon name="close" [size]="19"/></span><div><small>IA REJEITADA</small><strong>{{ store.aiRejectedCount() }}</strong><p>Sugestões rejeitadas e devolvidas para revisão.</p></div></article>
