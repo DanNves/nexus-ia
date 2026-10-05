@@ -93,7 +93,7 @@ export class NexusStore {
       comments,
       context: record.context || 'Contexto não informado',
       solution: solution?.name ?? record.solution ?? 'A definir',
-      version: version?.version ?? record.version || 'A definir',
+      version: version?.version ?? (record.version || 'A definir'),
       description: record.description || 'Sem descrição registrada.',
       ...(solutionId ? { solutionId } : {}),
       ...(versionId ? { versionId } : {}),
