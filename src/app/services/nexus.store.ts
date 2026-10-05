@@ -165,7 +165,11 @@ export class NexusStore {
     const relatedIds = new Set<string>();
     if (requirement) relatedIds.add(requirement.id);
     if (version) relatedIds.add(version.id);
-    if (type === 'chamado') this.records().filter(item => item.id !== newId && item.solutionId === solution?.id && item.versionId === version?.id).forEach(item => relatedIds.add(item.id));
+    if (type === 'chamado') {
+      this.records()
+        .filter(item => item.id !== newId && solution?.id && item.solutionId === solution.id && version?.id && item.versionId === version.id)
+        .forEach(item => relatedIds.add(item.id));
+    }
     const record: NexusRecord = {
       id: newId, title: draft.title.trim(), description: draft.description.trim(), type: recordType, status: 'Pendente',
       context: draft.context.trim() || 'Contexto a completar', solution: solution?.name ?? 'A definir',
@@ -174,11 +178,20 @@ export class NexusStore {
       ...(requirement && type !== 'demanda' ? { parentId: requirement.id } : {}), relatedIds: [...relatedIds], comments: [], objective: draft.objective.trim(), dueDate: draft.dueDate
     };
     this.records.update(items => {
-      const updated = items.map(item => requirement && item.id === requirement.id
-        ? { ...item, ...(type === 'demanda' ? { parentId: newId } : {}), relatedIds: Array.from(new Set([...item.relatedIds, newId])) }
-        : version && item.id === version.id
-          ? { ...item, relatedIds: Array.from(new Set([...item.relatedIds, newId])) }
-          : item);
+      const updated = items.map(item => {
+        const shouldLink =
+          (requirement?.id === item.id) ||
+          (version?.id === item.id) ||
+          relatedIds.has(item.id);
+
+        if (!shouldLink) return item;
+
+        return {
+          ...item,
+          ...(type === 'demanda' && requirement?.id === item.id ? { parentId: newId } : {}),
+          relatedIds: Array.from(new Set([...item.relatedIds, newId]))
+        };
+      });
       return [record, ...updated];
     });
     this.persist(); this.closeWizard(); this.select(record); this.flash(record.id + ' criado e contexto preservado.');
