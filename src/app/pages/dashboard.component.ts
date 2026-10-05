@@ -22,23 +22,27 @@ export class DashboardComponent {
     })
     .slice(0, 3));
 
-  readonly attention = computed(() => {
-    const priority = { Alta: 0, Média: 1, Normal: 2, Baixa: 3 } as const;
-    return this.store.records()
-      .filter(r => r.nextAction || r.status === 'Em validação' || (r.type === 'Chamado' && r.status !== 'Concluído'))
-      .sort((a,b) => (priority[a.priority] ?? 9) - (priority[b.priority] ?? 9) || a.date.localeCompare(b.date))
-      .slice(0, 3);
-  });
+  readonly attention = computed(() => this.store.records()
+    .filter(r => Boolean(r.nextAction) || r.status === 'Em validação' || (r.type === 'Chamado' && r.status !== 'Concluído'))
+    .sort((a, b) => {
+      const priority = { Alta: 0, Média: 1, Normal: 2, Baixa: 3 };
+      const aPending = a.type === 'Chamado' && a.aiStatus === 'pending' ? 0 : 1;
+      const bPending = b.type === 'Chamado' && b.aiStatus === 'pending' ? 0 : 1;
+      return aPending - bPending || (priority[a.priority] ?? 9) - (priority[b.priority] ?? 9);
+    })
+    .slice(0, 3));
 
   readonly nextAction = computed(() => this.attention()[0] ?? this.tickets()[0] ?? null);
 
   readonly trace = computed(() => {
-    const ticket = this.tickets()[0];
-    if (!ticket) return [] as string[];
-    const context = this.store.aiContextFor(ticket.id);
-    const pick = (type: string) => context.find(record => record.type === type)?.id;
-    return [pick('Demanda'), pick('Requisito'), pick('Versão'), ticket.id, pick('Conhecimento')]
-      .filter((id): id is string => Boolean(id));
+    const records = this.store.records();
+    const demand = records.find(r => r.type === 'Demanda' && r.relatedIds.some(id => records.find(x => x.id === id)?.type === 'Requisito'));
+    if (!demand) return [];
+    const requirement = records.find(r => r.type === 'Requisito' && (demand.relatedIds.includes(r.id) || r.parentId === demand.id));
+    const version = records.find(r => r.type === 'Versão' && (demand.relatedIds.includes(r.id) || r.relatedIds.includes(demand.id)));
+    const ticket = records.find(r => r.type === 'Chamado' && (demand.relatedIds.includes(r.id) || r.relatedIds.includes(version?.id ?? '')));
+    const knowledge = ticket ? records.find(r => r.type === 'Conhecimento' && (ticket.relatedIds.includes(r.id) || r.sourceTicketId === ticket.id)) : undefined;
+    return [demand, requirement, version, ticket, knowledge].filter((item): item is NexusRecord => Boolean(item)).map(item => item.id);
   });
 
   open(record: NexusRecord) { this.store.select(record); }
