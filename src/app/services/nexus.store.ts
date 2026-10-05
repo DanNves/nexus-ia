@@ -11,9 +11,8 @@ export class NexusStore {
   readonly wizard = signal<WizardType | null>(null);
   readonly search = signal('');
   readonly feedback = signal<string | null>(null);
-  readonly solutionCatalog = solutions;
-  readonly versionCatalog = versions;
-  readonly currentUser = { name: 'Tester', role: 'Usuário', kind: 'Responsável' as const };
+  readonly solutions = solutions;
+  readonly versions = versions;
   readonly solutions = solutions;
   readonly versions = versions;
 
@@ -74,7 +73,7 @@ export class NexusStore {
     const versionId = record.versionId ?? versions.find(item => item.version === record.version && item.solutionId === solutionId)?.id;
 
     const solution = solutions.find(item => item.name === record.solution);
-    const version = versions.find(item => item.id === record.id || (item.solutionId === solution?.id && item.label === record.version));
+    const version = versions.find(item => item.id === record.versionId || (item.solutionId === solution?.id && item.version === record.version));
 
     return {
       ...record,
@@ -524,7 +523,7 @@ export class NexusStore {
     const record = this.records().find(item => item.id === id);
     if (!record) return false;
 
-    const allowedByType: Record<RecordType, Status[]> = {
+    const allowed: Record<string, Status[]> = {
       Demanda: ['Pendente', 'Em desenvolvimento', 'Em validação', 'Concluído'],
       Atividade: ['Pendente', 'Em desenvolvimento', 'Em validação', 'Concluído'],
       Requisito: ['Pendente', 'Em validação', 'Concluído'],
@@ -534,8 +533,8 @@ export class NexusStore {
       Conhecimento: ['Em validação', 'Concluído']
     };
 
-    if (!allowedByType[record.type].includes(status)) {
-      this.flash(`O status “${status}” não é válido para ${record.type.toLowerCase()}.`);
+    if (!allowed[record.type]?.includes(status)) {
+      this.flash(`O status “${status}” não é válido para ${record.type}.`);
       return false;
     }
 
