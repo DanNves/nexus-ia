@@ -23,6 +23,7 @@ export class AppComponent {
   notificationOpen = false;
   globalQuery = '';
   commentText = '';
+  aiHumanNote = '';
   wizardStep = 1;
   readonly saved = signal(false);
   wizardError = '';
@@ -103,6 +104,7 @@ export class AppComponent {
   closeSearch() { this.searchOpen = false; this.globalQuery = ''; }
 
   openRecord(item: NexusRecord) {
+    this.aiHumanNote = '';
     this.store.select(item);
     this.closeSearch();
     this.notificationOpen = false;
