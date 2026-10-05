@@ -311,7 +311,9 @@ export class NexusStore {
     const score = (record: NexusRecord) => {
       const text = this.contextTerms(record);
       const overlap = text.filter(term => terms.includes(term)).length;
-      return overlap + (record.solution === ticket.solution ? 2 : 0) + (record.version === ticket.version ? 2 : 0);
+      return overlap
+        + (record.solutionId && ticket.solutionId && record.solutionId === ticket.solutionId ? 2 : 0)
+        + (record.versionId && ticket.versionId && record.versionId === ticket.versionId ? 2 : 0);
     };
 
     const matchedKnowledge = knowledge.slice().sort((a,b) => score(b) - score(a)).find(record => score(record) >= 3);
@@ -574,9 +576,18 @@ export class NexusStore {
     const record = this.records().find(item => item.id === id);
     if (!record) return false;
 
-    if (!this.validStatusesFor(record).includes(status)) {
-      this.flash(`O status “${status}” não é válido para ${record.type.toLowerCase()}.`);
-      this.syncSelected(id);
+    const allowedByType: Record<RecordType, Status[]> = {
+      Demanda: ['Pendente', 'Em desenvolvimento', 'Em validação', 'Concluído'],
+      Atividade: ['Pendente', 'Em desenvolvimento', 'Em validação', 'Concluído'],
+      Requisito: ['Pendente', 'Em validação', 'Concluído'],
+      Solução: ['Em desenvolvimento', 'Em validação', 'Concluído'],
+      Versão: ['Em desenvolvimento', 'Em validação', 'Concluído'],
+      Chamado: ['Pendente', 'Em análise', 'Em validação', 'Concluído'],
+      Conhecimento: ['Em validação', 'Concluído']
+    };
+
+    if (!allowedByType[record.type].includes(status)) {
+      this.flash('O status solicitado não é válido para este tipo de registro.');
       return false;
     }
 
@@ -589,7 +600,7 @@ export class NexusStore {
     this.records.update(items => items.map(r => r.id === id ? { ...r, status } : r));
     this.syncSelected(id);
     this.persist();
-    this.flash(`${id} atualizado para “${status}”.`);
+    this.flash(id + ' atualizado para “' + status + '”.');
     return true;
   }
 
