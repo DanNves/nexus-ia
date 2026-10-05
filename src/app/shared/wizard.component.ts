@@ -9,6 +9,7 @@ import { team, currentUser } from '../data/nexus.data';
   selector: 'nx-wizard',
   standalone: true,
   imports: [FormsModule, NxIconComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './wizard.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
