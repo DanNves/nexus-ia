@@ -87,7 +87,7 @@
 
     <section class="panel module-panel">
       <div class="toolbar">
-        <div class="search-box"><nx-icon name="search" [size]="17"/><input [value]="store.search()" (input)="store.setSearch(($event.target as HTMLInputElement).value)" placeholder="Pesquisar por código, título, solução ou versão..." aria-label="Pesquisar registros"></div>
+        <div class="search-box"><nx-icon name="search" [size]="17"/><input [value]="store.search()" (input)="onSearchInput($event)" placeholder="Pesquisar por código, título, solução ou versão..." aria-label="Pesquisar registros"></div>
         <div class="filter-label"><nx-icon name="filter" [size]="15"/> <span>Filtrar por status</span></div>
         <div class="filters">
           @for (f of statusOptions(); track f) {
