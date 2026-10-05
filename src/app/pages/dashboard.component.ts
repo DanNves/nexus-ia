@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { NexusStore } from '../services/nexus.store';
 import { NxIconComponent } from '../shared/icon.component';
@@ -9,6 +9,7 @@ import { NexusRecord } from '../models/nexus.models';
   standalone: true,
   imports: [NxIconComponent],
   templateUrl: './dashboard.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DashboardComponent {
   readonly store = inject(NexusStore);
