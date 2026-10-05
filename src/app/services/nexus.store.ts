@@ -1,6 +1,6 @@
 import { Injectable, computed, signal } from '@angular/core';
 import { seedRecords, people, team, solutions, versions, currentUser } from '../data/nexus.data';
-import { AiValidationStatus, NexusRecord, Person, Solution, SolutionVersion, RecordType, Status, WizardDraft, WizardType } from '../models/nexus.models';
+import { AiValidationStatus, NexusRecord, Person, RecordType, Status, WizardDraft, WizardType, SolutionEntity, VersionEntity } from '../models/nexus.models';
 
 @Injectable({ providedIn: 'root' })
 export class NexusStore {
@@ -10,15 +10,13 @@ export class NexusStore {
     'nexus-angular-records:v2',
     'nexus-angular-records'
   ];
-  readonly solutions: readonly Solution[] = solutions;
-  readonly solutionVersions: readonly SolutionVersion[] = solutionVersions;
   readonly records = signal<NexusRecord[]>(this.load());
   readonly selected = signal<NexusRecord | null>(null);
   readonly wizard = signal<WizardType | null>(null);
   readonly search = signal('');
   readonly feedback = signal<string | null>(null);
-  readonly solutions = solutions;
-  readonly versions = versions;
+  readonly solutions: readonly SolutionEntity[] = solutions;
+  readonly versions: readonly VersionEntity[] = versions;
   private readonly storageVersion = 4;
 
   readonly openTickets = computed(() => this.records().filter(r => r.type === 'Chamado' && r.status !== 'Concluído').length);
@@ -82,16 +80,13 @@ export class NexusStore {
     const participants = Array.isArray(record.participants) ? record.participants : [];
     const relatedIds = Array.isArray(record.relatedIds) ? record.relatedIds : [];
     const comments = Array.isArray(record.comments) ? record.comments : [];
-    const solutionId = record.solutionId ?? solutions.find(item => item.name === record.solution)?.id;
-    const versionId = record.versionId ?? versions.find(item => item.version === record.version && item.solutionId === solutionId)?.id;
 
     const solution = solutions.find(item => item.name === record.solution);
     const version = versions.find(item => item.id === record.versionId || (item.solutionId === solution?.id && item.version === record.version));
 
     return {
       ...record,
-      ...(record.solutionId || !solution ? {} : { solutionId: solution.id }),
-      ...(record.versionId || !version ? {} : { versionId: version.id }),
+
       requester,
       assignee,
       participants,
@@ -101,8 +96,7 @@ export class NexusStore {
       solution: solution?.name ?? record.solution ?? 'A definir',
       version: version?.version ?? (record.version || 'A definir'),
       description: record.description || 'Sem descrição registrada.',
-      ...(solutionId ? { solutionId } : {}),
-      ...(versionId ? { versionId } : {}),
+
       ...(aiStatus !== undefined ? { aiStatus } : {})
     };
   }
