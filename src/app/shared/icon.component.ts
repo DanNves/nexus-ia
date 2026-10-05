@@ -1,4 +1,4 @@
-import { Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 @Component({
   selector: 'nx-icon',
@@ -33,6 +33,7 @@ import { Component, input } from '@angular/core';
         @case ('link') { <path d="M9.5 14.5 14.5 9.5"/><path d="M7.5 17.5 5.8 19.2a4 4 0 0 1-5.7-5.7l3.5-3.5a4 4 0 0 1 5.7 0"/><path d="m16.5 6.5 1.7-1.7a4 4 0 0 1 5.7 5.7l-3.5 3.5a4 4 0 0 1-5.7 0"/> }
       }
     </svg>`,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class NxIconComponent {
   name = input.required<string>();
