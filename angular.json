@@ -15,7 +15,7 @@
             "browser": "src/main.ts",
             "index": "src/index.html",
             "polyfills": [],
-            "tsConfig": "tsconfig.app.json",
+            "tsConfig": "tsconfig.json",
             "assets": [
               {
                 "glob": "**/*",
