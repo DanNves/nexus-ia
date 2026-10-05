@@ -7,7 +7,6 @@ import { NexusRecord } from '../models/nexus.models';
   selector: 'nx-notification-menu',
   standalone: true,
   imports: [NxIconComponent],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './notification-menu.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
