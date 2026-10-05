@@ -22,8 +22,6 @@ export interface NexusRecord {
   solutionId?: string;
   version: string;
   versionId?: string;
-  solutionId?: string;
-  versionId?: string;
   date: string;
   priority: Priority;
   requester: Person;
