@@ -18,7 +18,7 @@ export class KnowledgeComponent {
     const query = this.store.search().trim().toLowerCase();
     return this.store.knowledgeRecords()
       .filter(item => {
-        if (this.filter() === 'Mais reutilizados' return (item.reuseCount ?? 0) > 0;
+        if (this.filter() === 'Mais reutilizados') return (item.reuseCount ?? 0) > 0;
         if (this.filter() === 'Originados de chamados') return Boolean(item.sourceTicketId);
         return true;
       })
