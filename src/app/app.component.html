@@ -114,7 +114,7 @@
           @if (!globalQuery().trim()) { <div class="search-empty"><nx-icon name="search" [size]="24"/><span>Pesquise demandas, requisitos, versões, chamados e conhecimentos.</span></div> }
           @for (item of searchResults(); track item.id) { <button (click)="openRecord(item)"><span class="row-icon blue"><nx-icon [name]="item.type === 'Chamado' ? 'ticket' : item.type === 'Conhecimento' ? 'knowledge' : item.type === 'Requisito' ? 'requirement' : 'demand'"/></span><span><strong>{{ item.id }} · {{ item.title }}</strong><small>{{ item.type }} · {{ item.solution }} · {{ item.version }}</small></span><nx-icon name="arrow" [size]="14"/></button> }
           @empty {
-            @if (globalQuery().trim()) { <div class="search-empty"><nx-icon name="search" [size]="24"/><span>Nenhum registro encontrado para “{{ globalQuery }}”.</span></div> }
+            @if (globalQuery().trim()) { <div class="search-empty"><nx-icon name="search" [size]="24"/><span>Nenhum registro encontrado para “{{ globalQuery() }}”.</span></div> }
           }
         </div>
       </section>
