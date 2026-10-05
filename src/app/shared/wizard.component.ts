@@ -27,6 +27,16 @@ export class WizardComponent {
   constructor(){
     effect(()=>{const wizard=this.store.wizard(); if(!wizard)return; const saved=this.readDraft(this.draftKey(wizard)); this.draft=saved??this.emptyDraft(wizard); this.wizardStep=1; this.saved.set(Boolean(saved)); this.wizardError='';});
   }
+  trapFocus(event: KeyboardEvent, container: HTMLElement) {
+    if (event.key !== 'Tab') return;
+    const focusable = Array.from(container.querySelectorAll<HTMLElement>('button:not([disabled]), a[href], input:not([disabled]), textarea:not([disabled]), select:not([disabled])')).filter(element => element.offsetParent !== null);
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (!first || !last) return;
+    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+    else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+  }
   close(){this.saveDraft();this.closed.emit();}
   nextStep(){if(!this.isStepValid())return;this.saveDraft();if(this.wizardStep<5){this.wizardStep++;this.wizardError='';this.saveDraft();}}
   previousStep(){if(this.wizardStep>1){this.wizardStep--;this.wizardError='';}}
