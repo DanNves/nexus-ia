@@ -8,7 +8,6 @@ import { NexusRecord } from '../models/nexus.models';
   selector: 'nx-global-search',
   standalone: true,
   imports: [FormsModule, NxIconComponent],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './global-search.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
