@@ -1,4 +1,4 @@
-import { Component, effect, inject, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NexusStore } from '../services/nexus.store';
 import { NxIconComponent } from './icon.component';
@@ -10,6 +10,7 @@ import { team, currentUser } from '../data/nexus.data';
   standalone: true,
   imports: [FormsModule, NxIconComponent],
   templateUrl: './wizard.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class WizardComponent {
   readonly store=inject(NexusStore);
