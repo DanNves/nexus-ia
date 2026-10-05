@@ -4,8 +4,9 @@ import { AiValidationStatus, NexusRecord, Person, RecordType, Status, WizardDraf
 
 @Injectable({ providedIn: 'root' })
 export class NexusStore {
-  private readonly storageKey = 'nexus-angular-records:v4';
+  private readonly storageKey = 'nexus-angular-records:v5';
   private readonly previousStorageKeys = [
+    'nexus-angular-records:v4',
     'nexus-angular-records:v3',
     'nexus-angular-records:v2',
     'nexus-angular-records'
@@ -17,7 +18,7 @@ export class NexusStore {
   readonly feedback = signal<string | null>(null);
   readonly solutions = solutions;
   readonly versions = versions;
-  private readonly storageVersion = 4;
+  private readonly storageVersion = 5;
 
   readonly openTickets = computed(() => this.records().filter(r => r.type === 'Chamado' && r.status !== 'Concluído').length);
   readonly activeDemands = computed(() => this.records().filter(r => r.type === 'Demanda' && r.status === 'Em desenvolvimento').length);
@@ -80,16 +81,21 @@ export class NexusStore {
     const participants = Array.isArray(record.participants) ? record.participants : [];
     const relatedIds = Array.isArray(record.relatedIds) ? record.relatedIds : [];
     const comments = Array.isArray(record.comments) ? record.comments : [];
-    const solutionId = record.solutionId ?? solutions.find(item => item.name === record.solution)?.id;
-    const versionId = record.versionId ?? versions.find(item => item.version === record.version && item.solutionId === solutionId)?.id;
+    const solution = solutions.find(item =>
+      item.id === record.solutionId || item.name === record.solution
+    );
+    const solutionId = solution?.id;
 
-    const solution = solutions.find(item => item.name === record.solution);
-    const version = versions.find(item => item.id === record.versionId || (item.solutionId === solution?.id && item.version === record.version));
+    const version = versions.find(item =>
+      item.id === record.versionId ||
+      (item.solutionId === solutionId && item.version === record.version)
+    );
+    const versionId = version?.id;
 
     return {
       ...record,
-      ...(record.solutionId || !solution ? {} : { solutionId: solution.id }),
-      ...(record.versionId || !version ? {} : { versionId: version.id }),
+      ...(solutionId ? { solutionId } : {}),
+      ...(versionId ? { versionId } : {}),
       requester,
       assignee,
       participants,
