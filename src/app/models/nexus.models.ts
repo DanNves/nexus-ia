@@ -1,10 +1,13 @@
-export type View = 'Dashboard' | 'IA' | 'Demandas' | 'Atividades' | 'Requisitos' | 'Soluções e Versões' | 'Chamados' | 'Conhecimento' | 'Indicadores' | 'Configurações';
+export type View = 'Dashboard' | 'IA' | 'IA' | 'Demandas' | 'Atividades' | 'Requisitos' | 'Soluções e Versões' | 'Chamados' | 'Conhecimento' | 'Indicadores' | 'Configurações';
 export type RecordType = 'Demanda' | 'Atividade' | 'Requisito' | 'Solução' | 'Versão' | 'Chamado' | 'Conhecimento';
 export type Status = 'Pendente' | 'Em análise' | 'Em desenvolvimento' | 'Em validação' | 'Concluído';
 export type Priority = 'Alta' | 'Média' | 'Baixa' | 'Normal';
 export type AiValidationStatus = 'pending' | 'approved' | 'rejected';
 export type WizardType = 'demanda' | 'atividade' | 'chamado';
 export type PersonKind = 'Solicitante' | 'Responsável' | 'Participante';
+
+export interface SolutionEntity { id: string; name: string; description: string; }
+export interface VersionEntity { id: string; solutionId: string; label: string; description: string; status: 'Publicada' | 'Em desenvolvimento'; }
 
 export interface Person { name: string; role: string; kind: PersonKind; }
 export interface SolutionEntity { id: string; name: string; description: string; }
@@ -18,7 +21,9 @@ export interface NexusRecord {
   status: Status;
   context: string;
   solution: string;
+  solutionId?: string;
   version: string;
+  versionId?: string;
   solutionId?: string;
   versionId?: string;
   date: string;
@@ -74,4 +79,6 @@ export interface WizardDraft {
   priority: Priority;
   objective: string;
   dueDate: string;
+  requirementId: string;
+  versionId: string;
 }
