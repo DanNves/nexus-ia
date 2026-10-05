@@ -165,7 +165,7 @@ export class NexusStore {
     };
     this.records.update(items => {
       const updated = items.map(item => requirement && item.id === requirement.id
-        ? { ...item, ...(type === 'demanda' ? { parentId: undefined } : {}), relatedIds: Array.from(new Set([...item.relatedIds, newId])) }
+        ? { ...item, ...(type === 'demanda' ? { parentId: newId } : {}), relatedIds: Array.from(new Set([...item.relatedIds, newId])) }
         : version && item.id === version.id
           ? { ...item, relatedIds: Array.from(new Set([...item.relatedIds, newId])) }
           : item);
