@@ -62,6 +62,11 @@ export class ModuleComponent {
     if (this.view === 'Chamados') this.store.openWizard('chamado');
   }
 
+  validStatuses() {
+    const map: Record<View,string[]> = { Demandas:['Pendente','Em desenvolvimento','Em validação','Concluído'], Atividades:['Pendente','Em desenvolvimento','Em validação','Concluído'], Requisitos:['Pendente','Em análise','Em validação','Concluído'], 'Soluções e Versões':['Pendente','Em desenvolvimento','Em validação','Concluído'], Chamados:['Pendente','Em análise','Em validação','Concluído'], Conhecimento:['Em validação','Concluído'], Indicadores:[], Configurações:[], IA:[] };
+    return map[this.view] ?? [];
+  }
+
   openNextTicket() {
     const ticket = this.store.records().find(r => r.type === 'Chamado' && r.status !== 'Concluído');
     if (ticket) this.store.select(ticket);
