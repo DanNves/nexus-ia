@@ -196,12 +196,23 @@ export class NexusStore {
     this.flash('Atualização registrada no contexto.');
   }
 
-  aiContextFor(ticketId: string): NexusRecord[] {
-    const ticket = this.records().find(item => item.id === ticketId);
-    if (!ticket || ticket.type !== 'Chamado') return [];
-
+  readonly aiContextByTicket = computed(() => {
     const all = this.records();
     const byId = new Map(all.map(record => [record.id, record]));
+    const result = new Map<string, NexusRecord[]>();
+
+    for (const ticket of all.filter(record => record.type === 'Chamado')) {
+      result.set(ticket.id, this.buildAiContext(ticket, all, byId));
+    }
+
+    return result;
+  });
+
+  aiContextFor(ticketId: string): NexusRecord[] {
+    return this.aiContextByTicket().get(ticketId) ?? [];
+  }
+
+  private buildAiContext(ticket: NexusRecord, all: NexusRecord[], byId: Map<string, NexusRecord>): NexusRecord[] {
     const visited = new Set<string>();
     const queue = [ticket.id, ...ticket.relatedIds];
     const collected: NexusRecord[] = [];
@@ -227,25 +238,10 @@ export class NexusStore {
     );
 
     for (const record of sameSolutionVersion) {
-      if (!visited.has(record.id)) {
-        visited.add(record.id);
-        collected.push(record);
-      }
+      if (!visited.has(record.id)) collected.push(record);
     }
 
-    const order: Record<string, number> = {
-      'Demanda': 1,
-      'Atividade': 2,
-      'Requisito': 3,
-      'Solução': 4,
-      'Versão': 4,
-      'Chamado': 5,
-      'Conhecimento': 6
-    };
-
-    return collected
-      .filter(record => record.id !== ticket.id)
-      .sort((a, b) => (order[a.type] ?? 99) - (order[b.type] ?? 99) || a.id.localeCompare(b.id));
+    return collected;
   }
 
   analyzeAi(id: string) {

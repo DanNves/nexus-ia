@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { NxIconComponent } from '../shared/icon.component';
 
@@ -6,6 +6,7 @@ import { NxIconComponent } from '../shared/icon.component';
   selector: 'nx-not-found',
   standalone: true,
   imports: [RouterLink, NxIconComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <main class="page empty-page">
       <section class="panel empty-state">

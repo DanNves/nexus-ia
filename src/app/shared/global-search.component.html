@@ -1,0 +1,17 @@
+@if (open()) {
+    <div class="overlay search-overlay" (click)="close()">
+      <section #searchDialog class="search-dialog" role="dialog" aria-modal="true" aria-labelledby="search-dialog-title" (click)="$event.stopPropagation()" (keydown)="trapFocus($event)">
+        <header><div><span class="section-kicker">BUSCA GLOBAL</span><h2 id="search-dialog-title">Encontre qualquer contexto</h2></div><button class="close-btn" (click)="close()" aria-label="Fechar pesquisa" title="Fechar pesquisa"><nx-icon name="close"/></button></header>
+        <div class="search-input"><nx-icon name="search"/><input #searchInput [ngModel]="query()" (ngModelChange)="query.set($event)" placeholder="Digite código, título, solução, versão..." aria-label="Pesquisar no contexto"><kbd>ESC</kbd></div>
+        <div class="search-results">
+          @if (!query().trim()) { <div class="search-empty"><nx-icon name="search" [size]="24"/><span>Pesquise demandas, requisitos, versões, chamados e conhecimentos.</span></div> }
+          @for (item of results(); track item.id) { <button (click)="select(item)"><span class="row-icon blue"><nx-icon [name]="item.type === 'Chamado' ? 'ticket' : item.type === 'Conhecimento' ? 'knowledge' : item.type === 'Requisito' ? 'requirement' : 'demand'"/></span><span><strong>{{ item.id }} · {{ item.title }}</strong><small>{{ item.type }} · {{ item.solution }} · {{ item.version }}</small></span><nx-icon name="arrow" [size]="14"/></button> }
+          @empty {
+            @if (query().trim()) { <div class="search-empty"><nx-icon name="search" [size]="24"/><span>Nenhum registro encontrado para “{{ query() }}”.</span></div> }
+          }
+        </div>
+      </section>
+    </div>
+  }
+
+  

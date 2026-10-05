@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NexusStore } from '../services/nexus.store';
 import { NxIconComponent } from '../shared/icon.component';
@@ -9,6 +9,7 @@ import { NexusRecord } from '../models/nexus.models';
   standalone: true,
   imports: [NxIconComponent, FormsModule],
   templateUrl: './ai.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AiComponent {
   readonly store = inject(NexusStore);
@@ -25,13 +26,9 @@ export class AiComponent {
     return this.tickets()[0] ?? null;
   });
 
-  contextFor(ticket: NexusRecord) {
-    return this.store.aiContextFor(ticket.id);
-  }
+  readonly activeContext = computed(() => { const ticket = this.activeTicket(); return ticket ? this.store.aiContextFor(ticket.id) : []; });
 
-  contextCount(ticket: NexusRecord, types: string[]) {
-    return this.contextFor(ticket).filter(record => types.includes(record.type)).length;
-  }
+  contextCount(types: string[]) { return this.activeContext().filter(record => types.includes(record.type)).length; }
 
   analyze(ticket: NexusRecord) {
     this.store.analyzeAi(ticket.id);

@@ -48,17 +48,17 @@
         </article>
 
         <article class="panel ai-recovery-card">
-          <header class="panel-head"><div><span class="section-kicker">02 · O QUE A IA RECUPERA</span><h2>Contexto completo da solução</h2><p>A IA percorre os vínculos do chamado e também considera os registros da mesma solução e versão. Assim, o atendimento não fica limitado a uma única tela.</p></div><span class="context-count">{{ contextFor(ticket).length }} fontes</span></header>
+          <header class="panel-head"><div><span class="section-kicker">02 · O QUE A IA RECUPERA</span><h2>Contexto completo da solução</h2><p>A IA percorre os vínculos do chamado e também considera os registros da mesma solução e versão. Assim, o atendimento não fica limitado a uma única tela.</p></div><span class="context-count">{{ activeContext().length }} fontes</span></header>
           <div class="ai-context-overview">
-            <div><span>DEMANDA</span><strong>{{ contextCount(ticket, ['Demanda']) }}</strong><small>origem da necessidade</small></div>
-            <div><span>ATIVIDADES</span><strong>{{ contextCount(ticket, ['Atividade']) }}</strong><small>trabalho relacionado</small></div>
-            <div><span>REQUISITOS</span><strong>{{ contextCount(ticket, ['Requisito']) }}</strong><small>regras e critérios</small></div>
-            <div><span>SOLUÇÃO / VERSÃO</span><strong>{{ contextCount(ticket, ['Solução','Versão']) }}</strong><small>baseline publicada</small></div>
-            <div><span>CHAMADOS</span><strong>{{ contextCount(ticket, ['Chamado']) }}</strong><small>ocorrências relacionadas</small></div>
-            <div><span>CONHECIMENTO</span><strong>{{ contextCount(ticket, ['Conhecimento']) }}</strong><small>soluções validadas</small></div>
+            <div><span>DEMANDA</span><strong>{{ contextCount(['Demanda']) }}</strong><small>origem da necessidade</small></div>
+            <div><span>ATIVIDADES</span><strong>{{ contextCount(['Atividade']) }}</strong><small>trabalho relacionado</small></div>
+            <div><span>REQUISITOS</span><strong>{{ contextCount(['Requisito']) }}</strong><small>regras e critérios</small></div>
+            <div><span>SOLUÇÃO / VERSÃO</span><strong>{{ contextCount(['Solução','Versão']) }}</strong><small>baseline publicada</small></div>
+            <div><span>CHAMADOS</span><strong>{{ contextCount(['Chamado']) }}</strong><small>ocorrências relacionadas</small></div>
+            <div><span>CONHECIMENTO</span><strong>{{ contextCount(['Conhecimento']) }}</strong><small>soluções validadas</small></div>
           </div>
           <div class="recovered-context">
-            @for (record of contextFor(ticket); track record.id) {
+            @for (record of activeContext(); track record.id) {
               <button (click)="store.select(record)">
                 <span class="recovered-icon"><nx-icon [name]="record.type === 'Conhecimento' ? 'knowledge' : record.type === 'Versão' || record.type === 'Solução' ? 'solution' : record.type === 'Requisito' ? 'requirement' : record.type === 'Chamado' ? 'ticket' : record.type === 'Atividade' ? 'activity' : 'demand'" [size]="15"/></span>
                 <span><strong>{{ record.id }} · {{ record.title }}</strong><small>{{ record.type }} · {{ record.context }}</small></span>
@@ -74,7 +74,7 @@
             <div class="ai-header-actions"><span class="ai-status-pill" [class.approved]="ticket.aiStatus === 'approved'">{{ ticket.aiStatus === 'approved' ? 'Validada' : 'Aguardando decisão' }}</span><button class="btn primary ai-run-btn" (click)="analyze(ticket)"><nx-icon name="spark" [size]="14"/> Analisar com IA</button></div>
           </header>
           <div class="analysis-body">
-            <div class="ai-processing-note"><nx-icon name="link" [size]="15"/><span><strong>Entrada consolidada:</strong> {{ contextFor(ticket).length }} registros recuperados de todas as etapas relacionadas antes da sugestão.</span></div>
+            <div class="ai-processing-note"><nx-icon name="link" [size]="15"/><span><strong>Entrada consolidada:</strong> {{ activeContext().length }} registros recuperados de todas as etapas relacionadas antes da sugestão.</span></div>
             <div class="analysis-summary"><span class="analysis-icon"><nx-icon name="spark" [size]="20"/></span><div><span class="section-kicker">SÍNTESE DA ANÁLISE</span><strong>{{ ticket.aiSummary || 'A IA analisa o chamado a partir do contexto recuperado e prepara uma sugestão.' }}</strong></div></div>
             <div class="analysis-grid">
               <div><span>Classificação</span><strong>{{ ticket.aiCategory || 'Falha funcional / acesso' }}</strong></div>

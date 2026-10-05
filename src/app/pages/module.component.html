@@ -6,17 +6,17 @@
       <p>{{ description() }}</p>
     </div>
     <div class="intro-actions">
-      @if (view === 'Demandas' || view === 'Atividades') {
-        <button class="btn primary" (click)="create()"><nx-icon name="plus"/> {{ view === 'Demandas' ? 'Nova demanda' : 'Nova atividade' }}</button>
+      @if (view() === 'Demandas' || view() === 'Atividades') {
+        <button class="btn primary" (click)="create()"><nx-icon name="plus"/> {{ view() === 'Demandas' ? 'Nova demanda' : 'Nova atividade' }}</button>
       }
-      @if (view === 'Chamados') {
+      @if (view() === 'Chamados') {
         <button class="btn secondary" (click)="openNextTicket()"><nx-icon name="ticket"/> Abrir próximo chamado</button>
         <button class="btn primary" (click)="create()"><nx-icon name="plus"/> Novo chamado</button>
       }
     </div>
   </section>
 
-  @if (view !== 'Indicadores' && view !== 'Configurações') {
+  @if (view() !== 'Indicadores' && view() !== 'Configurações') {
   <nav class="module-context-nav" aria-label="Navegação do ciclo NEXUS">
     <div class="module-context-title"><span class="module-context-dot"></span><strong>Ciclo da solução</strong><small>Desenvolvimento → suporte</small></div>
     <div class="module-context-links">
@@ -29,7 +29,7 @@
   </nav>
   }
 
-  @if (view === 'Indicadores') {
+  @if (view() === 'Indicadores') {
     <section class="indicator-grid">
       <article class="indicator-card"><span class="indicator-icon blue"><nx-icon name="link" [size]="19"/></span><div><small>CONTEXTO RECUPERÁVEL</small><strong>{{ store.contextCoverage() }}%</strong><p>Registros com contexto e relacionamento suficientes para apoiar a recuperação.</p></div></article>
       <article class="indicator-card"><span class="indicator-icon orange"><nx-icon name="ticket" [size]="19"/></span><div><small>CHAMADOS ABERTOS</small><strong>{{ store.openTickets() }}</strong><p>Ocorrências que ainda exigem análise, validação ou atendimento.</p></div></article>
@@ -61,7 +61,7 @@
         <div class="purpose-tags"><span><nx-icon name="link" [size]="13"/> Contexto</span><span><nx-icon name="spark" [size]="13"/> IA</span><span><nx-icon name="check" [size]="13"/> Validação</span><span><nx-icon name="knowledge" [size]="13"/> Reuso</span></div>
       </article>
     </section>
-  } @else if (view === 'Configurações') {
+  } @else if (view() === 'Configurações') {
     <section class="settings-grid">
       <article class="setting-card"><span class="setting-icon blue"><nx-icon name="check" [size]="18"/></span><div><span class="section-kicker">REGRA DO FLUXO</span><h2>Validação humana</h2><p>A sugestão da IA não encerra o atendimento. O responsável precisa aprovar ou rejeitar antes do fechamento.</p><strong class="setting-status"><i></i> Obrigatória</strong></div></article>
       <article class="setting-card"><span class="setting-icon purple"><nx-icon name="spark" [size]="18"/></span><div><span class="section-kicker">ESCOPO DA IA</span><h2>Apoio ao suporte</h2><p>Nesta versão a IA é uma simulação controlada para demonstrar a recuperação de contexto e a etapa de validação.</p><strong class="setting-status"><i></i> Simulação controlada</strong></div></article>
@@ -79,34 +79,28 @@
     </section>
   } @else {
     <section class="module-summary">
-      <article><span><nx-icon name="layers" [size]="14"/> Registros</span><strong>{{ items.length }}</strong><small>neste módulo</small></article>
-      <article><span><nx-icon name="check" [size]="14"/> Em validação</span><strong>{{ items.filter(r => r.status === 'Em validação').length }}</strong><small>aguardando responsável</small></article>
+      <article><span><nx-icon name="layers" [size]="14"/> Registros</span><strong>{{ items().length }}</strong><small>neste módulo</small></article>
+      <article><span><nx-icon name="check" [size]="14"/> Em validação</span><strong>{{ items().filter(r => r.status === 'Em validação').length }}</strong><small>aguardando responsável</small></article>
       <article><span><nx-icon name="link" [size]="14"/> Com contexto</span><strong>{{ contextReadyCount() }}</strong><small>relacionamentos disponíveis</small></article>
-      <article><span><nx-icon name="check" [size]="14"/> Concluídos</span><strong>{{ items.filter(r => r.status === 'Concluído').length }}</strong><small>finalizados</small></article>
+      <article><span><nx-icon name="check" [size]="14"/> Concluídos</span><strong>{{ items().filter(r => r.status === 'Concluído').length }}</strong><small>finalizados</small></article>
     </section>
 
     <section class="panel module-panel">
       <div class="toolbar">
-        <div class="search-box"><nx-icon name="search" [size]="17"/><input [value]="store.search()" (input)="store.setSearch($any($event.target).value)" placeholder="Pesquisar por código, título, solução ou versão..." aria-label="Pesquisar registros"></div>
+        <div class="search-box"><nx-icon name="search" [size]="17"/><input [value]="store.search()" (input)="onSearchInput($event)" placeholder="Pesquisar por código, título, solução ou versão..." aria-label="Pesquisar registros"></div>
         <div class="filter-label"><nx-icon name="filter" [size]="15"/> <span>Filtrar por status</span></div>
         <div class="filters">
-          @for (f of statusFilters(); track f) {
-            <button [class.active]="filter === f" (click)="setFilter(f)">{{ f }}</button>
+          @for (f of statusOptions(); track f) {
+            <button [class.active]="filter() === f" (click)="setFilter(f)">{{ f }}</button>
           }
         </div>
       </div>
 
       <div class="list-head"><span>Registro</span><span>Contexto</span><span>Status</span><span></span></div>
       <div class="module-list">
-        @for (item of items; track item.id) {
+        @for (item of items(); track item.id) {
           <button class="module-row" (click)="open(item)">
-            <span class="row-icon"
-              [class.blue]="item.type === 'Demanda' || item.type === 'Requisito' || item.type === 'Atividade'"
-              [class.green]="item.type === 'Conhecimento'"
-              [class.orange]="item.type === 'Chamado'"
-              [class.purple]="item.type === 'Solução' || item.type === 'Versão'">
-              <nx-icon [name]="item.type === 'Chamado' ? 'ticket' : item.type === 'Conhecimento' ? 'knowledge' : item.type === 'Requisito' ? 'requirement' : item.type === 'Atividade' ? 'activity' : item.type === 'Solução' || item.type === 'Versão' ? 'solution' : 'demand'" [size]="18"/>
-            </span>
+            <span class="row-icon" [class]="ui(item).tone"><nx-icon [name]="ui(item).icon" [size]="18"/></span>
             <span class="module-main"><strong>{{ item.id }} · {{ item.title }}</strong><small>{{ item.description }}</small></span>
             <span class="module-context"><strong>{{ item.context }}</strong><small>{{ item.solution }} · {{ item.version }}</small></span>
             <span class="status" [class]="item.status.toLowerCase().replace(' ','-')">{{ item.status }}</span>
