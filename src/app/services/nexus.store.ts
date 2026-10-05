@@ -4,8 +4,12 @@ import { AiValidationStatus, NexusRecord, Person, RecordType, Status, WizardDraf
 
 @Injectable({ providedIn: 'root' })
 export class NexusStore {
-  private readonly storageKey = 'nexus-angular-records:v3';
-  private readonly legacyStorageKey = 'nexus-angular-records';
+  private readonly storageKey = 'nexus-angular-records:v4';
+  private readonly previousStorageKeys = [
+    'nexus-angular-records:v3',
+    'nexus-angular-records:v2',
+    'nexus-angular-records'
+  ];
   readonly records = signal<NexusRecord[]>(this.load());
   readonly selected = signal<NexusRecord | null>(null);
   readonly wizard = signal<WizardType | null>(null);
@@ -13,7 +17,7 @@ export class NexusStore {
   readonly feedback = signal<string | null>(null);
   readonly solutions = solutions;
   readonly versions = versions;
-  private readonly storageVersion = 3;
+  private readonly storageVersion = 4;
 
   readonly openTickets = computed(() => this.records().filter(r => r.type === 'Chamado' && r.status !== 'Concluído').length);
   readonly activeDemands = computed(() => this.records().filter(r => r.type === 'Demanda' && r.status === 'Em desenvolvimento').length);
@@ -37,7 +41,8 @@ export class NexusStore {
 
   private load(): NexusRecord[] {
     try {
-      const raw = localStorage.getItem(this.storageKey) ?? localStorage.getItem('nexus-angular-records:v2') ?? localStorage.getItem(this.legacyStorageKey);
+      const raw = localStorage.getItem(this.storageKey)
+        ?? this.previousStorageKeys.map(key => localStorage.getItem(key)).find((value): value is string => Boolean(value));
       if (!raw) return seedRecords.map(record => this.normalize(record));
 
       const parsed = JSON.parse(raw) as { version?: number; records?: NexusRecord[] } | NexusRecord[];
@@ -56,8 +61,7 @@ export class NexusStore {
         version: this.storageVersion,
         records: merged
       }));
-      localStorage.removeItem('nexus-angular-records:v2');
-      localStorage.removeItem(this.legacyStorageKey);
+      for (const key of this.previousStorageKeys) localStorage.removeItem(key);
 
       return merged;
     } catch {
@@ -104,7 +108,7 @@ export class NexusStore {
   private persist() {
     try {
       localStorage.setItem(this.storageKey, JSON.stringify({ version: this.storageVersion, records: this.records() }));
-      localStorage.removeItem(this.legacyStorageKey);
+      for (const key of this.previousStorageKeys) localStorage.removeItem(key);
     } catch {
       this.flash('Não foi possível persistir os dados locais do MVP.');
     }
@@ -134,7 +138,7 @@ export class NexusStore {
     this.selected.set(null);
     this.search.set('');
     localStorage.removeItem(this.storageKey);
-    localStorage.removeItem(this.legacyStorageKey);
+    for (const key of this.previousStorageKeys) localStorage.removeItem(key);
     localStorage.removeItem('nexus-angular-demanda-draft');
     localStorage.removeItem('nexus-angular-atividade-draft');
     localStorage.removeItem('nexus-angular-chamado-draft');
