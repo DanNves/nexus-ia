@@ -148,7 +148,12 @@ export class AppComponent {
   saveDraft() {
     const wizard = this.store.wizard();
     if (!wizard) return;
-    localStorage.setItem(this.draftKey(wizard), JSON.stringify(this.draft));
+    try {
+      localStorage.setItem(this.draftKey(wizard), JSON.stringify(this.draft));
+    } catch {
+      this.wizardError = 'Não foi possível salvar o rascunho neste navegador.';
+      return;
+    }
     this.saved.set(true);
     window.setTimeout(() => this.saved.set(false), 1200);
   }
@@ -246,6 +251,20 @@ export class AppComponent {
     return this.versions.filter(version => !this.draft.solutionId || version.solutionId === this.draft.solutionId);
   }
 
+  selectedSolutionName() {
+    return this.solutions.find(item => item.id === this.draft.solutionId)?.name ?? 'A definir';
+  }
+
+  selectedVersionLabel() {
+    return this.versions.find(item => item.id === this.draft.versionId)?.label ?? 'A definir';
+  }
+
+  confirmResetDemo() {
+    if (window.confirm('Restaurar os dados de demonstração apagará as alterações locais e os rascunhos deste navegador. Deseja continuar?')) {
+      this.store.resetDemoData();
+    }
+  }
+
   onSolutionChange() {
     if (!this.availableVersions().some(version => version.id === this.draft.versionId)) {
       this.draft.versionId = this.availableVersions()[0]?.id ?? '';
@@ -258,7 +277,7 @@ export class AppComponent {
       title:'',
       description:'',
       requester: currentUser.name,
-      assignee:type === 'atividade' ? 'João Silva' : type === 'chamado' ? 'Ana Souza' : 'Carlos Lima',
+      assignee: team.find(person => type === 'atividade' ? person.role === 'Desenvolvedor' : type === 'chamado' ? person.role === 'Analista de Suporte' : person.role === 'Analista de Sistemas')?.name ?? team[0]?.name ?? currentUser.name,
       participants:'',
       requirementId:'',
       solutionId:'SOL-001',

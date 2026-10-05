@@ -69,6 +69,12 @@ export class ModuleComponent {
 
   setFilter(value: string) { this.filter = value; }
 
+  confirmReset() {
+    if (window.confirm('Restaurar os dados de demonstração apagará alterações locais e rascunhos deste navegador. Deseja continuar?')) {
+      this.store.resetDemoData();
+    }
+  }
+
   contextReadyCount() {
     return this.items.filter(r => r.relatedIds.length > 0 && !/parcial|Aguardando/i.test(r.context)).length;
   }

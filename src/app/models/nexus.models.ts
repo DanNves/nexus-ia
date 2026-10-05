@@ -6,9 +6,10 @@ export type AiValidationStatus = 'pending' | 'approved' | 'rejected';
 export type WizardType = 'demanda' | 'atividade' | 'chamado';
 export type PersonKind = 'Solicitante' | 'Responsável' | 'Participante';
 
-export interface Person { name: string; role: string; kind: PersonKind; }
 export interface SolutionEntity { id: string; name: string; description: string; }
 export interface VersionEntity { id: string; solutionId: string; version: string; label: string; status: 'Publicado' | 'Em desenvolvimento'; }
+
+export interface Person { name: string; role: string; kind: PersonKind; }
 export interface Comment { id: string; author: string; text: string; date: string; recipient?: string; }
 export interface NexusRecord {
   id: string;
@@ -18,8 +19,8 @@ export interface NexusRecord {
   status: Status;
   context: string;
   solution: string;
-  version: string;
   solutionId?: string;
+  version: string;
   versionId?: string;
   date: string;
   priority: Priority;
