@@ -1,23 +1,13 @@
-        <div class="notification-wrap nexus-notification-wrap">
-          <button class="icon-btn nexus-action-btn notify"
-                  [class.active]="open()"
-                  (click)="open()=!open(); userOpen=false"
-                  title="Notificações" aria-label="Notificações">
-            <nx-icon name="bell" [size]="18"/>
-            @if (store.pendingNotifications() > 0) { <i>{{ store.pendingNotifications() > 9 ? '9+' : store.pendingNotifications() }}</i> }
-          </button>
-          @if (open()) {
-            <div class="notification-menu">
-              <header><div><span class="section-kicker">ATENÇÃO</span><strong>O que precisa de revisão</strong></div><span>{{ pending() }}</span></header>
-              @for (item of store.records().filter(r => (r.type === 'Chamado' && r.aiStatus === 'pending') || r.status === 'Em validação').slice(0,5); track item.id) {
-                <button (click)="select(item)">
-                  <span class="notification-icon" [class.orange]="item.type === 'Chamado'" [class.blue]="item.type !== 'Chamado'"><nx-icon [name]="item.type === 'Chamado' ? 'ticket' : 'check'" [size]="14"/></span>
-                  <span><strong>{{ item.nextAction || 'Revisar registro' }}</strong><small>{{ item.id }} · {{ item.title }}</small></span>
-                </button>
-              } @empty {
-                <div class="notification-empty">Nenhuma pendência no momento.</div>
-              }
-            </div>
-          }
-        </div>
-
+@if (open()) {
+  <div class="notification-menu">
+    <header><div><span class="section-kicker">ATENÇÃO</span><strong>O que precisa de revisão</strong></div><span>{{ pending() }}</span></header>
+    @for (item of store.records().filter(r => (r.type === 'Chamado' && r.aiStatus === 'pending') || r.status === 'Em validação').slice(0,5); track item.id) {
+      <button (click)="select(item)">
+        <span class="notification-icon" [class.orange]="item.type === 'Chamado'" [class.blue]="item.type !== 'Chamado'"><nx-icon [name]="item.type === 'Chamado' ? 'ticket' : 'check'" [size]="14"/></span>
+        <span><strong>{{ item.nextAction || 'Revisar registro' }}</strong><small>{{ item.id }} · {{ item.title }}</small></span>
+      </button>
+    } @empty {
+      <div class="notification-empty">Nenhuma pendência no momento.</div>
+    }
+  </div>
+}
