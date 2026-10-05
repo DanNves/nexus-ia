@@ -36,9 +36,8 @@ export class KnowledgeComponent {
   readonly reuseTotal = computed(() => this.store.knowledgeRecords().reduce((sum, item) => sum + (item.reuseCount ?? 0), 0));
   readonly originCount = computed(() => this.store.knowledgeRecords().filter(item => item.sourceTicketId || item.relatedIds.some(id => id.startsWith('CH-'))).length);
 
-  setFilter(value: string) {
-    this.filter.set(value);
-  }
+  setFilter(value: string) { this.filter.set(value); }
+  onSearchInput(event: Event) { this.store.setSearch((event.target as HTMLInputElement).value); }
 
   open(item: NexusRecord) {
     this.store.select(item);
