@@ -11,6 +11,9 @@ export class NexusStore {
   readonly wizard = signal<WizardType | null>(null);
   readonly search = signal('');
   readonly feedback = signal<string | null>(null);
+  readonly solutionCatalog = solutions;
+  readonly versionCatalog = versions;
+  readonly currentUser = { name: 'Tester', role: 'Usuário', kind: 'Responsável' as const };
   readonly solutions = solutions;
   readonly versions = versions;
 
@@ -37,17 +40,23 @@ export class NexusStore {
   private load(): NexusRecord[] {
     try {
       const raw = localStorage.getItem(this.storageKey) ?? localStorage.getItem(this.legacyStorageKey);
-      if (raw) {
-        const saved = JSON.parse(raw) as NexusRecord[];
-        const normalized = saved.map(record => this.normalize(record));
-        const savedById = new Map(normalized.map(record => [record.id, record]));
-        const merged = seedRecords.map(seed => this.normalize({ ...seed, ...(savedById.get(seed.id) ?? {}) }))
-          .concat(normalized.filter(record => !seedRecords.some(seed => seed.id === record.id)));
-        if (!localStorage.getItem(this.storageKey)) localStorage.setItem(this.storageKey, JSON.stringify(merged));
-        return merged;
+      if (!raw) return seedRecords.map(record => this.normalize(record));
+
+      const parsed = JSON.parse(raw) as { version?: number; records?: NexusRecord[] } | NexusRecord[];
+      const saved = Array.isArray(parsed) ? parsed : parsed.records ?? [];
+      const normalized = saved.map(record => this.normalize(record));
+      const savedById = new Map(normalized.map(record => [record.id, record]));
+      const merged = seedRecords
+        .map(seed => this.normalize({ ...seed, ...(savedById.get(seed.id) ?? {}) }))
+        .concat(normalized.filter(record => !seedRecords.some(seed => seed.id === record.id)));
+
+      if (localStorage.getItem(this.storageKey) === null) {
+        localStorage.setItem(this.storageKey, JSON.stringify({ version: this.storageVersion, records: merged }));
       }
-    } catch { /* usa o seed quando o armazenamento estiver inválido */ }
-    return seedRecords.map(record => this.normalize(record));
+      return merged;
+    } catch {
+      return seedRecords.map(record => this.normalize(record));
+    }
   }
 
   private normalize(record: NexusRecord): NexusRecord {
@@ -64,8 +73,13 @@ export class NexusStore {
     const solutionId = record.solutionId ?? solutions.find(item => item.name === record.solution)?.id;
     const versionId = record.versionId ?? versions.find(item => item.version === record.version && item.solutionId === solutionId)?.id;
 
+    const solution = solutions.find(item => item.name === record.solution);
+    const version = versions.find(item => item.id === record.id || (item.solutionId === solution?.id && item.label === record.version));
+
     return {
       ...record,
+      ...(record.solutionId || !solution ? {} : { solutionId: solution.id }),
+      ...(record.versionId || !version ? {} : { versionId: version.id }),
       requester,
       assignee,
       participants,
@@ -130,68 +144,31 @@ export class NexusStore {
   addRecord(draft: WizardDraft, type: WizardType) {
     const recordType = type === 'demanda' ? 'Demanda' : type === 'atividade' ? 'Atividade' : 'Chamado';
     const prefix = type === 'demanda' ? 'DEM' : type === 'atividade' ? 'ATV' : 'CH';
-    const maxId = this.records()
-      .filter(r => r.type === recordType)
-      .map(r => Number(r.id.split('-')[1]) || 0)
-      .reduce((max, value) => Math.max(max, value), 0);
-
-    const requester = this.findPerson(draft.requester) ?? people.marina;
-    const assignee = this.findPerson(draft.assignee) ?? (type === 'demanda' ? people.carlos : people.joao);
+    const maxId = this.records().filter(r => r.type === recordType).map(r => Number(r.id.split('-')[1]) || 0).reduce((max, value) => Math.max(max, value), 0);
+    const requester = this.findPerson(draft.requester) ?? team[0] ?? people.marina;
+    const assignee = this.findPerson(draft.assignee) ?? team.find(person => person.role === 'Analista de Sistemas') ?? requester;
     const participantNames = draft.participants.split(',').map(name => name.trim()).filter(Boolean);
-    const participants = participantNames
-      .map(name => this.findPerson(name))
-      .filter((person): person is Person => Boolean(person))
-      .map(person => ({ ...person, kind: 'Participante' as const }));
-
-    const solution = this.solutions.find(item => item.id === draft.solutionId);
-    const version = this.versions.find(item => item.id === draft.versionId);
+    const participants = participantNames.map(name => this.findPerson(name)).filter((person): person is Person => Boolean(person)).map(person => ({ ...person, kind: 'Participante' as const }));
+    const solution = solutions.find(item => item.id === draft.solution);
+    const version = versions.find(item => item.id === draft.versionId);
     const requirement = this.records().find(item => item.id === draft.requirementId && item.type === 'Requisito');
-    const versionRecord = version
-      ? this.records().find(item => item.type === 'Versão' && item.versionId === version.id)
-      : undefined;
-
-    const solutionName = solution?.name ?? 'A definir';
-    const versionName = version?.version ?? 'A definir';
-    const id = `${prefix}-${String(maxId + 1).padStart(3, '0')}`;
-    const relatedIds = [requirement?.id, versionRecord?.id].filter((value): value is string => Boolean(value));
-
+    const newId = prefix + '-' + String(maxId + 1).padStart(3, '0');
+    const relatedIds = new Set<string>();
+    if (requirement) relatedIds.add(requirement.id);
+    if (version) relatedIds.add(version.id);
+    if (type === 'chamado') this.records().filter(item => item.id !== newId && item.solutionId === solution?.id && item.versionId === version?.id).forEach(item => relatedIds.add(item.id));
     const record: NexusRecord = {
-      id,
-      title: draft.title.trim(),
-      description: draft.description.trim(),
-      type: recordType,
-      status: 'Pendente',
-      context: draft.context.trim() || 'Contexto a completar',
-      solution: solutionName,
-      version: versionName,
-      ...(solution?.id ? { solutionId: solution.id } : {}),
-      ...(version?.id ? { versionId: version.id } : {}),
-      date: new Date().toLocaleDateString('pt-BR'),
-      priority: draft.priority,
-      requester: { ...requester, kind: 'Solicitante' },
-      assignee: { ...assignee, kind: 'Responsável' },
-      participants,
-      ...(requirement ? { parentId: requirement.id } : {}),
-      relatedIds,
-      comments: [],
-      objective: draft.objective.trim(),
-      dueDate: draft.dueDate,
+      id: newId, title: draft.title.trim(), description: draft.description.trim(), type: recordType, status: 'Pendente',
+      context: draft.context.trim() || 'Contexto a completar', solution: solution?.name ?? 'A definir',
+      ...(solution ? { solutionId: solution.id } : {}), version: version?.label ?? 'A definir', ...(version ? { versionId: version.id } : {}),
+      date: new Date().toLocaleDateString('pt-BR'), priority: draft.priority, requester: { ...requester, kind: 'Solicitante' }, assignee: { ...assignee, kind: 'Responsável' }, participants,
+      ...(requirement && type !== 'demanda' ? { parentId: requirement.id } : {}), relatedIds: [...relatedIds], comments: [], objective: draft.objective.trim(), dueDate: draft.dueDate
     };
-
-    this.records.update(items => items.map(item => {
-      if (requirement && item.id === requirement.id) {
-        return { ...item, relatedIds: Array.from(new Set([...item.relatedIds, id])) };
-      }
-      if (versionRecord && item.id === versionRecord.id) {
-        return { ...item, relatedIds: Array.from(new Set([...item.relatedIds, id])) };
-      }
-      return item;
-    }).concat(record));
-
-    this.persist();
-    this.closeWizard();
-    this.select(record);
-    this.flash(`${record.id} criado e relacionado ao contexto selecionado.`);
+    this.records.update(items => {
+      const updated = items.map(item => requirement && item.id === requirement.id ? { ...item, relatedIds: Array.from(new Set([...item.relatedIds, newId])) } : version && item.id === version.id ? { ...item, relatedIds: Array.from(new Set([...item.relatedIds, newId])) } : item);
+      return [record, ...updated];
+    });
+    this.persist(); this.closeWizard(); this.select(record); this.flash(record.id + ' criado e contexto preservado.');
   }
 
   private findPerson(name: string) {
