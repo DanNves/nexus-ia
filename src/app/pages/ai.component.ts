@@ -1,7 +1,8 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NexusStore } from '../services/nexus.store';
 import { NxIconComponent } from '../shared/icon.component';
+import { FormsModule } from '@angular/forms';
 import { NexusRecord } from '../models/nexus.models';
 
 @Component({
@@ -12,6 +13,7 @@ import { NexusRecord } from '../models/nexus.models';
 })
 export class AiComponent {
   readonly store = inject(NexusStore);
+  readonly humanNote = signal('');
   humanNote = '';
   validationError = '';
 
