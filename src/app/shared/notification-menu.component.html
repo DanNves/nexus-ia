@@ -1,7 +1,7 @@
         <div class="notification-wrap nexus-notification-wrap">
           <button class="icon-btn nexus-action-btn notify"
-                  [class.active]="notificationOpen"
-                  (click)="notificationOpen=!notificationOpen; userOpen=false"
+                  [class.active]="open()"
+                  (click)="open()=!open(); userOpen=false"
                   title="Notificações" aria-label="Notificações">
             <nx-icon name="bell" [size]="18"/>
             @if (store.pendingNotifications() > 0) { <i>{{ store.pendingNotifications() > 9 ? '9+' : store.pendingNotifications() }}</i> }
