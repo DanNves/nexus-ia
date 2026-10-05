@@ -3,6 +3,8 @@ export type RecordType = 'Demanda' | 'Atividade' | 'Requisito' | 'Solução' | '
 export type Status = 'Pendente' | 'Em análise' | 'Em desenvolvimento' | 'Em validação' | 'Concluído';
 export type Priority = 'Alta' | 'Média' | 'Baixa' | 'Normal';
 export type AiValidationStatus = 'pending' | 'approved' | 'rejected';
+export interface Solution { id: string; name: string; description: string; }
+export interface SolutionVersion { id: string; solutionId: string; version: string; title: string; status: Status; publishedAt: string; }
 export type WizardType = 'demanda' | 'atividade' | 'chamado';
 export type PersonKind = 'Solicitante' | 'Responsável' | 'Participante';
 
@@ -72,6 +74,9 @@ export interface WizardDraft {
   context: string;
   solution: string;
   version: string;
+  solutionId: string;
+  versionId: string;
+  requirementId: string;
   priority: Priority;
   objective: string;
   dueDate: string;
