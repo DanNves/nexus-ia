@@ -3,7 +3,7 @@
       <aside #drawerDialog class="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title" (click)="$event.stopPropagation()" (keydown)="trapFocus($event, drawerDialog)">
         <header class="drawer-head">
           <div><span class="eyebrow">{{ item.type.toUpperCase() }} · {{ item.id }}</span><h2 id="drawer-title">{{ item.title }}</h2><p>{{ item.description }}</p></div>
-          <button class="close-btn" (click)="closeDetail()" aria-label="Fechar detalhes" title="Fechar detalhes"><nx-icon name="close"/></button>
+          <button class="close-btn" (click)="close()" aria-label="Fechar detalhes" title="Fechar detalhes"><nx-icon name="close"/></button>
         </header>
 
         <div class="context-strip">
