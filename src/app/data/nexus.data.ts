@@ -23,6 +23,17 @@ export const versions: VersionEntity[] = [
 export const currentUser: Person = { name: 'Tester', role: 'Usuário', kind: 'Responsável' };
 
 
+
+export const solutions = [
+  { id:'SOL-001', name:'Portal de Atendimento', description:'Solução principal de atendimento e acesso.' },
+  { id:'SOL-002', name:'Dashboard de Relatórios', description:'Solução de relatórios e indicadores de atendimento.' }
+] as const;
+
+export const solutionVersions = [
+  { id:'VER-120', solutionId:'SOL-001', version:'v1.2.0', title:'Portal de Atendimento · v1.2.0', status:'Concluído' as const, publishedAt:'25/09/2026' },
+  { id:'VER-210', solutionId:'SOL-002', version:'v2.1.0', title:'Dashboard de Relatórios · v2.1.0', status:'Concluído' as const, publishedAt:'22/09/2026' }
+] as const;
+
 export const seedRecords: NexusRecord[] = [
   { id:'DEM-012', title:'Implementar autenticação de dois fatores', description:'Adicionar segundo fator ao acesso dos usuários.', type:'Demanda', status:'Em desenvolvimento', context:'Contexto completo', solution:'Portal de Atendimento', version:'v1.2.0', date:'18/09/2026', priority:'Alta', requester:people.marina, assignee:people.joao, participants:[people.carlos,people.rafael], relatedIds:['REQ-014','VER-120','CH-028'], comments:[{id:'c1',author:'Marina Costa',text:'Precisamos reduzir os chamados de acesso sem comprometer a segurança.',date:'18/09/2026 09:10'},{id:'c2',author:'João Silva',text:'Demanda assumida. Estou trabalhando na implementação.',date:'18/09/2026 11:32'}], objective:'Permitir autenticação adicional para usuários do portal.' },
   { id:'DEM-011', title:'Melhorar navegação do dashboard', description:'Simplificar a navegação e reduzir etapas para as principais tarefas.', type:'Demanda', status:'Em validação', context:'Contexto completo', solution:'Portal de Atendimento', version:'v1.2.0', date:'17/09/2026', priority:'Média', requester:people.marina, assignee:people.carlos, participants:[people.joao], relatedIds:['REQ-015','VER-120'], comments:[{id:'c3',author:'Carlos Lima',text:'Fluxo revisado com a equipe. Aguardando validação do solicitante.',date:'20/09/2026 14:20'}], objective:'Reduzir o número de etapas para acessar as funções principais.' },
