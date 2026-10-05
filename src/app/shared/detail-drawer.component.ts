@@ -20,6 +20,16 @@ export class DetailDrawerComponent {
   aiValidationError='';
   readonly item=computed(()=>this.store.selected());
 
+  trapFocus(event: KeyboardEvent, container: HTMLElement) {
+    if (event.key !== 'Tab') return;
+    const focusable = Array.from(container.querySelectorAll<HTMLElement>('button:not([disabled]), a[href], input:not([disabled]), textarea:not([disabled]), select:not([disabled])')).filter(element => element.offsetParent !== null);
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (!first || !last) return;
+    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+    else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+  }
   close(){ this.closed.emit(); }
   addComment(){ const item=this.store.selected(); if(!item||!this.commentText.trim())return; this.store.addComment(item.id,this.commentText); this.commentText=''; }
   analyzeAi(){ const item=this.store.selected(); if(item?.type==='Chamado')this.store.analyzeAi(item.id); }
