@@ -12,7 +12,7 @@
         "build": {
           "builder": "@angular/build:application",
           "options": {
-            "browser": "src/main.ts",
+            "browser": "src/app/main.ts",
             "index": "src/index.html",
             "polyfills": [],
             "tsConfig": "src/tsconfig.app.json",
