@@ -1,29 +1,13 @@
 {
+  "extends": "./tsconfig.json",
   "compilerOptions": {
-    "target": "ES2022",
-    "module": "ES2022",
-    "moduleResolution": "bundler",
-    "useDefineForClassFields": true,
-    "lib": ["ES2022", "DOM"],
-    "skipLibCheck": true,
-    "strict": true,
-    "noImplicitOverride": true,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-    "noPropertyAccessFromIndexSignature": true,
-    "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true,
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
-    "noEmit": true
+    "outDir": "./out-tsc/app",
+    "types": []
   },
-  "angularCompilerOptions": {
-    "strictTemplates": true,
-    "strictInjectionParameters": true,
-    "strictInputAccessModifiers": true,
-    "strictStandalone": true,
-    "compilationMode": "full"
-  },
-  "files": ["src/app/main.ts"],
-  "include": ["src/app/**/*.ts"]
+  "files": [
+    "src/main.ts"
+  ],
+  "include": [
+    "src/**/*.d.ts"
+  ]
 }
