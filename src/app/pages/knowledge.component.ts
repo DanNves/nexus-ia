@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { NexusStore } from '../services/nexus.store';
 import { NxIconComponent } from '../shared/icon.component';
 import { NexusRecord } from '../models/nexus.models';
@@ -8,17 +8,18 @@ import { NexusRecord } from '../models/nexus.models';
   standalone: true,
   imports: [NxIconComponent],
   templateUrl: './knowledge.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class KnowledgeComponent {
   readonly store = inject(NexusStore);
-  filter = 'Todos';
+  readonly filter = signal('Todos');
 
   readonly items = computed(() => {
     const query = this.store.search().trim().toLowerCase();
     return this.store.knowledgeRecords()
       .filter(item => {
-        if (this.filter === 'Mais reutilizados') return (item.reuseCount ?? 0) > 0;
-        if (this.filter === 'Originados de chamados') return Boolean(item.sourceTicketId);
+        if (this.filter() === 'Mais reutilizados' return (item.reuseCount ?? 0) > 0;
+        if (this.filter() === 'Originados de chamados') return Boolean(item.sourceTicketId);
         return true;
       })
       .filter(item => !query || [
@@ -36,7 +37,7 @@ export class KnowledgeComponent {
   readonly originCount = computed(() => this.store.knowledgeRecords().filter(item => item.sourceTicketId || item.relatedIds.some(id => id.startsWith('CH-'))).length);
 
   setFilter(value: string) {
-    this.filter = value;
+    this.filter.set(value);
   }
 
   open(item: NexusRecord) {
