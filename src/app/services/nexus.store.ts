@@ -13,8 +13,7 @@ export class NexusStore {
   readonly feedback = signal<string | null>(null);
   readonly solutions = solutions;
   readonly versions = versions;
-  readonly solutions = solutions;
-  readonly versions = versions;
+  private readonly storageVersion = 2;
 
   readonly openTickets = computed(() => this.records().filter(r => r.type === 'Chamado' && r.status !== 'Concluído').length);
   readonly activeDemands = computed(() => this.records().filter(r => r.type === 'Demanda' && r.status === 'Em desenvolvimento').length);
@@ -96,7 +95,7 @@ export class NexusStore {
 
   private persist() {
     try {
-      localStorage.setItem(this.storageKey, JSON.stringify(this.records()));
+      localStorage.setItem(this.storageKey, JSON.stringify({ version: this.storageVersion, records: this.records() }));
       localStorage.removeItem(this.legacyStorageKey);
     } catch {
       this.flash('Não foi possível persistir os dados locais do MVP.');
