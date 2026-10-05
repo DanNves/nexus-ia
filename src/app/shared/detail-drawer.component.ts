@@ -1,4 +1,4 @@
-import { Component, computed, inject, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NexusStore } from '../services/nexus.store';
 import { NxIconComponent } from './icon.component';
@@ -9,6 +9,7 @@ import { NexusRecord } from '../models/nexus.models';
   standalone: true,
   imports: [FormsModule, NxIconComponent],
   templateUrl: './detail-drawer.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DetailDrawerComponent {
   readonly store=inject(NexusStore);
