@@ -15,7 +15,6 @@ import { RECORD_UI } from '../shared/nexus-ui.config';
 export class ModuleComponent {
   readonly store = inject(NexusStore);
   private readonly route = inject(ActivatedRoute);
-  view: View = 'Demandas';
   readonly view = signal<View>('Demandas');
   readonly filter = signal('Todos');
 
