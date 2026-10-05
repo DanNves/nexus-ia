@@ -22,6 +22,17 @@ export const versions: VersionEntity[] = [
 
 export const currentUser: Person = { ...people.ana, kind: 'Responsável' };
 
+
+export const solutions: SolutionEntity[] = [
+  { id: 'SOL-001', name: 'Portal de Atendimento', description: 'Portal usado para atendimento, autenticação e acompanhamento de solicitações.' },
+  { id: 'SOL-002', name: 'Dashboard de Relatórios', description: 'Solução de relatórios e indicadores de atendimento.' },
+];
+
+export const versions: VersionEntity[] = [
+  { id: 'VER-120', solutionId: 'SOL-001', label: 'v1.2.0', description: 'Versão publicada com autenticação, recuperação de acesso e notificações.', status: 'Publicada' },
+  { id: 'VER-210', solutionId: 'SOL-002', label: 'v2.1.0', description: 'Versão publicada com novo relatório de atendimento e indicadores.', status: 'Publicada' },
+];
+
 export const seedRecords: NexusRecord[] = [
   { id:'DEM-012', title:'Implementar autenticação de dois fatores', description:'Adicionar segundo fator ao acesso dos usuários.', type:'Demanda', status:'Em desenvolvimento', context:'Contexto completo', solution:'Portal de Atendimento', version:'v1.2.0', date:'18/09/2026', priority:'Alta', requester:people.marina, assignee:people.joao, participants:[people.carlos,people.rafael], relatedIds:['REQ-014','VER-120','CH-028'], comments:[{id:'c1',author:'Marina Costa',text:'Precisamos reduzir os chamados de acesso sem comprometer a segurança.',date:'18/09/2026 09:10'},{id:'c2',author:'João Silva',text:'Demanda assumida. Estou trabalhando na implementação.',date:'18/09/2026 11:32'}], objective:'Permitir autenticação adicional para usuários do portal.' },
   { id:'DEM-011', title:'Melhorar navegação do dashboard', description:'Simplificar a navegação e reduzir etapas para as principais tarefas.', type:'Demanda', status:'Em validação', context:'Contexto completo', solution:'Portal de Atendimento', version:'v1.2.0', date:'17/09/2026', priority:'Média', requester:people.marina, assignee:people.carlos, participants:[people.joao], relatedIds:['REQ-015','VER-120'], comments:[{id:'c3',author:'Carlos Lima',text:'Fluxo revisado com a equipe. Aguardando validação do solicitante.',date:'20/09/2026 14:20'}], objective:'Reduzir o número de etapas para acessar as funções principais.' },
