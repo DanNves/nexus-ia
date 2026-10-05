@@ -7,7 +7,7 @@ export type WizardType = 'demanda' | 'atividade' | 'chamado';
 export type PersonKind = 'Solicitante' | 'Responsável' | 'Participante';
 
 export interface SolutionEntity { id: string; name: string; description: string; }
-export interface VersionEntity { id: string; solutionId: string; label: string; description: string; status: 'Publicada' | 'Em desenvolvimento'; }
+export interface VersionEntity { id: string; solutionId: string; version: string; label: string; status: 'Publicado' | 'Em desenvolvimento'; }
 
 export interface Person { name: string; role: string; kind: PersonKind; }
 export interface SolutionEntity { id: string; name: string; description: string; }
