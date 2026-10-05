@@ -14,6 +14,8 @@
              [routerLink]="item[1]"
              routerLinkActive="active"
              [routerLinkActiveOptions]="{exact: item[1] === '/dashboard'}"
+             [attr.title]="item[0]"
+             [attr.aria-label]="item[0]"
              (click)="mobileOpen=false">
             <nx-icon [name]="item[2]" [size]="16"/>
             <span>{{ item[0] }}</span>
@@ -61,7 +63,8 @@
           </button>
           @if (userOpen) {
             <div class="user-menu">
-              <strong>Tester</strong>
+              <strong>{{ currentUser.name }}</strong>
+              <button (click)="navigate('/indicadores')"><nx-icon name="chart" [size]="14"/> Indicadores</button>
               <button (click)="navigate('/configuracoes')"><nx-icon name="settings" [size]="14"/> Configurações</button>
             </div>
           }
@@ -104,14 +107,14 @@
 
   @if (searchOpen) {
     <div class="overlay search-overlay" (click)="closeSearch()">
-      <section class="search-dialog" (click)="$event.stopPropagation()">
-        <header><div><span class="section-kicker">BUSCA GLOBAL</span><h2>Encontre qualquer contexto</h2></div><button class="close-btn" (click)="closeSearch()"><nx-icon name="close"/></button></header>
-        <div class="search-input"><nx-icon name="search"/><input autofocus [(ngModel)]="globalQuery" placeholder="Digite código, título, solução, versão..."><kbd>ESC</kbd></div>
+      <section #searchDialog class="search-dialog" role="dialog" aria-modal="true" aria-labelledby="search-dialog-title" (click)="$event.stopPropagation()" (keydown)="trapFocus($event, searchDialog)">
+        <header><div><span class="section-kicker">BUSCA GLOBAL</span><h2 id="search-dialog-title">Encontre qualquer contexto</h2></div><button class="close-btn" (click)="closeSearch()" aria-label="Fechar pesquisa" title="Fechar pesquisa"><nx-icon name="close"/></button></header>
+        <div class="search-input"><nx-icon name="search"/><input #searchInput [ngModel]="globalQuery()" (ngModelChange)="globalQuery.set($event)" placeholder="Digite código, título, solução, versão..." aria-label="Pesquisar no contexto"><kbd>ESC</kbd></div>
         <div class="search-results">
-          @if (!globalQuery.trim()) { <div class="search-empty"><nx-icon name="search" [size]="24"/><span>Pesquise demandas, requisitos, versões, chamados e conhecimentos.</span></div> }
+          @if (!globalQuery().trim()) { <div class="search-empty"><nx-icon name="search" [size]="24"/><span>Pesquise demandas, requisitos, versões, chamados e conhecimentos.</span></div> }
           @for (item of searchResults(); track item.id) { <button (click)="openRecord(item)"><span class="row-icon blue"><nx-icon [name]="item.type === 'Chamado' ? 'ticket' : item.type === 'Conhecimento' ? 'knowledge' : item.type === 'Requisito' ? 'requirement' : 'demand'"/></span><span><strong>{{ item.id }} · {{ item.title }}</strong><small>{{ item.type }} · {{ item.solution }} · {{ item.version }}</small></span><nx-icon name="arrow" [size]="14"/></button> }
           @empty {
-            @if (globalQuery.trim()) { <div class="search-empty"><nx-icon name="search" [size]="24"/><span>Nenhum registro encontrado para “{{ globalQuery }}”.</span></div> }
+            @if (globalQuery().trim()) { <div class="search-empty"><nx-icon name="search" [size]="24"/><span>Nenhum registro encontrado para “{{ globalQuery() }}”.</span></div> }
           }
         </div>
       </section>
@@ -119,11 +122,11 @@
   }
 
   @if (store.selected(); as item) {
-    <div class="overlay" (click)="store.closeDetail()">
-      <aside class="drawer" (click)="$event.stopPropagation()">
+    <div class="overlay" (click)="closeDetail()">
+      <aside #drawerDialog class="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title" (click)="$event.stopPropagation()" (keydown)="trapFocus($event, drawerDialog)">
         <header class="drawer-head">
-          <div><span class="eyebrow">{{ item.type.toUpperCase() }} · {{ item.id }}</span><h2>{{ item.title }}</h2><p>{{ item.description }}</p></div>
-          <button class="close-btn" (click)="store.closeDetail()"><nx-icon name="close"/></button>
+          <div><span class="eyebrow">{{ item.type.toUpperCase() }} · {{ item.id }}</span><h2 id="drawer-title">{{ item.title }}</h2><p>{{ item.description }}</p></div>
+          <button class="close-btn" (click)="closeDetail()" aria-label="Fechar detalhes" title="Fechar detalhes"><nx-icon name="close"/></button>
         </header>
 
         <div class="context-strip">
@@ -207,7 +210,7 @@
                     <strong>{{ item.aiExistingKnowledgeId }}</strong>
                   </div>
                   <p>A IA encontrou uma solução/conhecimento anterior compatível, anexou a referência ao chamado e a considerou na resolução sugerida.</p>
-                  <button class="relation-chip" (click)="openRelated($any(item.aiExistingKnowledgeId))"><nx-icon name="link" [size]="12"/> Abrir {{ item.aiExistingKnowledgeId }}</button>
+                  <button class="relation-chip" (click)="openRelated(item.aiExistingKnowledgeId)"><nx-icon name="link" [size]="12"/> Abrir {{ item.aiExistingKnowledgeId }}</button>
                 </div>
               }
 
@@ -306,11 +309,11 @@
   }
 
   @if (store.wizard(); as wizard) {
-    <div class="overlay" (click)="closeWizard()">
-      <section class="wizard" (click)="$event.stopPropagation()">
+    <div class="overlay" (click)="closeWizard(true)">
+      <section #wizardDialog class="wizard" role="dialog" aria-modal="true" aria-labelledby="wizard-title" (click)="$event.stopPropagation()" (keydown)="trapFocus($event, wizardDialog)">
         <header class="wizard-head">
-          <div><span class="eyebrow">{{ wizard === 'demanda' ? 'NOVA DEMANDA' : wizard === 'atividade' ? 'NOVA ATIVIDADE' : 'NOVO CHAMADO' }}</span><h2>Registrar {{ wizard === 'demanda' ? 'uma nova demanda' : wizard === 'atividade' ? 'uma nova atividade' : 'um novo chamado' }}</h2><p>O registro é salvo a cada etapa. Se fechar agora, o rascunho poderá ser retomado.</p></div>
-          <button class="close-btn" (click)="closeWizard()"><nx-icon name="close"/></button>
+          <div><span class="eyebrow">{{ wizard === 'demanda' ? 'NOVA DEMANDA' : wizard === 'atividade' ? 'NOVA ATIVIDADE' : 'NOVO CHAMADO' }}</span><h2 id="wizard-title">Registrar {{ wizard === 'demanda' ? 'uma nova demanda' : wizard === 'atividade' ? 'uma nova atividade' : 'um novo chamado' }}</h2><p>O registro é salvo a cada etapa. Se fechar agora, o rascunho poderá ser retomado.</p></div>
+          <button class="close-btn" (click)="closeWizard(true)" aria-label="Fechar formulário" title="Fechar formulário"><nx-icon name="close"/></button>
         </header>
 
         <div class="stepper">@for (step of [1,2,3,4,5]; track step){<div [class.active]="wizardStep === step" [class.done]="wizardStep > step"><span>{{ step }}</span><small>{{ ['Identificação','Pessoas','Contexto','Objetivo','Revisão'][step-1] }}</small></div>@if(step < 5){<i></i>}}</div>
