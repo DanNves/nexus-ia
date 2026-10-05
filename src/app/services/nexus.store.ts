@@ -141,6 +141,7 @@ export class NexusStore {
     this.search.set('');
     localStorage.removeItem(this.storageKey);
     for (const key of this.previousStorageKeys) localStorage.removeItem(key);
+    localStorage.removeItem('nexus-angular-records');
     localStorage.removeItem('nexus-angular-demanda-draft');
     localStorage.removeItem('nexus-angular-atividade-draft');
     localStorage.removeItem('nexus-angular-chamado-draft');
@@ -567,6 +568,19 @@ export class NexusStore {
       return false;
     }
 
+    const allowed: Record<NexusRecord['type'], Status[]> = {
+      Demanda: ['Pendente','Em desenvolvimento','Em validação','Concluído'],
+      Atividade: ['Pendente','Em desenvolvimento','Em validação','Concluído'],
+      Requisito: ['Pendente','Em análise','Em validação','Concluído'],
+      Solução: ['Pendente','Em desenvolvimento','Em validação','Concluído'],
+      Versão: ['Pendente','Em desenvolvimento','Em validação','Concluído'],
+      Chamado: ['Pendente','Em análise','Em validação','Concluído'],
+      Conhecimento: ['Em validação','Concluído']
+    };
+    if (!allowed[record.type].includes(status)) {
+      this.flash(`O status “${status}” não é válido para ${record.type}.`);
+      return false;
+    }
     if (record.type === 'Chamado' && status === 'Concluído' && record.aiStatus !== 'approved') {
       this.flash('O chamado só pode ser concluído após a validação humana da sugestão da IA.');
       this.syncSelected(id);
