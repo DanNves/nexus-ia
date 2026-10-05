@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { Component, ElementRef, HostListener, ViewChild, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { NexusStore } from './services/nexus.store';
@@ -24,7 +24,13 @@ export class AppComponent {
   userOpen = false;
   searchOpen = false;
   notificationOpen = false;
-  globalQuery = '';
+  readonly globalQuery = signal('');
+  private returnFocusElement: HTMLElement | null = null;
+  private selectedFocusId = '';
+
+  @ViewChild('searchDialog') private searchDialog?: ElementRef<HTMLElement>;
+  @ViewChild('searchInput') private searchInput?: ElementRef<HTMLInputElement>;
+  @ViewChild('wizardDialog') private wizardDialog?: ElementRef<HTMLElement>;
   commentText = '';
   wizardStep = 1;
   readonly saved = signal(false);
@@ -50,6 +56,11 @@ export class AppComponent {
 
     effect(() => {
       const selected = this.store.selected();
+      if (selected && selected.id !== this.selectedFocusId) {
+        this.selectedFocusId = selected.id;
+        if (!this.returnFocusElement) this.rememberFocus();
+        window.setTimeout(() => this.focusDrawer(), 0);
+      }
       if (selected?.type === 'Chamado' && selected.id !== this.validationTicketId) {
         this.validationTicketId = selected.id;
         this.aiHumanNote = '';
@@ -67,19 +78,16 @@ export class AppComponent {
     ['Chamados','/chamados','ticket'],
     ['IA','/ia','spark'],
     ['Conhecimento','/conhecimento','knowledge'],
-    ['Indicadores','/indicadores','chart'],
-    ['Configurações','/configuracoes','settings'],
   ] as const;
 
   readonly mobileSections = [
     { label: 'Operação', items: this.navItems.slice(0, 2) },
     { label: 'Desenvolvimento', items: this.navItems.slice(2, 5) },
     { label: 'Suporte e inteligência', items: this.navItems.slice(5, 8) },
-    { label: 'Gestão', items: this.navItems.slice(8) },
   ] as const;
 
   readonly searchResults = computed(() => {
-    const q = this.globalQuery.trim().toLowerCase();
+    const q = this.globalQuery().trim().toLowerCase();
     if (!q) return [];
     return this.store.records()
       .filter(r => [r.id,r.title,r.description,r.solution,r.version].join(' ').toLowerCase().includes(q))
@@ -98,20 +106,28 @@ export class AppComponent {
   }
 
   openSearch() {
+    this.rememberFocus();
     this.notificationOpen = false;
+    this.userOpen = false;
     this.searchOpen = true;
-    this.globalQuery = '';
+    this.globalQuery.set('');
+    window.setTimeout(() => this.searchInput?.nativeElement.focus(), 0);
   }
 
-  closeSearch() { this.searchOpen = false; this.globalQuery = ''; }
+  closeSearch(restoreFocus = true) {
+    this.searchOpen = false;
+    this.globalQuery.set('');
+    if (restoreFocus) this.restoreFocus();
+  }
 
   openRecord(item: NexusRecord) {
     this.store.select(item);
-    this.closeSearch();
+    this.closeSearch(false);
     this.notificationOpen = false;
   }
 
   openWizard(type: 'demanda'|'atividade'|'chamado') {
+    this.rememberFocus();
     this.notificationOpen = false;
     const key = this.draftKey(type);
     const savedDraft = this.readDraft(key);
@@ -121,11 +137,14 @@ export class AppComponent {
     this.wizardError = '';
     this.store.openWizard(type);
     this.mobileOpen = false;
+    window.setTimeout(() => this.wizardDialog?.nativeElement.querySelector<HTMLElement>('input, textarea, select, button')?.focus(), 0);
   }
 
-  closeWizard() {
+  closeWizard(saveDraft = true) {
+    if (saveDraft && this.store.wizard()) this.saveDraft();
     this.store.closeWizard();
     this.wizardError = '';
+    this.restoreFocus();
   }
 
   nextStep() {
@@ -228,6 +247,67 @@ export class AppComponent {
 
   openRelated(id: string) {
     this.store.selectById(id);
+  }
+
+  closeDetail() {
+    this.store.closeDetail();
+    this.selectedFocusId = '';
+    this.restoreFocus();
+  }
+
+  @HostListener('document:keydown', ['$event'])
+  onDocumentKeydown(event: KeyboardEvent) {
+    if (event.key === 'Escape') {
+      if (this.store.wizard()) {
+        event.preventDefault();
+        this.closeWizard(true);
+      } else if (this.store.selected()) {
+        event.preventDefault();
+        this.closeDetail();
+      } else if (this.searchOpen) {
+        event.preventDefault();
+        this.closeSearch();
+      } else if (this.notificationOpen || this.userOpen || this.mobileOpen) {
+        event.preventDefault();
+        this.notificationOpen = false;
+        this.userOpen = false;
+        this.mobileOpen = false;
+      }
+    }
+  }
+
+  trapFocus(event: KeyboardEvent, container: HTMLElement) {
+    if (event.key !== 'Tab') return;
+    const focusable = Array.from(container.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), a[href], input:not([disabled]), textarea:not([disabled]), select:not([disabled])'
+    )).filter(element => element.offsetParent !== null);
+    if (!focusable.length) return;
+
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
+
+  private rememberFocus() {
+    const active = document.activeElement;
+    this.returnFocusElement = active instanceof HTMLElement ? active : null;
+  }
+
+  private restoreFocus() {
+    const target = this.returnFocusElement;
+    this.returnFocusElement = null;
+    window.setTimeout(() => target?.focus(), 0);
+  }
+
+  private focusDrawer() {
+    const drawer = document.querySelector<HTMLElement>('.drawer');
+    drawer?.querySelector<HTMLElement>('button.close-btn')?.focus();
   }
 
   private draftKey(type: 'demanda'|'atividade'|'chamado') {
