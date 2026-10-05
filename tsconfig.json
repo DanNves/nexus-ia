@@ -27,8 +27,7 @@
     "strictStandalone": true,
     "compilationMode": "full"
   },
-  "include": [
-    "src/main.ts",
-    "src/app/**/*.ts"
+  "files": [
+    "src/main.ts"
   ]
 }
