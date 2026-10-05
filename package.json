@@ -29,5 +29,6 @@
   },
   "engines": {
     "node": ">=22.22.3"
-  }
+  },
+  "description": "NEXUS — Conexão de contexto entre desenvolvimento e suporte"
 }
