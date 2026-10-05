@@ -164,7 +164,11 @@ export class NexusStore {
       ...(requirement && type !== 'demanda' ? { parentId: requirement.id } : {}), relatedIds: [...relatedIds], comments: [], objective: draft.objective.trim(), dueDate: draft.dueDate
     };
     this.records.update(items => {
-      const updated = items.map(item => requirement && item.id === requirement.id ? { ...item, relatedIds: Array.from(new Set([...item.relatedIds, newId])) } : version && item.id === version.id ? { ...item, relatedIds: Array.from(new Set([...item.relatedIds, newId])) } : item);
+      const updated = items.map(item => requirement && item.id === requirement.id
+        ? { ...item, ...(type === 'demanda' ? { parentId: undefined } : {}), relatedIds: Array.from(new Set([...item.relatedIds, newId])) }
+        : version && item.id === version.id
+          ? { ...item, relatedIds: Array.from(new Set([...item.relatedIds, newId])) }
+          : item);
       return [record, ...updated];
     });
     this.persist(); this.closeWizard(); this.select(record); this.flash(record.id + ' criado e contexto preservado.');
