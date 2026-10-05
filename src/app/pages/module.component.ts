@@ -80,6 +80,7 @@ export class ModuleComponent {
   setFilter(value: string) { this.filter.set(value); }
 
   ui(record: NexusRecord) { return RECORD_UI[record.type]; }
+  onSearchInput(event: Event) { this.store.setSearch((event.target as HTMLInputElement).value); }
 
   confirmReset() {
     if (window.confirm('Restaurar os dados de demonstração apagará alterações locais e rascunhos deste navegador. Deseja continuar?')) {
