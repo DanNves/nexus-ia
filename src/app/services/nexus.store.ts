@@ -155,7 +155,7 @@ export class NexusStore {
     const assignee = this.findPerson(draft.assignee) ?? team.find(person => person.role === 'Analista de Sistemas') ?? requester;
     const participantNames = draft.participants.split(',').map(name => name.trim()).filter(Boolean);
     const participants = participantNames.map(name => this.findPerson(name)).filter((person): person is Person => Boolean(person)).map(person => ({ ...person, kind: 'Participante' as const }));
-    const solution = solutions.find(item => item.id === draft.solution);
+    const solution = solutions.find(item => item.id === draft.solutionId);
     const version = versions.find(item => item.id === draft.versionId && item.solutionId === solution?.id);
     const requirement = this.records().find(item => item.id === draft.requirementId && item.type === 'Requisito');
     const newId = prefix + '-' + String(maxId + 1).padStart(3, '0');
@@ -168,7 +168,7 @@ export class NexusStore {
       context: draft.context.trim() || 'Contexto a completar', solution: solution?.name ?? 'A definir',
       ...(solution ? { solutionId: solution.id } : {}), version: version?.version ?? 'A definir', ...(version ? { versionId: version.id } : {}),
       date: new Date().toLocaleDateString('pt-BR'), priority: draft.priority, requester: { ...requester, kind: 'Solicitante' }, assignee: { ...assignee, kind: 'Responsável' }, participants,
-      ...(requirement && type !== 'demanda' ? { parentId: requirement.id } : {}), relatedIds: [...relatedIds], comments: [], objective: draft.objective.trim(), dueDate: draft.dueDate
+      ...(requirement ? { parentId: requirement.id } : {}), relatedIds: [...relatedIds], comments: [], objective: draft.objective.trim(), dueDate: draft.dueDate
     };
     this.records.update(items => {
       const updated = items.map(item => requirement && item.id === requirement.id
