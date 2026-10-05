@@ -1,4 +1,4 @@
-import { Component, inject, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
 import { NexusStore } from '../services/nexus.store';
 import { NxIconComponent } from './icon.component';
 import { NexusRecord } from '../models/nexus.models';
@@ -8,6 +8,7 @@ import { NexusRecord } from '../models/nexus.models';
   standalone: true,
   imports: [NxIconComponent],
   templateUrl: './notification-menu.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class NotificationMenuComponent {
   readonly store=inject(NexusStore);
