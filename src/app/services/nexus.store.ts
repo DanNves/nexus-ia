@@ -129,7 +129,6 @@ export class NexusStore {
   closeDetail() { this.selected.set(null); }
 
   resetDemoData() {
-    if (!window.confirm('Restaurar os dados de demonstração? Os dados locais criados ou alterados serão substituídos pelo estado inicial do TCC.')) return;
     const fresh = seedRecords.map(record => this.normalize(record));
     this.records.set(fresh);
     this.selected.set(null);
@@ -530,22 +529,35 @@ export class NexusStore {
     this.flash(`${knowledge.id} registrado. O contexto agora pode ser reutilizado.`);
   }
 
+  validStatusesFor(record: NexusRecord): Status[] {
+    switch (record.type) {
+      case 'Chamado':
+        return ['Pendente', 'Em análise', 'Em validação', 'Concluído'];
+      case 'Conhecimento':
+        return ['Em validação', 'Concluído'];
+      case 'Solução':
+      case 'Versão':
+        return ['Em desenvolvimento', 'Em validação', 'Concluído'];
+      case 'Requisito':
+        return ['Pendente', 'Em desenvolvimento', 'Em validação', 'Concluído'];
+      default:
+        return ['Pendente', 'Em desenvolvimento', 'Em validação', 'Concluído'];
+    }
+  }
+
+  canChangeStatus(record: NexusRecord, status: Status): boolean {
+    if (!this.validStatusesFor(record).includes(status)) return false;
+    if (record.type === 'Chamado' && status === 'Concluído' && record.aiStatus !== 'approved') return false;
+    return true;
+  }
+
   changeStatus(id: string, status: Status): boolean {
     const record = this.records().find(item => item.id === id);
     if (!record) return false;
 
-    const allowed: Record<string, Status[]> = {
-      Demanda: ['Pendente', 'Em desenvolvimento', 'Em validação', 'Concluído'],
-      Atividade: ['Pendente', 'Em desenvolvimento', 'Em validação', 'Concluído'],
-      Requisito: ['Pendente', 'Em validação', 'Concluído'],
-      Solução: ['Em desenvolvimento', 'Em validação', 'Concluído'],
-      Versão: ['Em desenvolvimento', 'Em validação', 'Concluído'],
-      Chamado: ['Pendente', 'Em análise', 'Em validação', 'Concluído'],
-      Conhecimento: ['Em validação', 'Concluído']
-    };
-
-    if (!allowed[record.type]?.includes(status)) {
-      this.flash(`O status “${status}” não é válido para ${record.type}.`);
+    if (!this.validStatusesFor(record).includes(status)) {
+      this.flash(`O status “${status}” não é válido para ${record.type.toLowerCase()}.`);
+      this.syncSelected(id);
       return false;
     }
 
