@@ -41,11 +41,11 @@
 
   <section class="panel knowledge-panel">
     <div class="toolbar">
-      <div class="search-box"><nx-icon name="search" [size]="17"/><input [value]="store.search()" (input)="store.setSearch($any($event.target).value)" placeholder="Pesquisar conhecimento, origem, solução ou versão..." aria-label="Pesquisar conhecimento"></div>
+      <div class="search-box"><nx-icon name="search" [size]="17"/><input [value]="store.search()" (input)="onSearchInput($event)" placeholder="Pesquisar conhecimento, origem, solução ou versão..." aria-label="Pesquisar conhecimento"></div>
       <div class="knowledge-filter-label"><nx-icon name="filter" [size]="15"/> <span>Exibir</span></div>
       <div class="filters">
         @for (f of ['Todos','Originados de chamados','Mais reutilizados']; track f) {
-          <button [class.active]="filter === f" (click)="setFilter(f)">{{ f }}</button>
+          <button [class.active]="filter() === f" (click)="setFilter(f)">{{ f }}</button>
         }
       </div>
     </div>
