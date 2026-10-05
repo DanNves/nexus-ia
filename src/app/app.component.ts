@@ -285,6 +285,9 @@ export class AppComponent {
       context:'',
       solution:'',
       version:'',
+      solutionId:'',
+      versionId:'',
+      requirementId:'',
       priority:'Média',
       objective:'',
       dueDate:''
