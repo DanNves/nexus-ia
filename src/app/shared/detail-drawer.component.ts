@@ -8,7 +8,6 @@ import { NexusRecord } from '../models/nexus.models';
   selector: 'nx-detail-drawer',
   standalone: true,
   imports: [FormsModule, NxIconComponent],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './detail-drawer.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
