@@ -56,6 +56,10 @@ export class ModuleComponent {
 
   open(item: NexusRecord) { this.store.select(item); }
 
+  resetDemoData() {
+    if (window.confirm('Restaurar os dados de demonstração? As alterações locais do MVP serão substituídas pelos dados iniciais.')) this.store.resetDemoData();
+  }
+
   create() {
     if (this.view === 'Demandas') this.store.openWizard('demanda');
     if (this.view === 'Atividades') this.store.openWizard('atividade');
@@ -79,6 +83,8 @@ export class ModuleComponent {
       this.store.resetDemoData();
     }
   }
+
+  reuseTotal() { return this.store.knowledgeRecords().reduce((total, record) => total + (record.reuseCount ?? 0), 0); }
 
   contextReadyCount() {
     return this.items.filter(r => r.relatedIds.length > 0 && !/parcial|Aguardando/i.test(r.context)).length;
