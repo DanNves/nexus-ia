@@ -1,4 +1,6 @@
 {
+  "files": ["src/main.ts"],
+  "include": ["src/app/**/*.ts"],
   "compilerOptions": {
     "target": "ES2022",
     "module": "ES2022",
