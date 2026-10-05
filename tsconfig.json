@@ -1,12 +1,16 @@
 {
-  "files": ["src/main.ts"],
-  "include": ["src/app/**/*.ts"],
+  "include": [
+    "src/app/**/*.ts"
+  ],
   "compilerOptions": {
     "target": "ES2022",
     "module": "ES2022",
     "moduleResolution": "bundler",
     "useDefineForClassFields": true,
-    "lib": ["ES2022", "DOM"],
+    "lib": [
+      "ES2022",
+      "DOM"
+    ],
     "skipLibCheck": true,
     "strict": true,
     "noImplicitOverride": true,
