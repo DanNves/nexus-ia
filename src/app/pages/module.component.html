@@ -16,6 +16,7 @@
     </div>
   </section>
 
+  @if (view !== 'Indicadores' && view !== 'Configurações') {
   <nav class="module-context-nav" aria-label="Navegação do ciclo NEXUS">
     <div class="module-context-title"><span class="module-context-dot"></span><strong>Ciclo da solução</strong><small>Desenvolvimento → suporte</small></div>
     <div class="module-context-links">
@@ -26,6 +27,7 @@
       <a routerLink="/chamados" routerLinkActive="active">Chamados</a>
     </div>
   </nav>
+  }
 
   @if (view === 'Indicadores') {
     <section class="indicator-grid">
@@ -72,7 +74,7 @@
       <p>O foco é provar a continuidade do contexto: demanda, requisito, versão, chamado, recuperação, sugestão da IA, validação humana e conhecimento. Integração com LLM real, API, banco, autenticação e RAG ficam como evolução arquitetural.</p>
       <div class="settings-reset">
         <div><strong>Restaurar demonstração</strong><span>Apaga apenas os dados locais do MVP e volta aos registros de exemplo do TCC. Use se o navegador estiver com um estado antigo ou inconsistente.</span></div>
-        <button class="btn secondary" (click)="store.resetDemoData()"><nx-icon name="refresh" [size]="14"/> Restaurar dados</button>
+        <button class="btn secondary" (click)="confirmReset()"><nx-icon name="refresh" [size]="14"/> Restaurar dados</button>
       </div>
     </section>
   } @else {
