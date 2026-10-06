@@ -39,29 +39,18 @@ export class ModuleComponent {
     return [...base, 'Pendente', 'Em desenvolvimento', 'Em validação', 'Concluído'];
   });
 
-  statusFilters() {
-    const base = ['Todos'];
-    if (this.view() === 'Chamados') return [...base, 'Pendente', 'Em análise', 'Em validação', 'Concluído'];
-    if (this.view() === 'Requisitos' || this.view() === 'Conhecimento') return [...base, 'Pendente', 'Em validação', 'Concluído'];
-    if (this.view() === 'Soluções e Versões') return [...base, 'Em desenvolvimento', 'Em validação', 'Concluído'];
-    return this.statusOptions();
-  }
-
-  title() { return this.view(); }
-
-  description() {
-    const map: Partial<Record<View,string>> = {
-      Demandas:'Registre necessidades e acompanhe sua transformação em requisitos, versão e suporte.',
-      Atividades:'Organize o trabalho que materializa uma demanda e acompanhe responsáveis.',
-      Requisitos:'Mantenha a especificação vinculada à demanda e à versão da solução.',
-      'Soluções e Versões':'Visualize o que foi publicado e quais informações chegam ao suporte.',
-      Chamados:'Recupere contexto do desenvolvimento, analise o chamado e valide a sugestão da IA.',
-      Conhecimento:'Transforme soluções validadas em conhecimento reutilizável no suporte.',
-      Indicadores:'Acompanhe contexto recuperável, validação humana, chamados e conhecimento.',
-      Configurações:'Visualize as regras e limites funcionais deste MVP.'
-    };
-    return map[this.view()] ?? 'Acompanhe o contexto do ciclo de vida da solução.';
-  }
+  readonly title = computed(() => this.view());
+  readonly description = computed(() => ({
+    Demandas:'Registre necessidades e acompanhe sua transformação em requisitos, versão e suporte.',
+    Atividades:'Organize o trabalho que materializa uma demanda e acompanhe responsáveis.',
+    Requisitos:'Mantenha a especificação vinculada à demanda e à versão da solução.',
+    'Soluções e Versões':'Visualize o que foi publicado e quais informações chegam ao suporte.',
+    Chamados:'Recupere contexto do desenvolvimento, analise o chamado e valide a sugestão da IA.',
+    Conhecimento:'Transforme soluções validadas em conhecimento reutilizável no suporte.',
+    Indicadores:'Acompanhe contexto recuperável, validação humana, chamados e conhecimento.',
+    Configurações:'Visualize as regras e limites funcionais deste MVP.'
+  } as Record<View,string>)[this.view()] ?? 'Acompanhe o contexto do ciclo de vida da solução.');
+  readonly contextReadyCount = computed(() => this.items().filter(r => r.relatedIds.length > 0 && !/parcial|Aguardando/i.test(r.context)).length);
 
   open(item: NexusRecord) { this.store.select(item); }
 
@@ -87,7 +76,4 @@ export class ModuleComponent {
     }
   }
 
-  contextReadyCount() {
-    return this.items().filter(r => r.relatedIds.length > 0 && !/parcial|Aguardando/i.test(r.context)).length;
-  }
 }
