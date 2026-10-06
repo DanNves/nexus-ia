@@ -27,8 +27,17 @@ export class AiComponent {
   });
 
   readonly activeContext = computed(() => { const ticket = this.activeTicket(); return ticket ? this.store.aiContextFor(ticket.id) : []; });
-
-  contextCount(types: string[]) { return this.activeContext().filter(record => types.includes(record.type)).length; }
+  readonly contextCounts = computed(() => {
+    const context = this.activeContext();
+    return {
+      Demanda: context.filter(r => r.type === 'Demanda').length,
+      Atividade: context.filter(r => r.type === 'Atividade').length,
+      Requisito: context.filter(r => r.type === 'Requisito').length,
+      SolucaoVersao: context.filter(r => r.type === 'Solução' || r.type === 'Versão').length,
+      Chamado: context.filter(r => r.type === 'Chamado').length,
+      Conhecimento: context.filter(r => r.type === 'Conhecimento').length,
+    };
+  });
 
   analyze(ticket: NexusRecord) {
     this.store.analyzeAi(ticket.id);
