@@ -23,7 +23,6 @@ export class AppComponent {
   notificationOpen = false;
   globalQuery = '';
   commentText = '';
-  aiHumanNote = '';
   wizardStep = 1;
   readonly saved = signal(false);
   wizardError = '';
