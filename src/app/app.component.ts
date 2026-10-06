@@ -38,10 +38,15 @@ export class AppComponent {
   navigate(path:string){void this.router.navigateByUrl(path);this.mobileOpen=false;this.userOpen=false;}
   openSearch(){this.returnFocus=document.activeElement instanceof HTMLElement ? document.activeElement : undefined;this.searchOpen=true;this.notificationOpen=false;this.userOpen=false;}
   closeSearch(){this.searchOpen=false;this.restoreFocus();}
-  closeDetail(){this.store.closeDetail();}
+  closeDetail(){this.store.closeDetail();this.restoreFocus();}
   closeWizard(){this.store.closeWizard();this.restoreFocus();}
   private restoreFocus(){const target=this.returnFocus;this.returnFocus=undefined;if(target){window.setTimeout(()=>target.focus(),0);}}
-  openRecord(record:NexusRecord){this.store.select(record);}
+  openRecord(record:NexusRecord){
+    if (!this.store.selected()) {
+      this.returnFocus=document.activeElement instanceof HTMLElement ? document.activeElement : undefined;
+    }
+    this.store.select(record);
+  }
   openWizard(type:'demanda'|'atividade'|'chamado'){this.returnFocus=document.activeElement instanceof HTMLElement ? document.activeElement : undefined;this.notificationOpen=false;this.userOpen=false;this.mobileOpen=false;this.store.openWizard(type);}
 
   @HostListener('document:keydown',['$event'])
