@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, ElementRef, effect, inject, output, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NexusStore } from '../services/nexus.store';
 import { NxIconComponent } from './icon.component';
@@ -18,6 +18,16 @@ export class DetailDrawerComponent {
   aiHumanNote='';
   aiValidationError='';
   readonly item=computed(()=>this.store.selected());
+  @ViewChild('drawerDialog') private drawer?: ElementRef<HTMLElement>;
+
+  constructor(){
+    effect(() => {
+      if (!this.item()) return;
+      window.setTimeout(() => {
+        this.drawer?.nativeElement.querySelector<HTMLElement>('button.close-btn')?.focus();
+      }, 0);
+    });
+  }
 
   trapFocus(event: KeyboardEvent, container: HTMLElement) {
     if (event.key !== 'Tab') return;
