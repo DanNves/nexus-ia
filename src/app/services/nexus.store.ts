@@ -1,5 +1,5 @@
 import { Injectable, computed, signal } from '@angular/core';
-import { seedRecords, people, team, solutions, versions } from '../data/nexus.data';
+import { seedRecords, people, team, solutions, versions, currentUser } from '../data/nexus.data';
 import { AiValidationStatus, NexusRecord, Person, RecordType, Status, WizardDraft, WizardType } from '../models/nexus.models';
 
 @Injectable({ providedIn: 'root' })
@@ -254,7 +254,7 @@ export class NexusStore {
       ...r,
       comments: [...r.comments, {
         id: crypto.randomUUID(),
-        author: record.assignee.name,
+        author: currentUser.name,
         text: clean,
         date: new Date().toLocaleString('pt-BR'),
         ...(recipient !== undefined ? { recipient } : {})
