@@ -9,6 +9,7 @@ export const people = {
 };
 
 export const team: Person[] = [people.marina, people.carlos, people.joao, people.ana, people.rafael];
+export const currentUser: Person = { name: 'Tester', role: 'Usuário', kind: 'Responsável' };
 
 
 export const solutions: SolutionOption[] = [
