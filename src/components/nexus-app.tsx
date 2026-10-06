@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+function useDialogFocus<T extends HTMLElement>(key:unknown){const ref=useRef<T>(null);useEffect(()=>{const prev=document.activeElement as HTMLElement|null;const t=window.setTimeout(()=>ref.current?.querySelector<HTMLElement>('button[title="Fechar"]')?.focus(),0);return()=>{window.clearTimeout(t);prev?.focus?.();};},[key]);return ref;}
 import { useNavigate, useRouterState } from '@tanstack/react-router';
 import { Button } from './ui/button';
 import { Icon } from './nexus-icon';
@@ -65,8 +66,8 @@ function Knowledge({open}: {open:(r:NexusRecord)=>void}){
  return <main className="page module-page"><Intro label="CONHECIMENTO" title="Base de conhecimento" description="Procedimentos validados por humanos e prontos para reuso."/><section className="panel module-panel"><RecordList items={items} open={open}/></section></main>;
 }
 function Detail({item,open}: {item:NexusRecord,open:(r:NexusRecord)=>void}){
- const s=useNexus();const [comment,setComment]=useState('');const related=item.relatedIds.map(id=>s.find(id)).filter((r):r is NexusRecord=>Boolean(r));
- return <div className="modal-backdrop" onClick={()=>s.setSelected(null)}><aside className="detail-panel" onClick={e=>e.stopPropagation()}>
+ const s=useNexus();const [comment,setComment]=useState('');const related=item.relatedIds.map(id=>s.find(id)).filter((r):r is NexusRecord=>Boolean(r));const ref=useDialogFocus<HTMLElement>(item.id);
+ return <div className="modal-backdrop" onClick={()=>s.setSelected(null)}><aside ref={ref} role="dialog" aria-modal="true" aria-label={item.title} className="detail-panel" onClick={e=>e.stopPropagation()}>
  <header className="panel-head"><div><span className="section-kicker">{item.type} · {item.id}</span><h2>{item.title}</h2></div><Btn className="icon-btn" onClick={()=>s.setSelected(null)} title="Fechar"><Icon name="close"/></Btn></header>
  <p>{item.description}</p>
  <dl className="detail-grid"><dt>Status</dt><dd>{item.status}</dd><dt>Prioridade</dt><dd>{item.priority}</dd><dt>Solução</dt><dd>{item.solution}</dd><dt>Versão</dt><dd>{item.version}</dd><dt>Solicitante</dt><dd>{item.requester.name}</dd><dt>Responsável</dt><dd>{item.assignee.name}</dd><dt>Contexto</dt><dd>{item.context}</dd></dl>
@@ -78,8 +79,8 @@ function Detail({item,open}: {item:NexusRecord,open:(r:NexusRecord)=>void}){
 }
 function Wizard({type}: {type:WizardType}){
  const s=useNexus();const [d,setD]=useState<WizardDraft>({title:'',description:'',requester:team[0]?.name??'',assignee:team[1]?.name??'',participants:'',context:'',solution:'',version:'',priority:'Média',objective:'',dueDate:''});
- const f=(k:keyof WizardDraft)=>(e:React.ChangeEvent<HTMLInputElement|HTMLTextAreaElement|HTMLSelectElement>)=>setD({...d,[k]:e.target.value});
- return <div className="modal-backdrop" onClick={()=>s.setWizard(null)}><form className="detail-panel wizard" onClick={e=>e.stopPropagation()} onSubmit={e=>{e.preventDefault();if(d.title.trim())s.addRecord(d,type)}}>
+ const f=(k:keyof WizardDraft)=>(e:React.ChangeEvent<HTMLInputElement|HTMLTextAreaElement|HTMLSelectElement>)=>setD({...d,[k]:e.target.value});const ref=useDialogFocus<HTMLFormElement>(type);
+ return <div className="modal-backdrop" onClick={()=>s.setWizard(null)}><form ref={ref} role="dialog" aria-modal="true" aria-label={`Nova ${type}`} className="detail-panel wizard" onClick={e=>e.stopPropagation()} onSubmit={e=>{e.preventDefault();if(d.title.trim())s.addRecord(d,type)}}>
  <header className="panel-head"><h2>Nova {type}</h2><Btn className="icon-btn" onClick={()=>s.setWizard(null)} title="Fechar"><Icon name="close"/></Btn></header>
  <label>Título<input required value={d.title} onChange={f('title')}/></label><label>Descrição<textarea value={d.description} onChange={f('description')}/></label><label>Objetivo<input value={d.objective} onChange={f('objective')}/></label>
  <label>Solicitante<select value={d.requester} onChange={f('requester')}>{team.map(p=><option key={p.name}>{p.name}</option>)}</select></label><label>Responsável<select value={d.assignee} onChange={f('assignee')}>{team.map(p=><option key={p.name}>{p.name}</option>)}</select></label>
