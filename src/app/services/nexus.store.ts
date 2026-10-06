@@ -164,7 +164,7 @@ export class NexusStore {
     const assignee = this.findPerson(draft.assignee) ?? team.find(person => person.role === 'Analista de Sistemas') ?? requester;
     const participantNames = draft.participants.split(',').map(name => name.trim()).filter(Boolean);
     const participants = participantNames.map(name => this.findPerson(name)).filter((person): person is Person => Boolean(person)).map(person => ({ ...person, kind: 'Participante' as const }));
-    const solution = solutions.find(item => item.id === draft.solution);
+    const solution = solutions.find(item => item.id === draft.solutionId);
     const version = versions.find(item => item.id === draft.versionId && item.solutionId === solution?.id);
     const requirement = this.records().find(item => item.id === draft.requirementId && item.type === 'Requisito');
     const newId = prefix + '-' + String(maxId + 1).padStart(3, '0');
