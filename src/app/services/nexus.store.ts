@@ -311,7 +311,9 @@ export class NexusStore {
     const score = (record: NexusRecord) => {
       const text = this.contextTerms(record);
       const overlap = text.filter(term => terms.includes(term)).length;
-      return overlap + (record.solution === ticket.solution ? 2 : 0) + (record.version === ticket.version ? 2 : 0);
+      return overlap
+        + (record.solutionId && ticket.solutionId && record.solutionId === ticket.solutionId ? 2 : 0)
+        + (record.versionId && ticket.versionId && record.versionId === ticket.versionId ? 2 : 0);
     };
 
     const matchedKnowledge = knowledge.slice().sort((a,b) => score(b) - score(a)).find(record => score(record) >= 3);
