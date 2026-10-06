@@ -16,8 +16,8 @@ export class GlobalSearchComponent {
   readonly open = input(false);
   readonly closed = output<void>();
   readonly query = signal('');
-  @ViewChild('dialog') private dialog?: ElementRef<HTMLElement>;
-  @ViewChild('input') private input?: ElementRef<HTMLInputElement>;
+  @ViewChild('searchDialog') private dialog?: ElementRef<HTMLElement>;
+  @ViewChild('searchInput') private input?: ElementRef<HTMLInputElement>;
 
   readonly results = computed(() => {
     const q = this.query().trim().toLowerCase();
