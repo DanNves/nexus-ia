@@ -69,93 +69,9 @@
             </section>
           }
 
-          @if (item.type === 'Chamado') {
-            <section class="ai-card">
-              <header><span><nx-icon name="spark" [size]="15"/> APOIO DA IA GENERATIVA</span><em>{{ item.aiStatus === 'approved' ? 'Validada' : item.aiStatus === 'rejected' ? 'Rejeitada' : 'Aguardando validação' }}</em></header>
-              <div class="ai-title-row"><div><span class="section-kicker">IA ATIVA NO CHAMADO</span><h3>Análise assistida pelo contexto completo</h3></div><div class="ai-header-actions"><span class="ai-context"><nx-icon name="link" [size]="13"/> {{ store.aiContextFor(item.id).length }} fontes recuperadas</span><button class="btn primary ai-run-btn" (click)="analyzeAi()"><nx-icon name="spark" [size]="13"/> Analisar com IA</button></div></div>
-              <p>A IA está presente no atendimento: lê o problema do chamado e recupera o contexto das etapas relacionadas — demanda, atividade, requisito, solução/versão, chamados relacionados e conhecimento validado. Ela sugere caminhos; o responsável decide.</p>
-              <div class="suggestion">
-                <div class="ai-block"><strong>O que a IA identificou</strong><span>{{ item.aiSummary || 'Execute “Analisar com IA” para cruzar o chamado com o que foi projetado, desenvolvido, publicado e já solucionado.' }}</span></div>
-                <div class="ai-block"><strong>Possível causa</strong><span>{{ item.aiCause || 'Aguardando análise do contexto.' }}</span></div>
-                <div class="ai-block"><strong>Confiança simulada</strong><span>{{ item.aiConfidence !== undefined ? item.aiConfidence + '%' : 'Aguardando análise.' }}</span></div>
-              </div>
+          @if (item.type === 'Chamado') { <nx-ticket-ai-detail [ticket]="item" /> }
 
-              @if (item.aiExistingKnowledgeId) {
-                <div class="ai-match">
-                  <div class="ai-match-head">
-                    <span><nx-icon name="knowledge" [size]="14"/> SOLUÇÃO ANTERIOR ENCONTRADA</span>
-                    <strong>{{ item.aiExistingKnowledgeId }}</strong>
-                  </div>
-                  <p>A IA encontrou uma solução/conhecimento anterior compatível, anexou a referência ao chamado e a considerou na resolução sugerida.</p>
-                  <button class="relation-chip" (click)="openRelated(item.aiExistingKnowledgeId)"><nx-icon name="link" [size]="12"/> Abrir {{ item.aiExistingKnowledgeId }}</button>
-                </div>
-              }
-
-              @if (item.aiFindings?.length) {
-                <div class="ai-findings">
-                  <span class="section-kicker">O QUE FOI CONSIDERADO</span>
-                  <ul>@for (finding of item.aiFindings; track finding){<li>{{ finding }}</li>}</ul>
-                </div>
-              }
-
-              <div class="ai-resolution">
-                <div class="ai-resolution-head"><span><nx-icon name="check" [size]="14"/> RESOLUÇÃO SUGERIDA</span><small>{{ item.aiStatus === 'approved' ? 'validada pelo responsável' : item.aiStatus === 'rejected' ? 'rejeitada pelo responsável' : 'aguarda validação humana' }}</small></div>
-                <p>{{ item.aiResolution || 'A resolução será apresentada após a análise do chamado.' }}</p>
-                <ol>@for (step of (item.aiProcedure || []); track step){<li>{{ step }}</li>} @empty {<li>Aguardando a análise do chamado.</li>}</ol>
-              </div>
-
-              <div class="evidence"><span>CONTEXTO RECUPERADO E ANEXADO</span>@for (source of store.aiContextFor(item.id); track source.id){<button (click)="openRelated(source.id)">{{ source.id }}</button>}</div>
-              <div class="validation">
-                <strong><nx-icon name="check" [size]="15"/> Validação humana obrigatória</strong>
-                <div class="validation-note">
-                  <label for="ai-human-note">Observação ou ajuste do profissional</label>
-                  <textarea id="ai-human-note"
-                            [(ngModel)]="aiHumanNote"
-                            placeholder="Registre um ajuste na sugestão ou, ao rejeitar, informe o motivo da decisão."></textarea>
-                  <small>Ao aprovar com texto, o NEXUS registra que houve ajuste humano na sugestão.</small>
-                  @if (aiValidationError) { <span class="validation-error">{{ aiValidationError }}</span> }
-                </div>
-                <div>
-                  <button class="btn secondary" (click)="rejectAi()" [disabled]="item.aiStatus === 'approved' || !item.aiSummary">Rejeitar e revisar</button>
-                  <button class="btn primary" (click)="approveAi()" [disabled]="item.aiStatus === 'approved' || !item.aiSummary">Aprovar sugestão</button>
-                </div>
-              </div>
-              @if (item.aiStatus === 'approved' || item.aiStatus === 'rejected') {
-                <div class="ai-approved-note" [class.rejected]="item.aiStatus === 'rejected'">
-                  <nx-icon [name]="item.aiStatus === 'approved' ? 'check' : 'close'" [size]="15"/>
-                  <span>
-                    <strong>{{ item.aiStatus === 'approved' ? 'Sugestão aprovada.' : 'Sugestão rejeitada.' }}</strong>
-                    {{ item.aiValidationNote || 'Decisão humana registrada.' }}
-                    @if (item.aiHumanNote) { <small>Ajuste/observação: {{ item.aiHumanNote }}</small> }
-                    <small>Decisão por {{ item.aiValidatedBy || 'responsável' }} · {{ item.aiValidatedAt || 'agora' }}</small>
-                  </span>
-                </div>
-              }
-            </section>
-          }
-
-          @if (item.type === 'Conhecimento') {
-            <section class="detail-card knowledge-detail">
-              <header><div><span class="section-kicker">BASE DE CONHECIMENTO</span><h3>Conhecimento validado e reutilizável</h3></div><span class="reuse">{{ item.reuseCount || 0 }} usos</span></header>
-              @if (item.isDemoSeed) {
-                <div class="demo-data-note"><nx-icon name="info" [size]="13"/> Reuso inicial fictício de demonstração do TCC.</div>
-              }
-              <p>{{ item.description }}</p>
-              <div class="knowledge-meta-grid">
-                <div><span>ORIGEM</span><strong>{{ item.sourceTicketId || item.relatedIds[0] || 'Registro de origem' }}</strong></div>
-                <div><span>SOLUÇÃO</span><strong>{{ item.solution }}</strong></div>
-                <div><span>VERSÃO</span><strong>{{ item.version }}</strong></div>
-                <div><span>REVISÃO</span><strong>v{{ item.revision || 1 }}</strong></div>
-                <div><span>VALIDADO POR</span><strong>{{ item.validatedBy || item.assignee.name }}</strong></div>
-                <div><span>VALIDADO EM</span><strong>{{ item.validatedAt || item.date }}</strong></div>
-              </div>
-              <div class="knowledge-procedure">
-                <span class="section-kicker">PROCEDIMENTO VALIDADO</span>
-                <ol>@for (step of (item.procedure || item.aiProcedure || []); track step){<li>{{ step }}</li>} @empty {<li>Procedimento registrado no histórico do atendimento de origem.</li>}</ol>
-              </div>
-              <div class="knowledge-source"><span>CONTEXTO DE ORIGEM</span>@for (related of item.relatedIds; track related){<button (click)="openRelated(related)">{{ related }}</button>}</div>
-            </section>
-          }
+          @if (item.type === 'Conhecimento') { <nx-knowledge-detail [item]="item" /> }
 
           <section class="detail-card">
             <header><div><span class="section-kicker">COMUNICAÇÃO</span><h3>Atualizações do registro</h3></div><nx-icon name="message" [size]="17"/></header>
