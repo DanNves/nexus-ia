@@ -17,8 +17,6 @@ export class DetailDrawerComponent {
   readonly store=inject(NexusStore);
   readonly closed=output<void>();
   commentText='';
-  aiHumanNote='';
-  aiValidationError='';
   readonly item=computed(()=>this.store.selected());
   @ViewChild('drawerDialog') private drawer?: ElementRef<HTMLElement>;
 
