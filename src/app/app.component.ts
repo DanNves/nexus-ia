@@ -21,6 +21,7 @@ export class AppComponent {
   readonly router=inject(Router);
   readonly currentUser=currentUser;
   mobileOpen=false; userOpen=false; searchOpen=false; notificationOpen=false;
+  private returnFocus?: HTMLElement;
 
   readonly navItems=[
     ['Visão geral','/dashboard','home'],['Demandas','/demandas','demand'],['Atividades','/atividades','activity'],
@@ -35,12 +36,13 @@ export class AppComponent {
   ] as const;
 
   navigate(path:string){void this.router.navigateByUrl(path);this.mobileOpen=false;this.userOpen=false;}
-  openSearch(){this.searchOpen=true;this.notificationOpen=false;this.userOpen=false;}
-  closeSearch(){this.searchOpen=false;}
+  openSearch(){this.returnFocus=document.activeElement instanceof HTMLElement ? document.activeElement : undefined;this.searchOpen=true;this.notificationOpen=false;this.userOpen=false;}
+  closeSearch(){this.searchOpen=false;this.restoreFocus();}
   closeDetail(){this.store.closeDetail();}
-  closeWizard(){this.store.closeWizard();}
+  closeWizard(){this.store.closeWizard();this.restoreFocus();}
+  private restoreFocus(){const target=this.returnFocus;this.returnFocus=undefined;if(target){window.setTimeout(()=>target.focus(),0);}}
   openRecord(record:NexusRecord){this.store.select(record);}
-  openWizard(type:'demanda'|'atividade'|'chamado'){this.notificationOpen=false;this.userOpen=false;this.mobileOpen=false;this.store.openWizard(type);}
+  openWizard(type:'demanda'|'atividade'|'chamado'){this.returnFocus=document.activeElement instanceof HTMLElement ? document.activeElement : undefined;this.notificationOpen=false;this.userOpen=false;this.mobileOpen=false;this.store.openWizard(type);}
 
   @HostListener('document:keydown',['$event'])
   onDocumentKeydown(event:KeyboardEvent){
