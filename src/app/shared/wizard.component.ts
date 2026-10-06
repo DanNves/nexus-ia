@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, effect, inject, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, effect, inject, output, signal, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NexusStore } from '../services/nexus.store';
 import { NxIconComponent } from './icon.component';
@@ -22,9 +22,10 @@ export class WizardComponent {
   readonly saved=signal(false);
   wizardError='';
   draft:WizardDraft=this.emptyDraft();
+  @ViewChild('wizardDialog') private dialog?: ElementRef<HTMLElement>;
 
   constructor(){
-    effect(()=>{const wizard=this.store.wizard(); if(!wizard)return; const saved=this.readDraft(this.draftKey(wizard)); this.draft=saved??this.emptyDraft(wizard); this.wizardStep=1; this.saved.set(Boolean(saved)); this.wizardError='';});
+    effect(()=>{const wizard=this.store.wizard(); if(!wizard)return; const saved=this.readDraft(this.draftKey(wizard)); this.draft=saved??this.emptyDraft(wizard); this.wizardStep=1; this.saved.set(Boolean(saved)); this.wizardError=''; window.setTimeout(()=>this.dialog?.nativeElement.querySelector<HTMLElement>('button.close-btn')?.focus(),0);});
   }
   trapFocus(event: KeyboardEvent, container: HTMLElement) {
     if (event.key !== 'Tab') return;
