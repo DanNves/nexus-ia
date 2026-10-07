@@ -1,54 +1,59 @@
-# NEXUS — Conexão entre Demanda, Desenvolvimento e Suporte
+# NEXUS
 
-Plataforma web para preservar o contexto produzido durante o desenvolvimento de uma solução de software e utilizá-lo no atendimento de chamados de suporte.
+Plataforma inteligente de apoio ao levantamento, especificação, prototipação e suporte pós-entrega de soluções de software. Trabalho de Conclusão de Curso — ADS, UCSal.
 
-## MVP
-Demanda → Requisitos → Versão da solução → Chamado → Recuperação do contexto → IA generativa → Sugestão → Validação humana → Base de conhecimento
+O cliente descreve a necessidade (texto ou ata/transcrição). O NEXUS conduz uma entrevista guiada com perguntas simples de múltipla escolha, recomenda o tipo de solução (web, desktop, job…), gera um protótipo de telas, encaminha a solicitação à equipe responsável e produz o documento de requisitos. Depois da entrega, usa esse contexto no atendimento de chamados e forma uma base de conhecimento.
 
-**Regra central:** IA sugere → humano valida → sistema consolida.
+**Regra central:** IA propõe → humano valida → sistema consolida.
 
-O GitHub é a fonte principal do desenvolvimento. O escopo poderá evoluir durante o TCC sem perder o foco central.
+> Fase atual: **documentação**. Ver [`docs/STATUS_PROJETO.md`](docs/STATUS_PROJETO.md).
 
+## Estrutura
 
-## Arquitetura atual
+```
+frontend/   Angular 22 (standalone, Signals, Router, TypeScript strict)
+backend/    Django + Django REST Framework (SQLite em localhost)
+docs/       documentação oficial
+```
 
-O MVP oficial usa **Angular 22**, standalone components, Signals, Angular Router, TypeScript strict e persistência em `localStorage`. A aplicação utiliza o application builder do Angular e possui fallback de SPA configurado para publicação na Vercel. A persistência do MVP consolidado utiliza Supabase/PostgreSQL com RLS; localStorage permanece como fallback temporário durante a migração.
+## Rodar em localhost
 
-A IA do MVP é uma **simulação controlada**: ela demonstra recuperação de contexto, classificação, possíveis causas e procedimentos sugeridos, sempre com validação humana. Não há LLM real ou RAG vetorial nesta etapa. O Supabase é a camada de persistência gerenciada do MVP, sem backend próprio.
+Frontend:
+
+```bash
+cd frontend
+npm ci
+npm start          # http://localhost:4200
+```
+
+Backend:
+
+```bash
+cd backend
+python -m venv venv
+venv\Scripts\activate          # Windows
+python manage.py runserver     # http://localhost:8000
+```
 
 ## Qualidade
 
-Antes de concluir alterações:
-
 ```bash
-npm ci
+# frontend/
 npm run check
 npm run build
+
+# backend/
+python manage.py check
+python manage.py test
 ```
 
-O `check` verifica alguns contratos arquiteturais do MVP, como ausência de `!important`, `100vh` e `$any()` no código da aplicação. O GitHub Actions executa essa verificação antes do build.
+## Documentação
 
-## Fluxo demonstrável
-
-**Demanda → Requisito → Versão → Chamado → Recuperação do contexto → IA sugere → Humano valida → Conhecimento**
-
-O cenário de demonstração utiliza dados fictícios. Indicadores e reuso iniciais são dados do MVP e não representam resultados experimentais do TCC.
-
-
-## Arquitetura e documentação
-
-- [Arquitetura do MVP](docs/ARQUITETURA_MVP.md)
+- [Especificação mestra](CLAUDE.md)
+- [Fluxo funcional](docs/FLUXO.md)
+- [Arquitetura](docs/ARQUITETURA.md) — resumo de [`docs/Nexus_Arquitetura.pdf`](docs/Nexus_Arquitetura.pdf)
 - [Modelo de dados](docs/MODELO_DADOS.md)
-- [Supabase](docs/SUPABASE.md)
-- [Parte/Fase 4](docs/PARTE_4_IMPLEMENTACAO.md)
-- [Diagramas](docs/DIAGRAMAS.md)
+- [Status](docs/STATUS_PROJETO.md)
+- [Histórico do MVP anterior](docs/historico/)
 
-A documentação da Fase 4 original permanece como histórico e critérios de validação. A adoção do Supabase é tratada como evolução posterior e não altera retroativamente o histórico acadêmico.
-
-## Validação
-
-```bash
-npm ci
-npm run check
-npm run build
-```
+Os dados de demonstração são fictícios e não representam resultados experimentais do TCC.

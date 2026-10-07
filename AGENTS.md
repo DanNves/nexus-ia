@@ -1,53 +1,47 @@
 # NEXUS — Orientações de desenvolvimento
 
-O repositório oficial do NEXUS é a implementação **Angular 22** em `DanNves/nexus-ia`.
+Leia [`CLAUDE.md`](CLAUDE.md) antes de qualquer alteração. Ele é a especificação mestra.
 
 ## Fonte do desenvolvimento
 
-- GitHub é a fonte principal do código.
-- Não regenerar o projeto no Lovable.
-- Lovable/preview antigo pode conter a implementação React/TanStack anterior e não representa o runtime oficial atual.
-- Não reescrever histórico publicado: não usar force push, rebase, amend ou squash em commits já enviados.
+- GitHub (`DanNves/nexus-ia`) é a fonte oficial do código.
+- Lovable e Supabase não são mais usados.
+- Não reescrever histórico publicado: sem force push, rebase, amend ou squash de commits já enviados.
 
-## Arquitetura atual
+## Arquitetura
 
-- Angular 22, standalone components e Signals.
-- Angular Router.
-- TypeScript strict.
-- Persistência principal em Supabase/PostgreSQL com RLS.
-- localStorage permanece como fallback temporário e mecanismo de demonstração.
-- IA como simulação controlada.
-- Sem backend próprio; Supabase fornece PostgreSQL/Data API.
-- Autenticação Supabase deve ser concluída antes da escrita pública.
-- IA simulada, sem LLM real ou RAG vetorial.
+- `frontend/`: Angular 22, standalone components, Signals, Router, TypeScript strict.
+- `backend/`: Django + DRF, monólito modular (apps por contexto de negócio; camadas api/services/domain/infra).
+- Banco SQLite em localhost (temporário).
+- IA via porta `LLMProvider` (modelo real a definir; `fake_adapter` para testes e demonstração).
+- Detalhes: [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md).
 
 ## Regra central do produto
 
-**IA sugere → humano valida → sistema consolida.**
+**IA propõe → humano valida → sistema consolida.**
 
-Nenhuma implementação deve permitir que a IA conclua chamados, publique conhecimento ou tome decisão crítica de forma autônoma.
+Nenhuma implementação pode permitir que a IA aprove artefatos, conclua chamados, decida viabilidade/metodologia, publique conhecimento ou envie documento ao cliente de forma autônoma.
 
 ## Antes de alterar
 
-1. Ler `CLAUDE.md`.
-2. Verificar modelo, store, rotas, componente e CSS relacionados.
-3. Preservar rastreabilidade entre demanda, requisito, versão, chamado e conhecimento.
-4. Evitar adicionar funcionalidade fora do recorte do TCC.
-5. Executar `npm run check` e `npm run build` antes de considerar a alteração concluída.
+1. Ler `CLAUDE.md` (escopo §4, fluxo §5, regras §19 e §23).
+2. Verificar modelo, serviço, rota, componente e CSS relacionados.
+3. Preservar rastreabilidade e a máquina de estados dos artefatos.
+4. Não adicionar funcionalidade fora do escopo.
+5. Rodar as validações: `npm run check` e `npm run build` em `frontend/`; `python manage.py check` e `python manage.py test` em `backend/`.
+
+## Segurança
+
+- Nenhum segredo no código nem no frontend; usar `backend/.env` (não versionado).
+- Permissão por objeto em toda rota da API.
+- Anonimizar dados pessoais antes de enviar à IA.
+- Componentes Angular não chamam a API diretamente; usar serviços.
+- Mudanças de schema via migrations do Django.
 
 ## Dados
 
-Os registros de demonstração são fictícios e devem permanecer coerentes. Não apresentar dados de demonstração como resultados experimentais reais.
+Os registros de demonstração são fictícios e devem permanecer coerentes. Não apresentá-los como resultados experimentais.
 
 ## Git
 
-Preferir branches pequenas e commits objetivos. Nunca force histórico publicado.
-
-
-## Supabase
-
-- Não colocar secret/service role key no frontend.
-- Usar chave publicável no navegador.
-- RLS deve permanecer habilitado.
-- Componentes não devem acessar Supabase diretamente; usar camada de persistência.
-- Versionar mudanças do schema em `supabase/migrations`.
+Branches pequenas e commits objetivos. `.claude/` e `claude/` são locais e não são versionados.

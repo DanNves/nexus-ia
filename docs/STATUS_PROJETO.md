@@ -1,57 +1,44 @@
-# NEXUS — Status da Consolidação
+# NEXUS — Status do projeto
 
 Data: 2026-10-07
 
-## Estado geral
+## Fase atual: 0 — Documentação
 
-O repositório principal agora está consolidado como Angular 22.
+Nenhuma implementação nova até a liberação do autor. Objetivo da fase: deixar escopo, fluxo, arquitetura e modelo de dados consistentes antes de começar.
 
-### GitHub
+## Repositório
 
-- Repositório: DanNves/nexus-ia
-- branch principal: main
-- consolidação: PR #26 mesclada
-- commit de consolidação: 75d3a89905b7e7fa30026e36f95f489d63aaadb4
-- React/TanStack legado removido do runtime principal
-- package.json alinhado ao Angular
-- TypeScript alinhado ao Angular
-- documentação técnica atualizada
+```
+frontend/   Angular 22 — MVP anterior (suporte-centrado, dados em localStorage); build e check passando
+backend/    Django — projeto `config` recém-criado, SQLite, sem apps
+docs/       documentação oficial (este diretório)
+```
 
-### Vercel
+## Decisões tomadas
 
-- projeto configurado como Angular
-- Node 24.x
-- instalação: npm ci
-- build: npm run build
-- produção: READY
-- domínio principal: nexus-ia-self.vercel.app
-- runtime errors nas últimas 1h: nenhum
-- build de produção validado pela Vercel
+| Data | Decisão |
+|---|---|
+| 2026-10-07 | Separação em `frontend/` (Angular 22, mantido) e `backend/` (Django) |
+| 2026-10-07 | Sobras do Lovable (React/TanStack) removidas |
+| 2026-10-07 | Supabase descartado; execução em **localhost** |
+| 2026-10-07 | Banco **SQLite** temporário |
+| 2026-10-07 | Escopo ampliado: levantamento guiado → cenário → protótipo → solicitação → requisitos → pós-entrega |
+| 2026-10-07 | Arquitetura de referência: `docs/Nexus_Arquitetura.pdf` (monólito modular Django + Angular + API REST) |
+| 2026-10-07 | IA usará **modelo real** via porta `LLMProvider` (provedor a definir); `fake_adapter` em testes/demonstração |
+| 2026-10-07 | Anexos do MVP: somente texto (ata/transcrição); .txt decidido, .docx/.pdf a confirmar |
+| 2026-10-07 | Parecer do PO sobre a documentação v2: aprovado com ressalvas; correções aplicadas e lacunas levadas ao §30 |
 
-### Supabase
+## Decisões em aberto
 
-- banco PostgreSQL provisionado
-- RLS habilitado nas tabelas existentes
-- políticas atuais para authenticated
-- nenhuma escrita anônima liberada
-- schema contempla pessoas, demandas, atividades, requisitos, soluções, versões, chamados, IA, conhecimento, comentários, relações e auditoria
+Ver `CLAUDE.md` §30.
 
-### Pendente
+## Pendências técnicas conhecidas
 
-1. integrar Angular com a camada de persistência Supabase;
-2. concluir Supabase Auth;
-3. validar RLS por perfil;
-4. migrar/confirmar seeds;
-5. substituir localStorage como fonte principal;
-6. concluir a Fase 6 de arquitetura;
-7. executar/regularizar GitHub Actions, pois não há workflow run registrado no commit de consolidação;
-8. corrigir warnings Angular restantes;
-9. executar testes funcionais completos do fluxo DEMANDA → REQUISITO → VERSÃO → CHAMADO → CONTEXTO → IA → VALIDAÇÃO → CONHECIMENTO.
+- `backend/config/settings.py`: `SECRET_KEY` fixa no código e `DEBUG = True` — mover para `.env` antes do primeiro commit do backend.
+- Aviso NG8107 no template do `AiComponent` (frontend).
+- Frontend ainda organizado em `pages/` (alvo: `core/shared/features`) e sem integração com API.
+- Vercel não é usada; `frontend/vercel.json` é legado.
 
-## Decisão arquitetural
+## Próximas fases (após liberação)
 
-O Supabase é uma evolução posterior à Fase 4 original. A Fase 4 histórica continua registrada com localStorage e seus critérios próprios. O novo banco não deve ser apresentado como se tivesse sido implementado naquela fase.
-
-## Critério para considerar o MVP realmente pronto
-
-O MVP só deve ser considerado fechado quando o fluxo completo persistir e recuperar dados do Supabase, houver autenticação/RLS funcionando, o conhecimento validado puder ser reutilizado, o build/CI estiver verde e a demonstração acadêmica puder ser executada sem intervenção técnica manual.
+Ver `CLAUDE.md` §31.
