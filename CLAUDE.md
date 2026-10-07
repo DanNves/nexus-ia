@@ -90,7 +90,8 @@ Quando houver IA no sistema, deve existir indicação clara de que a decisão é
 - Comentários/atualizações
 - Rastreabilidade entre registros
 - Criação de demanda/atividade em passo a passo
-- Persistência local para demonstração
+- Persistência em Supabase/PostgreSQL como caminho principal do MVP
+- localStorage mantido como fallback controlado e mecanismo de migração/demonstração
 
 ### Fora do escopo atual
 
@@ -107,9 +108,9 @@ Não implementar como parte central do MVP:
 - dezenas de integrações externas;
 - LLM real obrigatoriamente conectado;
 - RAG vetorial real;
-- backend completo;
-- PostgreSQL;
-- autenticação completa.
+- backend completo além dos serviços gerenciados do Supabase;
+- infraestrutura própria de PostgreSQL;
+- autenticação empresarial complexa.
 
 Esses itens podem aparecer como evolução arquitetural/documentação, mas não devem desviar o MVP.
 
@@ -286,11 +287,15 @@ src/
 
 ### Persistência
 
-Atualmente:
+**Supabase PostgreSQL** é a persistência principal planejada para o MVP consolidado.
 
-**localStorage**
+- Supabase fornece PostgreSQL e Data API;
+- RLS deve permanecer habilitado nas tabelas expostas;
+- o frontend usa apenas chave publicável;
+- chaves secretas nunca entram no Angular;
+- localStorage permanece como fallback controlado durante a transição e para restauração/demonstração.
 
-O backend ainda não faz parte da implementação funcional atual.
+O schema atual já possui: people, solutions, versions, demands, activities, requirements, tickets, ai_suggestions, knowledge, comments, record_links e audit_events.
 
 ---
 
@@ -854,20 +859,18 @@ Não alterar essa estratégia sem verificar o build do Angular.
 
 ## 30. LIMITAÇÕES ATUAIS
 
-Ainda não existem:
+Já existe um banco Supabase/PostgreSQL provisionado e estruturado para o MVP, com RLS habilitado e políticas para usuários autenticados. A integração completa do frontend com autenticação Supabase ainda deve ser concluída antes de substituir definitivamente o localStorage.
 
-- API REST;
-- PostgreSQL;
-- autenticação;
+Ainda não existem no MVP consolidado:
+
 - LLM real;
-- RAG semântico;
+- RAG vetorial real;
+- execução autônoma;
+- infraestrutura própria;
 - armazenamento de objetos;
-- auditoria completa;
 - testes E2E completos.
 
-A aplicação atual é um MVP frontend com persistência local e IA simulada/controlada.
-
-Isso é proposital para a etapa atual.
+A IA continua sendo uma simulação controlada. O banco real não altera essa regra acadêmica.
 
 ---
 
@@ -910,17 +913,23 @@ Testar:
 
 Demanda → Requisito → Versão → Chamado → Contexto → IA → Validação → Conhecimento.
 
-### FASE 4 — Dados
+### FASE 4 — Dados e persistência
+
+Esta fase é a consolidação do modelo de dados e da rastreabilidade. O plano detalhado está em docs/PARTE_4_IMPLEMENTACAO.md.
 
 Garantir:
 
-- relacionamentos;
-- persistência;
-- recuperação;
-- atualização de status;
+- relacionamentos por IDs estáveis;
+- Solução e Versão tipadas;
+- persistência Supabase/PostgreSQL;
+- fallback/migração local quando necessário;
+- recuperação de contexto;
+- atualização de status válida;
 - comentários;
 - participantes;
-- conhecimento.
+- conhecimento;
+- auditoria das decisões humanas;
+- RLS e permissões coerentes.
 
 ### FASE 5 — Apresentação do TCC
 
@@ -1157,12 +1166,68 @@ Isso é especialmente importante durante demonstrações e testes do TCC.
 
 O projeto possui GitHub Actions para executar:
 
-npm install
-
-seguido de:
-
+npm ci
+npm run check
 npm run build
 
 O build deve ser tratado como requisito de aceite antes de considerar uma alteração estrutural concluída.
 
 A versão Angular 22 usa o application builder oficial. A compatibilidade deve seguir a matriz oficial de Angular/Node/TypeScript.
+
+---
+
+## 40. ARQUITETURA CONSOLIDADA DO MVP
+
+A arquitetura alvo é:
+
+Navegador → Angular 22 → serviços/Store → Supabase Data API → PostgreSQL
+
+O GitHub é a fonte oficial do código e do histórico. A Vercel é o ambiente de publicação. Lovable é somente apoio de preview/sincronização e não define a arquitetura oficial.
+
+O fluxo de dados do produto permanece:
+
+DEMANDA → REQUISITO → VERSÃO → CHAMADO → CONTEXTO → IA → SUGESTÃO → VALIDAÇÃO HUMANA → CONHECIMENTO
+
+O banco deve preservar esse encadeamento por chaves estáveis e pela tabela record_links.
+
+## 41. SUPABASE E SEGURANÇA
+
+O projeto Supabase foi provisionado para o NEXUS.
+
+Regras obrigatórias:
+- RLS habilitado;
+- acesso normal do sistema por usuário autenticado;
+- chave publicável somente no frontend;
+- chave secreta/service role somente em backend/Edge Function;
+- nenhuma credencial secreta em GitHub;
+- dados de demonstração marcados como fictícios;
+- validação humana persistida antes da consolidação de conhecimento.
+
+A configuração do banco está documentada em docs/SUPABASE.md e a migração estrutural em supabase/migrations/20261007_nexus_mvp.sql.
+
+## 42. DOCUMENTAÇÃO E DIAGRAMAS
+
+Os diagramas oficiais do projeto ficam descritos em:
+- docs/ARQUITETURA_MVP.md
+- docs/MODELO_DADOS.md
+- docs/DIAGRAMAS.md
+
+## 43. PARTE 4 — REGRA DE EXECUÇÃO
+
+A Parte 4 não deve ser considerada concluída somente porque o schema existe.
+
+Ela será considerada concluída quando:
+1. modelo e relacionamentos estiverem implementados;
+2. migração de dados estiver validada;
+3. frontend conseguir persistir e consultar dados;
+4. autenticação/permissões estiverem funcionais;
+5. RLS estiver validado;
+6. fluxo completo do chamado estiver funcional;
+7. validação humana estiver registrada;
+8. conhecimento puder ser criado a partir de atendimento aprovado;
+9. indicadores forem derivados do banco;
+10. npm ci, npm run check e npm run build passarem;
+11. Vercel publicar o Angular corretamente;
+12. o PR da fase estiver revisado e mesclado.
+
+Até lá, documentar como em implementação, não como concluída.
