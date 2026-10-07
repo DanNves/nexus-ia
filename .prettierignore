@@ -1,8 +1,5 @@
 node_modules
 dist
-.output
-.vinxi
-pnpm-lock.yaml
+out-tsc
+.angular
 package-lock.json
-bun.lock
-routeTree.gen.ts

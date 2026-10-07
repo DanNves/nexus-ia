@@ -14,9 +14,12 @@ O repositório oficial do NEXUS é a implementação **Angular 22** em `DanNves/
 - Angular 22, standalone components e Signals.
 - Angular Router.
 - TypeScript strict.
-- Persistência em localStorage.
+- Persistência principal em Supabase/PostgreSQL com RLS.
+- localStorage permanece como fallback temporário e mecanismo de demonstração.
 - IA como simulação controlada.
-- Sem backend, PostgreSQL, autenticação completa, LLM real ou RAG vetorial no MVP.
+- Sem backend próprio; Supabase fornece PostgreSQL/Data API.
+- Autenticação Supabase deve ser concluída antes da escrita pública.
+- IA simulada, sem LLM real ou RAG vetorial.
 
 ## Regra central do produto
 
@@ -39,3 +42,12 @@ Os registros de demonstração são fictícios e devem permanecer coerentes. Nã
 ## Git
 
 Preferir branches pequenas e commits objetivos. Nunca force histórico publicado.
+
+
+## Supabase
+
+- Não colocar secret/service role key no frontend.
+- Usar chave publicável no navegador.
+- RLS deve permanecer habilitado.
+- Componentes não devem acessar Supabase diretamente; usar camada de persistência.
+- Versionar mudanças do schema em `supabase/migrations`.
