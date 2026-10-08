@@ -5,7 +5,7 @@
 > Versão 2 (2026-10-07): escopo ampliado para o ciclo completo — do levantamento guiado da necessidade até o suporte pós-entrega.
 > Arquitetura de referência: `docs/Nexus_Arquitetura.pdf` (resumo em `docs/ARQUITETURA.md`). Este arquivo registra as adaptações vigentes.
 
-> **ESTADO ATUAL: FASE DE DOCUMENTAÇÃO.** Nenhuma implementação nova deve começar antes de o usuário liberar. Ver §31.
+> **ESTADO ATUAL: FRONTEND COM BACKEND SIMULADO.** O Angular navega como se estivesse conectado à API (`/api/v1` respondido por `core/api/mock-backend.interceptor.ts`). Backend Django ainda não é usado. Ver §31.
 
 ---
 
@@ -309,11 +309,24 @@ Front faz polling com intervalo crescente a partir de 2 s. Falhas são registrad
 
 ---
 
-## 9. ROTAS DO FRONTEND (PROPOSTA)
+## 9. ROTAS DO FRONTEND
 
-Rotas atuais (MVP anterior): `/dashboard`, `/demandas`, `/atividades`, `/requisitos`, `/solucoes-e-versoes`, `/chamados`, `/ia`, `/conhecimento`, `/indicadores`, `/configuracoes`.
+**Implementadas (2026-10-07):**
 
-Proposta para o novo escopo (a validar pelo front-techlead e pelo PO):
+```
+/visao-geral
+/demandas                      abas Demandas | Atividades (?aba=atividades, quadro ou lista)
+/demandas/nova                 sobre a demanda → necessidade/ata (.txt) → entrevista
+/demandas/:id[/:aba]           abas: resumo | levantamento | prototipo | solicitacao | requisitos | documento
+/calendario                    mês + agenda do dia + novo compromisso
+/solucoes, /solucoes/:id       versões, demanda de origem, chamados
+/fila, /fila/:id               posição na fila (cliente), fila ordenada e atendimento com IA (equipe)
+**                             página não encontrada
+```
+
+Visão por perfil: menu do usuário → "Ver o NEXUS como Cliente / Equipe responsável" (simulação; no backend real vem do JWT).
+
+Proposta original do novo escopo (referência para itens ainda não implementados, como validações, indicadores e ADM):
 
 ```
 /painel
@@ -355,7 +368,7 @@ A navbar principal deve ser **horizontal, limpa e contínua**.
 
 ### USAR
 Marca NEXUS à esquerda; itens principais ao centro; à direita: **Novo processo | Busca | Notificações | Usuário**.
-Itens principais (proposta): **Painel | Processos | Solicitações | Validações | Produtos | Chamados | Conhecimento | Indicadores**. ADM e Configurações no menu do usuário.
+Itens principais (implementado): **Visão geral | Demandas | Calendário | Soluções | Fila**. Busca (Ctrl K), notificações, **Nova demanda** e menu do usuário à direita. Indicadores, ADM e Configurações: ainda não implementados.
 Os itens visíveis dependem do perfil (cliente não vê Solicitações/Validações/ADM). Toda rota deve ter acesso pela navegação do perfil que a usa.
 
 Item atual: texto azul, fundo azul muito suave, linha inferior azul, ícone azul.
@@ -614,7 +627,9 @@ Memória do time em `claude/` (local, fora do Git): `README.md` (protocolo), `pr
 
 ## 31. ORDEM DE TRABALHO
 
-**Fase 0 — Documentação (ATUAL).** Consolidar este arquivo, `docs/` e as decisões em aberto. Nenhum código novo.
+**Fase 0 — Documentação.** Concluída e aprovada pelo PO (com ressalvas registradas no §30).
+
+**Fase 1-front — Frontend com backend simulado (ATUAL, 2026-10-07).** Angular reconstruído em `core/shared/features`; CSS consolidado do zero; dados mockados coerentes; ações reais via HttpClient + interceptor; fluxo completo testado (cliente e equipe). Detalhes em `docs/STATUS_PROJETO.md`.
 
 Quando liberado:
 1. **Base do backend:** `.env` + `SECRET_KEY`, DRF, settings por ambiente, `core` (modelo-base, auditoria, máquina de estados), `contas` (JWT, perfis), `ia` (porta + fake_adapter + Job + LogIA).

@@ -2,9 +2,20 @@
 
 Data: 2026-10-07
 
-## Fase atual: 0 — Documentação
+## Fase atual: frontend com backend simulado
 
-Nenhuma implementação nova até a liberação do autor. Objetivo da fase: deixar escopo, fluxo, arquitetura e modelo de dados consistentes antes de começar.
+A documentação (Fase 0) foi concluída. O frontend Angular foi reconstruído e navega como se estivesse ligado à API: o `HttpClient` chama `/api/v1/...` e o interceptor `core/api/mock-backend.interceptor.ts` responde com dados fictícios persistidos no navegador (localStorage), com latência simulada, validação de campos (erros 400 no formato do DRF), regras por perfil e operações longas no contrato `202 + job` com polling.
+
+### Telas implementadas
+Visão geral · Demandas (lista e filtros) e Atividades (quadro/lista) · Nova demanda (2 etapas + anexo .txt) · Detalhe da demanda (resumo, entrevista guiada adaptativa, cenário recomendado, protótipo em HTML isolado, solicitação com viabilidade/reunião/metodologia, requisitos com aprovar/editar/rejeitar, documento imprimível) · Calendário (mês, agenda, novo compromisso) · Soluções e versões · Fila (posição do cliente, fila ordenada da equipe) · Chamado (apoio da IA com contexto recuperado, aprovação/rejeição humana, resolução e registro de conhecimento).
+
+### Verificação feita (2026-10-07)
+- `npm run check` e `npm run build` sem erros e sem avisos.
+- Fluxo completo executado clicando no navegador (Edge headless via CDP): cliente cria demanda → responde 6 perguntas → recebe cenário e protótipo → envia à equipe; equipe marca possível → agenda reunião → define Scrum → IA sugere 5 requisitos → 1 rejeitado com motivo, 4 aprovados → inicia desenvolvimento → documento com 4 requisitos; cliente abre chamado (2º na fila); equipe atende, IA sugere, humano aprova, chamado resolvido e KB-008 registrado. Nenhum erro de console.
+- Sem rolagem horizontal em 375 px em todas as rotas.
+
+### Para trocar pelo backend real
+`src/app/environment.ts` → `useMock: false`. Os contratos esperados estão em `src/app/core/api/models.ts` e `nexus-api.service.ts`.
 
 ## Repositório
 
