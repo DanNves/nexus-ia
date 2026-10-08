@@ -5,7 +5,7 @@
 > Versão 2 (2026-10-07): escopo ampliado para o ciclo completo — do levantamento guiado da necessidade até o suporte pós-entrega.
 > Arquitetura de referência: `docs/Nexus_Arquitetura.pdf` (resumo em `docs/ARQUITETURA.md`). Este arquivo registra as adaptações vigentes.
 
-> **ESTADO ATUAL: FRONTEND COM BACKEND SIMULADO.** O Angular navega como se estivesse conectado à API (`/api/v1` respondido por `core/api/mock-backend.interceptor.ts`). Backend Django ainda não é usado. Ver §31.
+> **ESTADO ATUAL DA MAIN: ARQUITETURA RECONSTRUÍDA.** A main agora segue a estrutura frontend Angular + backend Django/DRF + SQLite definida nesta especificação. O frontend ainda usa o interceptor simulado durante a implementação da API real. A branch development é somente referência e não deve ser modificada nesta migração.
 
 ---
 
@@ -572,7 +572,8 @@ Testes por nível (documento de arquitetura): domínio (sem banco), serviços (b
 
 - O projeto foi migrado de React/TanStack (Lovable) para Angular 22. Lovable não é mais usado.
 - Supabase foi descartado; o projeto roda em localhost.
-- Vercel não é usada no momento (projeto local); `frontend/vercel.json` é legado.
+- SQLite é o banco do MVP atual.
+- Vercel foi removida da arquitetura atual; publicação não faz parte do MVP localhost.
 - O MVP anterior (suporte-centrado, com localStorage) está documentado em `docs/` como histórico acadêmico. A ampliação de escopo é evolução posterior e não reescreve o histórico.
 
 ---
@@ -629,9 +630,9 @@ Memória do time em `claude/` (local, fora do Git): `README.md` (protocolo), `pr
 
 **Fase 0 — Documentação.** Concluída e aprovada pelo PO (com ressalvas registradas no §30).
 
-**Fase 1-front — Frontend com backend simulado (ATUAL, 2026-10-07).** Angular reconstruído em `core/shared/features`; CSS consolidado do zero; dados mockados coerentes; ações reais via HttpClient + interceptor; fluxo completo testado (cliente e equipe). Detalhes em `docs/STATUS_PROJETO.md`.
+**Fase 1 — Reconstrução da main (2026-10-08).** A main foi reconstruída a partir da arquitetura da development, sem modificar development: frontend Angular 22, backend Django/DRF, SQLite, nova navegação e fluxo ampliado. A identidade visual NEXUS foi preservada por tokens de cor e marca. O frontend permanece com backend simulado enquanto a API real é implementada.
 
-Quando liberado:
+**Próxima fase — Backend real:**
 1. **Base do backend:** `.env` + `SECRET_KEY`, DRF, settings por ambiente, `core` (modelo-base, auditoria, máquina de estados), `contas` (JWT, perfis), `ia` (porta + fake_adapter + Job + LogIA).
 2. **Fluxo do cliente:** demandas → levantamento (fontes + entrevista) → cenário → protótipo → encerramento (stand-by/solicitação).
 3. **Equipe:** solicitações (viabilidade, reunião, metodologia) → validações → requisitos → documento.
@@ -674,3 +675,41 @@ Quando liberado:
 - [ ] IA sempre marcada como sugestão
 - [ ] responsivo; sem tela em branco; sem navegação falsa
 - [ ] build e testes passando
+
+
+---
+
+## 33. REGRA ESPECIAL DE MIGRAÇÃO MAIN/DEVELOPMENT
+
+A branch development é fonte de referência da arquitetura que foi consolidada na main.
+
+Regras:
+1. não fazer commits na development para executar esta migração;
+2. não usar development como branch de trabalho da implementação;
+3. toda nova implementação deve ocorrer na main ou em branches derivadas da main;
+4. alterações futuras devem atualizar a documentação da main quando mudarem arquitetura, fluxo, banco ou contratos;
+5. SQLite é a persistência oficial do MVP local;
+6. Supabase não faz parte da arquitetura atual;
+7. a identidade visual NEXUS deve permanecer estável enquanto a estrutura funcional evolui.
+
+## 34. ORDEM DE IMPLEMENTAÇÃO NA MAIN
+
+A implementação deve seguir esta ordem, sem pular diretamente para integrações de IA:
+
+1. Base Django: ambiente, .env, DRF, CORS local, settings e /api/v1/.
+2. Core: UUID, auditoria append-only, vínculos e máquina de estados.
+3. Contas: usuário, perfis e permissões por objeto.
+4. Demandas e levantamento: processo, fontes, entrevista e respostas.
+5. Cenário: sinais, catálogo, pontuação e recomendação.
+6. Protótipo: templates, telas sanitizadas e versionamento.
+7. Validação: aprovar/editar/rejeitar com motivo.
+8. Requisitos/documento: baseline e documento derivado somente de artefatos aprovados.
+9. Planejamento: solicitação, viabilidade, reunião e metodologia.
+10. Produtos/versões: publicação e ponte para suporte.
+11. Chamados: contexto, triagem, atendimento e conversão em nova demanda.
+12. Conhecimento: consolidação e reuso.
+13. IA: LLMProvider, jobs, prompts, logs, fake adapter e provedor real quando definido.
+14. Integração Angular: useMock false, serviços HTTP reais, polling de jobs e tratamento de erros.
+15. Testes: domínio, serviços, API e aceitação CT01–CT10.
+
+Até a etapa 14, o mock continua permitido para não quebrar a demonstração do frontend.
