@@ -1,8 +1,8 @@
 # NEXUS — Status do projeto
 
-Data: 2026-10-07
+Data: 2026-10-08
 
-## Fase atual: frontend com backend simulado
+## Fase atual: main reconstruída; backend real em implementação
 
 A documentação (Fase 0) foi concluída. O frontend Angular foi reconstruído e navega como se estivesse ligado à API: o `HttpClient` chama `/api/v1/...` e o interceptor `core/api/mock-backend.interceptor.ts` responde com dados fictícios persistidos no navegador (localStorage), com latência simulada, validação de campos (erros 400 no formato do DRF), regras por perfil e operações longas no contrato `202 + job` com polling.
 
@@ -18,6 +18,9 @@ Visão geral · Demandas (lista e filtros) e Atividades (quadro/lista) · Nova d
 `src/app/environment.ts` → `useMock: false`. Os contratos esperados estão em `src/app/core/api/models.ts` e `nexus-api.service.ts`.
 
 ## Repositório
+
+A main foi reconstruída usando a árvore da development como referência, sem alterar a development. A estrutura oficial agora é frontend/ + backend/ + docs/. A identidade visual NEXUS foi preservada nos tokens principais.
+
 
 ```
 frontend/   Angular 22 — MVP anterior (suporte-centrado, dados em localStorage); build e check passando
@@ -45,11 +48,13 @@ Ver `CLAUDE.md` §30.
 
 ## Pendências técnicas conhecidas
 
-- `backend/config/settings.py`: `SECRET_KEY` fixa no código e `DEBUG = True` — mover para `.env` antes do primeiro commit do backend.
+- Configurar SECRET_KEY, DEBUG, hosts e CORS por .env no backend real.
+- Criar os apps Django e migrations do modelo definido em docs/MODELO_DADOS.md.
 - Aviso NG8107 no template do `AiComponent` (frontend).
-- Frontend ainda organizado em `pages/` (alvo: `core/shared/features`) e sem integração com API.
-- Vercel não é usada; `frontend/vercel.json` é legado.
+- Frontend segue a estrutura core/shared/features e ainda usa mock enquanto a API real é construída.
+- Integrar useMock false somente depois dos endpoints reais e testes.
+- Vercel não faz parte da arquitetura atual; publicação é tratada como evolução posterior.
 
-## Próximas fases (após liberação)
+## Próximas fases na main
 
 Ver `CLAUDE.md` §31.
