@@ -27,9 +27,11 @@ export class AppComponent {
   readonly nav = [
     { rotulo: 'Visão geral', link: '/visao-geral', icone: 'home' },
     { rotulo: 'Demandas', link: '/demandas', icone: 'demand' },
-    { rotulo: 'Calendário', link: '/calendario', icone: 'calendar' },
+    { rotulo: 'Atividades', link: '/demandas?aba=atividades', icone: 'activity' },
+    { rotulo: 'Requisitos', link: '/requisitos', icone: 'requirement' },
     { rotulo: 'Soluções', link: '/solucoes', icone: 'layers' },
-    { rotulo: 'Fila', link: '/fila', icone: 'queue' },
+    { rotulo: 'Chamados', link: '/fila', icone: 'queue' },
+    { rotulo: 'Conhecimento', link: '/conhecimento', icone: 'knowledge' },
   ];
 
   readonly menuMobile = signal(false);
