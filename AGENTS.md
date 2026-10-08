@@ -39,3 +39,6 @@ Os registros de demonstração são fictícios e devem permanecer coerentes. Nã
 ## Git
 
 Preferir branches pequenas e commits objetivos. Nunca force histórico publicado.
+
+## Prévia no Lovable
+- A prévia serve o build oficial do Angular (`frontend/` de DanNves/nexus-ia): os arquivos montados ficam em `public/` e `src/nexus-angular.html`, e as rotas `src/routes/index.tsx` e `src/routes/$.tsx` devolvem esse HTML. Motivo: o Lovable não roda o Angular CLI, e assim a prévia mostra exatamente o código do repositório. Para atualizar, monte de novo o `frontend/` com Node >= 24.15 e copie os arquivos gerados.
