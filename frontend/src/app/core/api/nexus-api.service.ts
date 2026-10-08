@@ -85,6 +85,7 @@ export class NexusApi {
   gerarSugestao(id: string) { return this.http.post<Job>(`${API}/chamados/${id}/sugestao/gerar`, {}); }
   decidirSugestao(id: string, body: { decisao: 'APROVAR' | 'REJEITAR'; motivo?: string }) { return this.http.post<Chamado>(`${API}/chamados/${id}/sugestao/decisao`, body); }
   resolver(id: string, body: { solucao: string; registrarConhecimento: boolean }) { return this.http.post<Chamado>(`${API}/chamados/${id}/resolver`, body); }
+  conhecimentos() { return this.http.get<Conhecimento[]>(`${API}/conhecimentos`); }
   conhecimento(id: string) { return this.http.get<Conhecimento>(`${API}/conhecimentos/${id}`); }
 
   // Operação longa: 202 + job_id, depois polling até CONCLUIDO/FALHOU.

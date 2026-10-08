@@ -1,0 +1,40 @@
+<div class="pagina">
+  <header class="pagina-topo">
+    <div><span class="eyebrow">ESPECIFICAÇÃO</span><h1>Requisitos</h1><p class="mudo">Especificações, regras e critérios que preservam o contexto produzido no desenvolvimento.</p></div>
+    <a routerLink="/demandas" class="btn btn-secundario">Ver demandas</a>
+  </header>
+
+  <section class="resumo-grid">
+    <article class="resumo-card blue"><span>Requisitos registrados</span><strong>{{ itens().length }}</strong><small>nas demandas visíveis</small></article>
+    <article class="resumo-card purple"><span>Em validação</span><strong>{{ pendentes() }}</strong><small>aguardando decisão</small></article>
+    <article class="resumo-card green"><span>Aprovados</span><strong>{{ aprovados() }}</strong><small>recuperáveis no suporte</small></article>
+    <article class="resumo-card orange"><span>Regras de negócio</span><strong>{{ regras() }}</strong><small>preservadas no contexto</small></article>
+  </section>
+
+  <section class="secao">
+    <div class="barra-ferramentas">
+      <label class="campo-icone campo-busca"><nx-icon name="search" [size]="16"/><input type="search" [ngModel]="busca()" (ngModelChange)="busca.set($event)" placeholder="Buscar requisito, demanda ou regra..."/></label>
+      <div class="filtros">
+        <button class="filtro" [class.ativo]="filtro()==='todos'" (click)="filtro.set('todos')">Todos</button>
+        <button class="filtro" [class.ativo]="filtro()==='pendentes'" (click)="filtro.set('pendentes')">Em validação</button>
+        <button class="filtro" [class.ativo]="filtro()==='aprovados'" (click)="filtro.set('aprovados')">Aprovados</button>
+      </div>
+    </div>
+    <div class="tabela-wrap">
+      <table class="tabela"><thead><tr><th>Requisito</th><th>Demanda</th><th>Tipo</th><th>Situação</th><th>Decisão</th></tr></thead>
+      <tbody>
+        @for (r of filtrados(); track r.id) {
+          <tr>
+            <td><a class="tabela-titulo" [routerLink]="['/demandas',r.demandaId,'requisitos']">{{ r.codigo }} · {{ r.titulo }}</a><span class="mudo">{{ r.descricao }}</span></td>
+            <td><a class="link-sutil" [routerLink]="['/demandas',r.demandaId]">{{ r.demandaCodigo }} · {{ r.demandaNome }}</a></td>
+            <td><span class="tag">{{ r.tipo }}</span></td>
+            <td><nx-badge [tom]="r.estado==='APROVADO'?'verde':r.estado==='REJEITADO'?'vermelho':'roxo'">{{ r.estado === 'APROVADO' ? 'Aprovado' : r.estado === 'REJEITADO' ? 'Rejeitado' : 'Em validação' }}</nx-badge></td>
+            <td class="mudo">{{ r.decididoPor || 'Aguardando decisão' }}</td>
+          </tr>
+        } @empty {
+          <tr><td colspan="5"><nx-vazio icone="requirement" titulo="Nenhum requisito encontrado" texto="Os requisitos das demandas aparecerão aqui."/></td></tr>
+        }
+      </tbody></table>
+    </div>
+  </section>
+</div>

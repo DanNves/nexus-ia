@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, effect, inject, signal, untracked } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { NexusApi } from '../../core/api/nexus-api.service';
-import { VisaoGeral } from '../../core/api/models';
+import { Atividade, Conhecimento, Solucao, VisaoGeral } from '../../core/api/models';
 import { SessionService } from '../../core/session.service';
 import { UI } from '../../shared/ui/ui.components';
 import { ESTADO_CHAMADO, ESTADO_DEMANDA, ETAPAS, TIPO_EVENTO, diaRelativo, duracao, etapaAtual, hora, relativo } from '../../shared/labels';
@@ -16,6 +16,9 @@ export class VisaoGeralPage {
   readonly sessao = inject(SessionService);
   private api = inject(NexusApi);
   readonly dados = signal<VisaoGeral | null>(null);
+  readonly atividades = signal<Atividade[]>([]);
+  readonly solucoes = signal<Solucao[]>([]);
+  readonly conhecimentos = signal<Conhecimento[]>([]);
 
   readonly ESTADO_DEMANDA = ESTADO_DEMANDA;
   readonly ESTADO_CHAMADO = ESTADO_CHAMADO;
@@ -33,6 +36,9 @@ export class VisaoGeralPage {
       untracked(() => {
         this.dados.set(null);
         this.api.visaoGeral().subscribe((d) => this.dados.set(d));
+        this.api.atividades().subscribe((a) => this.atividades.set(a));
+        this.api.solucoes().subscribe((s) => this.solucoes.set(s));
+        this.api.conhecimentos().subscribe((k) => this.conhecimentos.set(k));
       });
     });
   }
@@ -43,4 +49,17 @@ export class VisaoGeralPage {
   }
 
   primeiroNome() { return this.sessao.usuario.nome.split(' ')[0]; }
+
+  atividadesAtivas() { return this.atividades().filter(a => a.estado !== 'CONCLUIDA').length; }
+  validacoesPendentes() {
+    const demandas = this.dados()?.demandas ?? [];
+    return demandas.reduce((n, d) => n + d.requisitos.filter(r => r.estado === 'PROPOSTO').length, 0)
+      + (this.dados()?.pendencias.filter(p => p.tipo === 'chamado').length ?? 0);
+  }
+  versoesPublicadas() { return this.solucoes().reduce((n, s) => n + s.versoes.filter(v => v.estado === 'PUBLICADA').length, 0); }
+  contextoCoberto() {
+    const demandas = this.dados()?.demandas ?? [];
+    if (!demandas.length) return 0;
+    return Math.round(demandas.filter(d => d.requisitos.length || d.solucaoId).length / demandas.length * 100);
+  }
 }

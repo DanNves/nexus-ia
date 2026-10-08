@@ -1,0 +1,29 @@
+<div class="pagina">
+  <header class="pagina-topo">
+    <div><span class="eyebrow">PÓS-ATENDIMENTO</span><h1>Base de conhecimento</h1><p class="mudo">Soluções validadas no atendimento ficam disponíveis para reuso e preservam sua origem.</p></div>
+    <a routerLink="/fila" class="btn btn-secundario">Ver chamados</a>
+  </header>
+
+  <section class="resumo-grid">
+    <article class="resumo-card green"><span>Conhecimentos validados</span><strong>{{ itens().length }}</strong><small>originados de chamados</small></article>
+    <article class="resumo-card blue"><span>Reusos registrados</span><strong>{{ reusos() }}</strong><small>no contexto do suporte</small></article>
+    <article class="resumo-card purple"><span>Origem rastreável</span><strong>{{ itens().length }}</strong><small>todos possuem chamado de origem</small></article>
+    <article class="resumo-card orange"><span>Mais reutilizado</span><strong>{{ maisUsado() }}</strong><small>usos no conhecimento líder</small></article>
+  </section>
+
+  <section class="secao">
+    <div class="barra-ferramentas"><label class="campo-icone campo-busca"><nx-icon name="search" [size]="16"/><input [ngModel]="busca()" (ngModelChange)="busca.set($event)" placeholder="Buscar procedimento, origem ou código..."/></label></div>
+    <div class="cards-conhecimento">
+      @for (k of filtrados(); track k.id) {
+        <article class="conhecimento-card">
+          <div class="conhecimento-topo"><span class="knowledge-icon"><nx-icon name="knowledge" [size]="18"/></span><div><span class="codigo">{{ k.codigo }}</span><h2>{{ k.titulo }}</h2></div><span class="uso">{{ k.usos }} usos</span></div>
+          <p>Procedimento validado e disponível para reutilização no atendimento.</p>
+          <ol>@for (step of k.procedimento; track step){<li>{{ step }}</li>}</ol>
+          <footer><span><strong>Origem</strong> {{ k.chamadoOrigemId }}</span><span><strong>Validado por</strong> {{ k.validadoPor }}</span><a [routerLink]="['/fila', k.chamadoOrigemId]">Abrir chamado</a></footer>
+        </article>
+      } @empty {
+        <nx-vazio icone="knowledge" titulo="Nenhum conhecimento validado" texto="Uma sugestão aprovada pode fechar este ciclo e criar conhecimento reutilizável."/>
+      }
+    </div>
+  </section>
+</div>

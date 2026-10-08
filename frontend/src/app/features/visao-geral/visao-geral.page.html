@@ -1,134 +1,135 @@
 <div class="pagina">
   <header class="pagina-topo">
     <div>
-      <h1>{{ saudacao() }}, {{ primeiroNome() }}</h1>
-      @if (dados(); as d) {
-        <p class="mudo">
-          @if (d.pendencias.length) { {{ d.pendencias.length }} {{ d.pendencias.length === 1 ? 'coisa espera' : 'coisas esperam' }} por você hoje. }
-          @else { Tudo em dia por aqui. }
-        </p>
-      }
+      <span class="eyebrow">VISÃO GERAL</span>
+      <h1>{{ saudacao() }}, {{ primeiroNome() }}!</h1>
+      <p class="mudo">Acompanhe o ciclo do NEXUS e veja onde o contexto precisa de atenção hoje.</p>
+    </div>
+    <div class="topo-botoes">
+      <a routerLink="/demandas?aba=atividades" class="btn btn-secundario"><nx-icon name="activity" [size]="16"/> Nova atividade</a>
+      <a routerLink="/demandas/nova" class="btn btn-primario"><nx-icon name="plus" [size]="16"/> Nova demanda</a>
     </div>
   </header>
 
   @if (dados(); as d) {
-    <dl class="numeros">
-      <div><dt>Demandas ativas</dt><dd>{{ d.numeros.demandasAtivas }}</dd></div>
-      <div><dt>Chamados na fila</dt><dd>{{ d.numeros.naFila }}</dd></div>
-      @if (sessao.ehEquipe()) { <div><dt>Validações pendentes</dt><dd>{{ d.numeros.validacoesPendentes }}</dd></div> }
-      <div><dt>Entregues</dt><dd>{{ d.numeros.entregues }}</dd></div>
-    </dl>
+    <section class="numeros">
+      <div><dt>Demandas em andamento</dt><dd>{{ d.numeros.demandasAtivas }}</dd><span class="mudo">trabalho ativo no ciclo</span></div>
+      <div><dt>Atividades em desenvolvimento</dt><dd>{{ atividadesAtivas() }}</dd><span class="mudo">execuções relacionadas</span></div>
+      <div><dt>Chamados abertos</dt><dd>{{ d.numeros.naFila }}</dd><span class="mudo">fila e atendimento</span></div>
+      <div><dt>Validações humanas</dt><dd>{{ validacoesPendentes() }}</dd><span class="mudo">aguardando decisão</span></div>
+    </section>
 
     <div class="grade-2">
       <div class="coluna">
         <section class="secao">
-          <h2>Precisa da sua ação</h2>
-          @if (d.pendencias.length) {
-            <ul class="lista">
-              @for (p of d.pendencias; track p.id) {
-                <li class="lista-item">
-                  <span class="lista-icone" [attr.data-tipo]="p.tipo">
-                    <nx-icon [name]="p.tipo === 'chamado' ? 'spark' : p.tipo === 'requisito' ? 'check-circle' : 'demand'" [size]="16" />
-                  </span>
-                  <div class="lista-texto">
-                    <strong>{{ p.texto }}</strong>
-                    <span class="mudo">{{ p.detalhe }}</span>
-                  </div>
-                  <a class="btn btn-secundario btn-p" [routerLink]="p.link">{{ p.acao }}</a>
-                </li>
-              }
-            </ul>
-          } @else {
-            <nx-vazio icone="check-circle" titulo="Nada pendente" texto="Quando algo precisar de você, aparece aqui." />
-          }
+          <div class="secao-topo">
+            <div><span class="eyebrow">CONTEXTO DO CICLO</span><h2>Fluxo do NEXUS</h2></div>
+            <span class="badge" data-tom="azul">IA com validação humana</span>
+          </div>
+          <div class="fluxo-nexus">
+            <a routerLink="/demandas"><span class="fluxo-icone blue"><nx-icon name="demand"/></span><b>Demanda</b><small>necessidade</small></a>
+            <i>→</i><a routerLink="/requisitos"><span class="fluxo-icone purple"><nx-icon name="requirement"/></span><b>Requisito</b><small>especificação</small></a>
+            <i>→</i><a routerLink="/solucoes"><span class="fluxo-icone purple"><nx-icon name="layers"/></span><b>Versão</b><small>baseline</small></a>
+            <i>→</i><a routerLink="/fila"><span class="fluxo-icone orange"><nx-icon name="queue"/></span><b>Chamado</b><small>problema</small></a>
+            <i>→</i><span><span class="fluxo-icone purple"><nx-icon name="spark"/></span><b>IA sugere</b><small>apoio</small></span>
+            <i>→</i><span><span class="fluxo-icone green"><nx-icon name="check"/></span><b>Humano valida</b><small>decisão</small></span>
+            <i>→</i><a routerLink="/conhecimento"><span class="fluxo-icone green"><nx-icon name="knowledge"/></span><b>Conhecimento</b><small>reuso</small></a>
+          </div>
+          <div class="fluxo-explicacao"><nx-icon name="link" [size]="17"/><div><strong>O contexto acompanha a solução.</strong><span>O suporte recupera requisitos, versão, chamados anteriores e conhecimento antes de apresentar a sugestão.</span></div></div>
         </section>
 
         <section class="secao">
-          <div class="secao-topo">
-            <h2>{{ sessao.ehEquipe() ? 'Demandas em andamento' : 'Suas demandas' }}</h2>
-            <a routerLink="/demandas" class="link">Ver todas</a>
-          </div>
-          @if (d.demandas.length) {
-            <ul class="lista">
-              @for (dm of d.demandas; track dm.id) {
-                <li>
-                  <a class="lista-item lista-link" [routerLink]="['/demandas', dm.id]">
-                    <div class="lista-texto">
-                      <strong>{{ dm.nome }}</strong>
-                      <span class="mudo">{{ dm.codigo }}, atualizada {{ relativo(dm.atualizadaEm) }}</span>
-                    </div>
-                    <div class="progresso-etapas" [attr.aria-label]="'Etapa: ' + ETAPAS[etapaAtual(dm.estado)]">
-                      @for (e of ETAPAS; track e; let i = $index) {
-                        <span class="etapa-ponto" [class.feita]="i < etapaAtual(dm.estado)" [class.atual]="i === etapaAtual(dm.estado)"></span>
-                      }
-                    </div>
-                    <nx-badge [tom]="ESTADO_DEMANDA[dm.estado].tom">{{ ESTADO_DEMANDA[dm.estado].rotulo }}</nx-badge>
-                  </a>
-                </li>
-              }
-            </ul>
-          } @else {
-            <nx-vazio icone="demand" titulo="Nenhuma demanda ainda" texto="Conte o que você precisa e o NEXUS guia o resto.">
-              <a routerLink="/demandas/nova" class="btn btn-primario">Criar demanda</a>
-            </nx-vazio>
-          }
+          <div class="secao-topo"><div><span class="eyebrow">SUPORTE</span><h2>Chamados que precisam de ação</h2></div><a routerLink="/fila" class="link">Ver fila</a></div>
+          <ul class="lista">
+            @for (c of d.chamados; track c.id) {
+              <li>
+                <a class="lista-item lista-link" [routerLink]="['/fila',c.id]">
+                  <span class="lista-icone" data-tipo="chamado"><nx-icon name="queue" [size]="16"/></span>
+                  <span class="lista-texto"><strong>{{ c.codigo }} · {{ c.titulo }}</strong><span class="mudo">{{ ESTADO_CHAMADO[c.estado].rotulo }} · {{ c.prioridade }}</span></span>
+                  @if (c.sugestao?.estado === 'PROPOSTO') { <nx-badge tom="roxo">Validar IA</nx-badge> } @else { <nx-badge [tom]="ESTADO_CHAMADO[c.estado].tom">{{ ESTADO_CHAMADO[c.estado].rotulo }}</nx-badge> }
+                </a>
+              </li>
+            } @empty { <nx-vazio icone="queue" titulo="Nenhum chamado aberto" texto="O atendimento aparecerá aqui quando houver ocorrências."/> }
+          </ul>
+        </section>
+
+        <section class="secao">
+          <div class="secao-topo"><div><span class="eyebrow">DEMANDAS</span><h2>Demandas recentes</h2></div><a routerLink="/demandas" class="link">Ver todas</a></div>
+          <ul class="lista">
+            @for (dm of d.demandas; track dm.id) {
+              <li><a class="lista-item lista-link" [routerLink]="['/demandas',dm.id]">
+                <span class="lista-icone"><nx-icon name="demand" [size]="16"/></span>
+                <span class="lista-texto"><strong>{{ dm.codigo }} · {{ dm.nome }}</strong><span class="mudo">{{ ESTADO_DEMANDA[dm.estado].rotulo }} · atualizada {{ relativo(dm.atualizadaEm) }}</span></span>
+                <nx-badge [tom]="ESTADO_DEMANDA[dm.estado].tom">{{ ESTADO_DEMANDA[dm.estado].rotulo }}</nx-badge>
+              </a></li>
+            }
+          </ul>
         </section>
       </div>
 
       <aside class="coluna">
-        <section class="secao">
-          <div class="secao-topo">
-            <h2>Próximos compromissos</h2>
-            <a routerLink="/calendario" class="link">Calendário</a>
-          </div>
-          @if (d.proximosEventos.length) {
-            <ul class="agenda">
-              @for (e of d.proximosEventos; track e.id) {
-                <li class="agenda-item">
-                  <span class="agenda-quando"><strong>{{ diaRelativo(e.inicio) }}</strong><span class="mudo">{{ hora(e.inicio) }}</span></span>
-                  <span class="agenda-barra" [attr.data-tom]="TIPO_EVENTO[e.tipo].tom"></span>
-                  <span class="agenda-texto">{{ e.titulo }}<small class="mudo">{{ TIPO_EVENTO[e.tipo].rotulo }}</small></span>
-                </li>
-              }
-            </ul>
-          } @else {
-            <p class="mudo">Sem compromissos marcados.</p>
-          }
+        <section class="secao contexto-destaque">
+          <div class="secao-topo"><div><span class="eyebrow">CONTINUIDADE</span><h2>Contexto da solução</h2></div><nx-icon name="link" [size]="18"/></div>
+          <div class="contexto-percentual"><strong>{{ contextoCoberto() }}%</strong><span>das demandas recentes possuem requisito ou solução recuperável</span></div>
+          <div class="contexto-mini"><div><strong>{{ versoesPublicadas() }}</strong><span>versões publicadas</span></div><div><strong>{{ conhecimentos().length }}</strong><span>conhecimentos validados</span></div></div>
+          <div class="contexto-linha"><span>Desenvolvimento</span><b>→</b><span>Suporte</span><b>→</b><span>Conhecimento</span></div>
         </section>
 
         <section class="secao">
-          <div class="secao-topo">
-            <h2>{{ sessao.ehEquipe() ? 'Atendimento' : 'Seus chamados' }}</h2>
-            <a routerLink="/fila" class="link">Fila</a>
-          </div>
-          @if (d.chamados.length) {
-            <ul class="lista lista-compacta">
-              @for (c of d.chamados; track c.id) {
-                <li>
-                  <a class="lista-item lista-link" [routerLink]="['/fila', c.id]">
-                    @if (c.posicao) {
-                      <span class="posicao-mini">{{ c.posicao }}º</span>
-                    } @else {
-                      <span class="lista-icone" data-tipo="chamado"><nx-icon name="users" [size]="15" /></span>
-                    }
-                    <div class="lista-texto">
-                      <strong>{{ c.titulo }}</strong>
-                      <span class="mudo">
-                        @if (c.posicao) { Espera estimada de {{ duracao(c.esperaEstimadaMin ?? 0) }} }
-                        @else { {{ ESTADO_CHAMADO[c.estado].rotulo }} }
-                      </span>
-                    </div>
-                  </a>
-                </li>
-              }
-            </ul>
-          } @else {
-            <p class="mudo">Nenhum chamado aberto.</p>
-          }
+          <div class="secao-topo"><div><span class="eyebrow">PRÓXIMAS AÇÕES</span><h2>Precisa da sua atenção</h2></div></div>
+          <ul class="lista lista-compacta">
+            @for (p of d.pendencias.slice(0,4); track p.id) {
+              <li><a class="lista-item lista-link" [routerLink]="p.link">
+                <span class="lista-icone" [attr.data-tipo]="p.tipo"><nx-icon [name]="p.tipo==='chamado'?'spark':p.tipo==='requisito'?'check-circle':'demand'" [size]="15"/></span>
+                <span class="lista-texto"><strong>{{ p.texto }}</strong><span class="mudo">{{ p.detalhe }}</span></span>
+              </a></li>
+            } @empty { <li><div class="vazio" style="min-height:100px"><nx-icon name="check-circle"/><span>Nenhuma pendência prioritária.</span></div></li> }
+          </ul>
+        </section>
+
+        <section class="secao">
+          <div class="secao-topo"><div><span class="eyebrow">PROJETOS EM ANDAMENTO</span><h2>Soluções</h2></div><a routerLink="/solucoes" class="link">Ver todas</a></div>
+          <ul class="lista lista-compacta">
+            @for (s of solucoes().slice(0,4); track s.id) {
+              <li><a class="lista-item lista-link" [routerLink]="['/solucoes',s.id]">
+                <span class="lista-icone" style="background:var(--purple-soft);color:var(--purple)"><nx-icon name="layers" [size]="15"/></span>
+                <span class="lista-texto"><strong>{{ s.codigo }} · {{ s.nome }}</strong><span class="mudo">{{ s.versoes.length }} versões · {{ s.tipo }}</span></span>
+              </a></li>
+            }
+          </ul>
+        </section>
+
+        <section class="secao">
+          <div class="secao-topo"><div><span class="eyebrow">ATIVIDADE RECENTE</span><h2>Trabalho do time</h2></div><a routerLink="/demandas?aba=atividades" class="link">Ver atividades</a></div>
+          <ul class="lista lista-compacta">
+            @for (a of atividades().slice(0,4); track a.id) {
+              <li><a class="lista-item lista-link" routerLink="/demandas?aba=atividades">
+                <span class="lista-icone" data-tipo="requisito"><nx-icon name="activity" [size]="15"/></span>
+                <span class="lista-texto"><strong>{{ a.codigo }} · {{ a.titulo }}</strong><span class="mudo">{{ a.estado === 'EM_DESENVOLVIMENTO' ? 'Em desenvolvimento' : a.estado === 'EM_REVISAO' ? 'Em revisão' : a.estado === 'CONCLUIDA' ? 'Concluída' : 'A fazer' }}</span></span>
+              </a></li>
+            }
+          </ul>
         </section>
       </aside>
     </div>
+
+    <div class="grade-2" style="margin-top:13px">
+      <section class="secao">
+        <div class="secao-topo"><div><span class="eyebrow">RASTREABILIDADE</span><h2>Exemplo do contexto conectado</h2></div></div>
+        <div class="rastreabilidade">
+          <a routerLink="/demandas/d12"><strong>DEM-012</strong><small>Demanda</small></a><i>→</i>
+          <a routerLink="/demandas/d12/requisitos"><strong>REQ-014</strong><small>Requisito</small></a><i>→</i>
+          <a routerLink="/solucoes/s1"><strong>v1.2.0</strong><small>Versão</small></a><i>→</i>
+          <a routerLink="/fila/c28"><strong>CH-028</strong><small>Chamado</small></a><i>→</i>
+          <a routerLink="/conhecimento"><strong>KB-007</strong><small>Conhecimento</small></a>
+        </div>
+      </section>
+      <section class="secao conhecimento-resumo">
+        <div class="conhecimento-numero">{{ conhecimentos().length }}</div>
+        <div><span class="eyebrow">BASE DE CONHECIMENTO</span><h2>Conhecimentos validados</h2><p class="mudo">Procedimentos aprovados podem ser reutilizados no atendimento.</p><a routerLink="/conhecimento" class="link">Abrir base →</a></div>
+      </section>
+    </div>
   } @else {
-    <div class="carregando" aria-busy="true"><span></span><span></span><span></span></div>
+    <div class="carregando"><span></span><span></span><span></span></div>
   }
 </div>
