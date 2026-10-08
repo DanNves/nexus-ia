@@ -6,6 +6,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NexusApi } from './core/api/nexus-api.service';
 import { Notificacao, Perfil, ResultadoBusca } from './core/api/models';
 import { SessionService } from './core/session.service';
+import { TemaService } from './core/tema.service';
 import { ToastService } from './shared/ui/toast.service';
 import { UI } from './shared/ui/ui.components';
 import { relativo } from './shared/labels';
@@ -19,6 +20,7 @@ import { relativo } from './shared/labels';
 export class AppComponent {
   readonly sessao = inject(SessionService);
   readonly toast = inject(ToastService);
+  readonly tema = inject(TemaService);
   private api = inject(NexusApi);
   private router = inject(Router);
 

@@ -68,6 +68,11 @@
               @if (sessao.perfil() === 'EQUIPE') { <nx-icon name="check" [size]="16" class="fim" /> }
             </button>
             <hr />
+            <button type="button" class="switch" role="switch" [attr.aria-checked]="tema.escuro()" (click)="tema.alternar()">
+              <nx-icon [name]="tema.escuro() ? 'moon' : 'sun'" [size]="16" /> Modo escuro
+              <span class="switch-trilho" aria-hidden="true"></span>
+            </button>
+            <hr />
             <button type="button" class="menu-opcao" (click)="restaurar()">
               <nx-icon name="refresh" [size]="16" /> Restaurar dados de demonstração
             </button>

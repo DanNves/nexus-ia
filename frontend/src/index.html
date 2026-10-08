@@ -11,6 +11,13 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    try {
+      var t = localStorage.getItem('nexus.tema');
+      if (t !== 'claro' && t !== 'escuro') t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'escuro' : 'claro';
+      document.documentElement.dataset.tema = t;
+    } catch (e) {}
+  </script>
 </head>
 <body>
   <nx-root></nx-root>
