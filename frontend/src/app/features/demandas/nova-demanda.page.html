@@ -1,0 +1,81 @@
+<div class="pagina pagina-estreita">
+  <a routerLink="/demandas" class="voltar"><nx-icon name="arrow-left" [size]="16" /> Demandas</a>
+
+  <header class="pagina-topo">
+    <div>
+      <h1>Nova demanda</h1>
+      <p class="mudo">Conte o que você precisa. Depois o NEXUS faz algumas perguntas simples para entender o melhor caminho.</p>
+    </div>
+  </header>
+
+  <ol class="passos" aria-label="Etapas">
+    <li [class.atual]="etapa() === 1" [class.feito]="etapa() > 1"><span>1</span> Sobre a demanda</li>
+    <li [class.atual]="etapa() === 2"><span>2</span> O que você precisa</li>
+    <li><span>3</span> Perguntas rápidas</li>
+  </ol>
+
+  @if (etapa() === 1) {
+    <form class="form painel" (ngSubmit)="avancar()" novalidate>
+      <label class="campo">
+        <span>Nome</span>
+        <input class="input" name="nome" [(ngModel)]="form.nome" maxlength="80" placeholder="Ex.: Agendamento online de consultas" [class.invalido]="erros()['nome']" autofocus />
+        <nx-erro-campo [mensagens]="erros()['nome']" />
+      </label>
+      <label class="campo">
+        <span>Em uma frase, do que se trata?</span>
+        <input class="input" name="descricao" [(ngModel)]="form.descricao" maxlength="200" placeholder="Ex.: Pacientes marcarem consultas sem precisar ligar" [class.invalido]="erros()['descricao']" />
+        <nx-erro-campo [mensagens]="erros()['descricao']" />
+      </label>
+      <fieldset class="campo">
+        <legend>Qual a urgência?</legend>
+        <div class="opcoes-cartao">
+          @for (p of PRIORIDADES; track p.valor) {
+            <label class="opcao" [class.marcada]="form.prioridade === p.valor">
+              <input type="radio" name="prioridade" [value]="p.valor" [(ngModel)]="form.prioridade" />
+              <strong>{{ p.rotulo }}</strong>
+              <span class="mudo">{{ p.texto }}</span>
+            </label>
+          }
+        </div>
+      </fieldset>
+      <div class="form-acoes">
+        <a routerLink="/demandas" class="btn btn-secundario">Cancelar</a>
+        <button type="submit" class="btn btn-primario">Continuar</button>
+      </div>
+    </form>
+  } @else {
+    <form class="form painel" (ngSubmit)="criar()" novalidate>
+      <label class="campo">
+        <span>Descreva o problema ou o que você precisa</span>
+        <textarea class="input" name="necessidade" rows="6" [(ngModel)]="form.necessidade" maxlength="4000"
+          placeholder="Como é feito hoje? O que dá errado? O que você gostaria que acontecesse?" [class.invalido]="erros()['necessidade']"></textarea>
+        <nx-erro-campo [mensagens]="erros()['necessidade']" />
+      </label>
+
+      <div class="campo">
+        <span class="campo-rotulo">Tem a ata ou a transcrição de uma reunião? <span class="mudo">(opcional)</span></span>
+        @if (arquivo(); as a) {
+          <div class="anexo">
+            <nx-icon name="file" />
+            <div class="lista-texto"><strong>{{ a.nome }}</strong><span class="mudo">{{ a.conteudo.length }} caracteres</span></div>
+            <button type="button" class="btn-icone" (click)="arquivo.set(null)" aria-label="Remover arquivo"><nx-icon name="close" [size]="16" /></button>
+          </div>
+        } @else {
+          <label class="soltar">
+            <nx-icon name="upload" />
+            <span><strong>Escolher arquivo</strong> <span class="mudo">em .txt, até 200 KB</span></span>
+            <input type="file" accept=".txt,text/plain" (change)="escolherArquivo($event)" />
+          </label>
+        }
+        <nx-erro-campo [mensagens]="erros()['arquivo']" />
+      </div>
+
+      <p class="aviso"><nx-icon name="file" [size]="16" /> O texto e a ata ficam guardados na demanda e servem de contexto em todas as próximas etapas.</p>
+
+      <div class="form-acoes">
+        <button type="button" class="btn btn-secundario" (click)="etapa.set(1)">Voltar</button>
+        <button type="submit" class="btn btn-primario" [disabled]="enviando()">{{ enviando() ? 'Criando…' : 'Criar e começar perguntas' }}</button>
+      </div>
+    </form>
+  }
+</div>

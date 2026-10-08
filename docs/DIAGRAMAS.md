@@ -1,211 +1,165 @@
-# NEXUS — Diagramas de Arquitetura e Modelagem
+# NEXUS — Diagramas oficiais
 
-Este documento define os diagramas que devem acompanhar o TCC e orientar a implementação.
-
-## 1. Diagrama de contexto
+## 1. Contexto
 
 ```
-                    +----------------------+
-                    |      Usuário         |
-                    | suporte / gestão     |
-                    +----------+-----------+
-                               |
-                               v
-                    +----------------------+
-                    |       NEXUS          |
-                    | contexto + suporte   |
-                    +----------+-----------+
-                               |
-             +-----------------+------------------+
-             |                                    |
-             v                                    v
-      +--------------+                     +--------------+
-      |   Supabase   |                     |    IA        |
-      | PostgreSQL   |                     | simulada     |
-      +--------------+                     +--------------+
-             |                                    |
-             +----------------+-------------------+
-                              |
-                              v
-                    +----------------------+
-                    | Conhecimento validado|
-                    +----------------------+
+┌───────────────┐
+│   SOLICITANTE │
+└───────┬───────┘
+        │ necessidade
+        ▼
+┌─────────────────────────────┐
+│           NEXUS             │
+│ levantamento → suporte      │
+│ contexto + IA + validação   │
+└───────┬─────────────┬───────┘
+        │             │
+        ▼             ▼
+┌─────────────┐  ┌─────────────┐
+│ Django/DRF  │  │ Provedor IA │
+│ SQLite      │  │ via porta   │
+└─────────────┘  └─────────────┘
 ```
 
-## 2. Diagrama de arquitetura
+## 2. Arquitetura
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                       NAVEGADOR                             │
-│                                                             │
-│  Angular 22                                                 │
-│  ├─ Router                                                  │
-│  ├─ Pages                                                   │
-│  ├─ Shared Components                                       │
-│  └─ Signals / Store                                         │
-└──────────────────────────┬──────────────────────────────────┘
-                           │ HTTPS
-                           v
-┌─────────────────────────────────────────────────────────────┐
-│                    SUPABASE DATA API                         │
-│                    + Row Level Security                      │
-└──────────────────────────┬──────────────────────────────────┘
-                           │
-                           v
-┌─────────────────────────────────────────────────────────────┐
-│                    PostgreSQL                               │
-│ people | demands | activities | requirements | solutions   │
-│ versions | tickets | ai_suggestions | knowledge             │
-│ comments | record_links | audit_events                       │
-└─────────────────────────────────────────────────────────────┘
+                    NEXUS
+                      │
+        ┌─────────────┴─────────────┐
+        │                           │
+        ▼                           ▼
+┌─────────────────┐       ┌────────────────────┐
+│ Angular 22      │ HTTP  │ Django + DRF       │
+│ Router/Signals  │◄─────►│ API /api/v1/       │
+│ Features        │       │ monólito modular   │
+└─────────────────┘       └─────────┬──────────┘
+                                    │
+                                    ▼
+                             ┌─────────────┐
+                             │   SQLite    │
+                             └─────────────┘
+                                    │
+                                    ▼
+                             ┌─────────────┐
+                             │ Auditoria   │
+                             └─────────────┘
 
-GitHub → CI → Vercel → Angular
-Lovable → preview/apoio visual
+                       ┌──────────────────┐
+                       │ LLMProvider      │
+                       │ + fake adapter   │
+                       └──────────────────┘
 ```
 
-## 3. Diagrama do fluxo do TCC
+## 3. Fluxo funcional
 
 ```
-[DEMANDA]
-    |
-    v
-[REQUISITO]
-    |
-    v
-[VERSÃO]
-    |
-    v
-[CHAMADO]
-    |
-    v
-[RECUPERAÇÃO DO CONTEXTO]
-    |
-    v
-[IA — SIMULAÇÃO CONTROLADA]
-    |
-    v
-[SUGESTÃO]
-    |
-    v
-[VALIDAÇÃO HUMANA]
-    |
-    +---- rejeitar/editar ----> [CHAMADO]
-    |
-    v
-[CONHECIMENTO]
-    |
-    v
-[REUSO EM NOVO CHAMADO]
+NECESSIDADE
+    ↓
+ENTREVISTA
+    ↓
+CENÁRIO
+    ↓
+PROTÓTIPO
+    ↓
+SOLICITAÇÃO
+    ↓
+VIABILIDADE
+    ↓
+REUNIÃO
+    ↓
+METODOLOGIA
+    ↓
+REQUISITOS
+    ↓
+DOCUMENTO
+    ↓
+PRODUTO / VERSÃO
+    ↓
+CHAMADO
+    ↓
+CONTEXTO
+    ↓
+IA PROPÕE
+    ↓
+HUMANO VALIDA
+   ↙       ↘
+REJEITA    APROVA
+  ↓          ↓
+REVISÃO   CONHECIMENTO
+             ↓
+            REUSO
 ```
 
-## 4. Diagrama de decisão da IA
+## 4. Rastreabilidade
 
 ```
-              +------------------+
-              | Chamado aberto   |
-              +--------+---------+
-                       |
-                       v
-             +----------------------+
-             | Há contexto?         |
-             +----+------------+----+
-                  |            |
-                 sim           não
-                  |            |
-                  v            v
-        +---------------+   +----------------+
-        | Recuperar     |   | Registrar      |
-        | relações      |   | contexto parcial|
-        +-------+-------+   +--------+-------+
-                |                    |
-                +---------+----------+
-                          v
-                 +-------------------+
-                 | Sugestão simulada |
-                 +---------+---------+
-                           |
-                    +------+------+
-                    |             |
-                 aprovar       rejeitar
-                    |             |
-                    v             v
-             +-------------+   +---------+
-             | Conhecimento|   | Revisão |
-             | consolidado |   | humana  |
-             +-------------+   +---------+
+Demanda
+  │
+  ├── Fonte / Entrevista
+  │
+  ├── Cenário
+  │
+  ├── Protótipo
+  │
+  ├── Requisitos
+  │      └── Baseline
+  │
+  └── Produto
+         └── Versão
+               │
+               └── Chamado
+                     │
+                     ├── Triagem
+                     └── Conhecimento
 ```
 
-## 5. Diagrama ER simplificado
+## 5. Máquina de estados da IA
 
 ```
-PEOPLE
-  |
-  +---- DEMANDS ---- ACTIVITIES
-  |       |
-  |       +---- REQUIREMENTS
-  |       |
-  |       +---- TICKETS ---- AI_SUGGESTIONS
-  |                    |
-  |                    +---- KNOWLEDGE
-  |
-  +---- COMMENTS
-  |
-  +---- AUDIT_EVENTS
-
-SOLUTIONS ---- VERSIONS
-     |
-     +---- DEMANDS
-     +---- REQUIREMENTS
-     +---- TICKETS
-     +---- KNOWLEDGE
-
-RECORD_LINKS conecta registros de tipos diferentes.
+GERAÇÃO
+   ↓
+PROPOSTO
+   ↓
+EM_REVISAO
+ ┌─┼───────────────┐
+ ↓ ↓               ↓
+APROVADO  EDITADO  REJEITADO
+            ↓          ↓
+       EM_REVISAO   NOVA GERAÇÃO
 ```
 
-## 6. Diagrama de implantação
+Não existe transição automática para APROVADO.
+
+## 6. Implantação local
 
 ```
 GitHub
-  |
-  | push / PR
-  v
-GitHub Actions
-  |
-  | npm ci + check + build
-  v
-Vercel
-  |
-  v
-Angular 22
-  |
-  | HTTPS
-  v
-Supabase
-  |
-  v
-PostgreSQL
+  │
+  ▼
+main
+  │
+  ├── frontend
+  │     └── Angular 22 :4200
+  │
+  └── backend
+        └── Django/DRF :8000
+              │
+              └── SQLite
+
+development
+  └── referência da arquitetura
+      (não recebe alterações desta migração)
 ```
 
-## 7. Diagrama para apresentação da banca
+## 7. Regra para a banca
 
-A versão visual deve destacar somente o fluxo essencial:
+O diagrama principal da apresentação deve mostrar somente:
 
 **DEMANDA → REQUISITO → VERSÃO → CHAMADO → CONTEXTO → IA → SUGESTÃO → VALIDAÇÃO → CONHECIMENTO**
 
-Abaixo dele:
+e, abaixo:
 
 **IA SUGERE → HUMANO VALIDA → SISTEMA CONSOLIDA**
 
-À direita:
-- Angular 22;
-- Supabase;
-- GitHub;
-- Vercel.
-
-O diagrama não deve transformar a apresentação em um mapa de infraestrutura.
-
-## 8. Arquivo visual de orientação
-
-Foi produzido também um infográfico visual detalhado para servir como referência durante a implementação e a montagem da apresentação. Ele contempla arquitetura geral, fluxo, modelo de entidades, organização Angular, GitHub, Vercel, Lovable e próximos passos.
-
-A imagem é material de orientação; os arquivos Markdown deste diretório são a fonte textual oficial.
+A arquitetura técnica detalhada fica para o slide de arquitetura.

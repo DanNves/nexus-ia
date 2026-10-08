@@ -1,161 +1,149 @@
-# NEXUS — Modelo de Dados e Rastreabilidade
+# NEXUS — Modelo de dados (proposta)
 
-## 1. Objetivo
+Base: docs/ARQUITETURA.md §5 e §11 + fluxo em docs/FLUXO.md.
+**Status: baseline de implementação da main.** Campos podem mudar durante as fases do backend; os princípios de rastreabilidade, validação humana e auditoria não devem ser removidos.
 
-O modelo deve representar o ciclo completo do NEXUS sem transformar relações em texto livre.
+O modelo é compatível com SQLite. Recursos exclusivos de PostgreSQL, como ArrayField e pgvector, não fazem parte do MVP local.
 
-## 2. Entidades
+## 1. Convenções
 
-| Entidade | Função |
+- PK `id` UUID em todas as entidades.
+- `codigo` legível e estável para exibição/rastreabilidade (ex.: `DEM-012`/`PRC-001` — prefixo pendente —, `REQ-014`, `VER-120`, `CH-028`, `KB-007`).
+- Modelo-base (`core`): `id`, `criado_em`, `atualizado_em`, `atualizado_por`.
+- Artefatos da IA herdam o **mixin de artefato**: `estado` (PROPOSTO, EM_REVISAO, APROVADO, EDITADO, REJEITADO, OBSOLETO), `versao`, `versao_anterior` (FK para si), `vigente` (bool), `origem` (IA/humano), `job` (FK), `confianca`, `validador`, `motivo_rejeicao`.
+- Exclusão lógica (`excluido_em`) para artefatos de projeto.
+- Auditoria append-only.
+- Um módulo não referencia models de outro por import; FKs entre módulos usam referência por string do app (`"demandas.Demanda"`) e o acesso a dados passa por serviços.
+- Compatível com SQLite (sem `ArrayField`, sem lookups exclusivos de PostgreSQL).
+
+## 2. Entidades por módulo
+
+### core
+| Entidade | Campos principais |
 |---|---|
-| people | pessoas envolvidas |
-| demands | origem da necessidade |
-| activities | trabalho relacionado à demanda |
-| requirements | especificação do que deve ser atendido |
-| solutions | solução/produto |
-| versions | versão publicada da solução |
-| tickets | problema pós-entrega |
-| ai_suggestions | sugestão simulada e decisão humana |
-| knowledge | conhecimento validado e reutilizável |
-| comments | comunicação associada aos registros |
-| record_links | relações explícitas entre registros |
-| audit_events | trilha de alterações relevantes |
+| EventoAuditoria | ator, acao, entidade_tipo, entidade_id, estado_anterior, estado_novo, versao, dados (JSON), criado_em — **sem update/delete** |
+| VinculoRegistro | origem_tipo, origem_id, destino_tipo, destino_id, tipo_relacao (origina, implementado_em, afetado_por, originou, melhoria_de…) |
 
-## 3. Chaves
+### contas
+| Entidade | Campos principais |
+|---|---|
+| Usuario | (usuário Django) nome, e-mail, perfil |
+| Perfil | CLIENTE, EQUIPE, SUPORTE, ADMIN — acumuláveis? pendente (`CLAUDE.md` §30 #16) |
+| Atribuicao | usuario, tipo_artefato, escopo (processo) — quem valida o quê |
 
-Os códigos legíveis atuais, como `DEM-012`, `REQ-014`, `VER-120`, `CH-028` e `KB-007`, continuam sendo identificadores de demonstração.
+### demandas
+| Entidade | Campos principais |
+|---|---|
+| Demanda (Processo) | codigo, nome, descricao, area, solicitante, contato, prioridade, prazo_desejado, tipo (NOVO, MELHORIA, DE_CHAMADO), processo_pai, produto_relacionado, estado (ver `FLUXO.md` §5) |
+| Anexo | demanda, arquivo, nome_original, tipo_mime, tamanho, enviado_por |
 
-Na persistência PostgreSQL, cada registro possui uma chave interna e mantém o código funcional para apresentação e rastreabilidade.
+### levantamento
+| Entidade | Campos principais |
+|---|---|
+| FonteInformacao | demanda, tipo (TEXTO, ATA, TRANSCRICAO, REUNIAO_EQUIPE), conteudo_original, conteudo_anonimizado, anexo |
+| SessaoEntrevista | demanda, estado (EM_ANDAMENTO, PAUSADA, CONCLUIDA), iniciada_em, concluida_em |
+| Pergunta | sessao, ordem, enunciado, tipo (UNICA, MULTIPLA), opcoes (JSON: rótulo, valor), permite_outro, permite_nao_sei, gerada_por (IA/banco), job |
+| Resposta | pergunta, opcoes_escolhidas (JSON), texto_outro, nao_sei, respondida_em, alterada_em |
+| Levantamento *(artefato)* | demanda, resumo, objetivos, atores, restricoes, conteudo (JSON) |
 
-## 4. Relações principais
+### cenario
+| Entidade | Campos principais |
+|---|---|
+| Sinal | demanda, chave, valor, peso, origem (resposta/fonte), origem_id |
+| CenarioTecnico | nome (WEB, DESKTOP, MOBILE, JOB, API…), descricao, regras_pontuacao (JSON), ativo — mantido no ADM |
+| AnaliseCenario | demanda, sinais_considerados (JSON), calculada_em |
+| Recomendacao *(artefato)* | analise, cenario, pontuacao, justificativa, posicao, escolhido_pelo_cliente, escolhido_pela_equipe |
 
-```
-people
-  ├── requester/assignee
-  └── validated_by
+### prototipo
+| Entidade | Campos principais |
+|---|---|
+| TemplateTela | nome, categoria (LOGIN, LISTAGEM, FORMULARIO, PAINEL, DETALHE, RELATORIO…), cenarios_aplicaveis, html_base, origem (ADM / gerado de protótipo), ativo — direção pendente (`CLAUDE.md` §30 #10) |
+| Prototipo *(artefato)* | demanda, cenario, observacoes |
+| Tela | prototipo, ordem, nome, template_origem, html (sanitizado), imagem |
+| Comentario | tela, autor, texto, criado_em |
 
-solutions
-  └── versions
+### validacao
+| Entidade | Campos principais |
+|---|---|
+| SolicitacaoValidacao | artefato_tipo, artefato_id, validador, prazo, estado |
+| Decisao | solicitacao, decisao (APROVAR, EDITAR, REJEITAR), motivo, versao_resultante, decidido_por, decidido_em |
 
-demands
-  ├── activities
-  ├── requirements
-  ├── tickets
-  └── solution/version
+### requisitos
+| Entidade | Campos principais |
+|---|---|
+| Requisito *(artefato)* | demanda, codigo, tipo (RF, RNF, REGRA), titulo, descricao, prioridade, criterios_aceite (JSON) |
+| Baseline | demanda, numero, requisitos (M2M versões aprovadas), fechada_em, fechada_por |
+| DocumentoRequisitos *(artefato)* | demanda, baseline, versao, conteudo, arquivo_gerado |
 
-requirements
-  └── demand + solution/version
+### planejamento
+*PDF: PlanoTrabalho, ItemBacklog, Iteracao. Adaptação proposta: Solicitacao, Viabilidade, Reuniao, Metodologia.*
 
-versions
-  └── solution
+| Entidade | Campos principais |
+|---|---|
+| Solicitacao | demanda, aberta_em, responsavel, estado |
+| Viabilidade | solicitacao, resultado (POSSIVEL, INVIAVEL; COM_RESSALVAS proposta), justificativa, decidido_por, decidido_em |
+| Reuniao | solicitacao, data_hora, participantes, pauta, ata (texto → pode virar FonteInformacao) |
+| Metodologia | nome (SCRUM, KANBAN, CASCATA, HIBRIDA…), descricao, ativo — mantido no ADM |
+| PlanoTrabalho | solicitacao, metodologia, data_inicio, data_previsao, responsavel |
+| ItemBacklog | plano, requisito, titulo, estado, ordem |
+| Iteracao | plano, numero, inicio, fim, objetivo |
 
-tickets
-  ├── demand
-  ├── activity
-  ├── requirement
-  ├── solution
-  ├── version
-  └── ai_suggestions
+### produtos
+| Entidade | Campos principais |
+|---|---|
+| Produto | codigo, nome, demanda_origem, descricao |
+| Versao | produto, numero (ex.: 1.2.0), publicada_em, baseline, notas |
+| Publicacao | versao, publicada_por, publicada_em |
 
-ai_suggestions
-  └── ticket + validated_by
+### chamados
+| Entidade | Campos principais |
+|---|---|
+| Chamado | codigo, titulo, descricao, produto, versao, solicitante, responsavel, prioridade, estado, demanda_gerada |
+| Triagem *(artefato)* | chamado, categoria, resumo, causa_possivel, procedimento, evidencias (JSON), fontes (JSON), conhecimento_encontrado |
+| Atendimento | chamado, responsavel, observacao, criado_em |
 
-knowledge
-  ├── source_ticket
-  ├── solution
-  ├── version
-  └── validated_by
+### conhecimento
+| Entidade | Campos principais |
+|---|---|
+| ItemConhecimento *(artefato)* | codigo, titulo, chamado_origem, produto, versao, procedimento, revisao, validado_por, validado_em, usos |
+| Trecho | item, texto, embedding (JSON/bytes — sem pgvector por enquanto) |
 
-record_links
-  └── qualquer origem ↔ qualquer destino permitido
-```
+### ia
+| Entidade | Campos principais |
+|---|---|
+| Job | tipo, alvo_tipo, alvo_id, estado (PENDENTE, EM_EXECUCAO, CONCLUIDO, FALHOU), percentual, tentativas, erro_tratado, criado_em, concluido_em |
+| PromptTemplate | chave, versao, texto, schema_json, ativo |
+| LogIA | job, provedor, modelo, versao_modelo, prompt_template, parametros, tokens_entrada, tokens_saida, custo_estimado, duracao_ms, anonimizado (bool), artefato_tipo, artefato_id |
 
-## 5. Regras de integridade
-
-1. Versão pertence a uma solução.
-2. Requisito pode apontar para demanda, solução e versão.
-3. Chamado deve preservar solução/versão quando conhecidos.
-4. Sugestão IA pertence a um chamado.
-5. Conhecimento originado de suporte deve apontar para o chamado de origem.
-6. Conhecimento oficial deve possuir validação humana.
-7. Relações importantes devem ser navegáveis nos dois sentidos.
-8. IDs de demonstração não devem ser embutidos em indicadores.
-9. Status devem respeitar o conjunto permitido por entidade.
-10. Conclusão de chamado deve exigir a validação humana prevista pelo TCC.
-
-## 6. Record links
-
-A tabela `record_links` permite registrar relações que não precisam virar dezenas de colunas específicas.
-
-Exemplos:
-
-```
-('Demanda', 'DEM-012', 'Requisito', 'REQ-014', 'origina')
-('Requisito', 'REQ-014', 'Versão', 'VER-120', 'implementado_em')
-('Versão', 'VER-120', 'Chamado', 'CH-028', 'afetado_por')
-('Chamado', 'CH-028', 'Conhecimento', 'KB-007', 'originou')
-```
-
-A implementação física atual utiliza IDs textuais para compatibilidade com o modelo existente do MVP. A migração futura para UUID interno não deve remover os códigos funcionais.
-
-## 7. IA
-
-`ai_suggestions` registra:
-- categoria;
-- resumo;
-- confiança simulada;
-- causa possível;
-- procedimento;
-- evidências;
-- conhecimento/chamado anterior encontrado;
-- estado pending/approved/rejected;
-- responsável pela validação;
-- data da validação;
-- indicação de edição.
-
-Isso permite calcular indicadores sem inventar resultados.
-
-## 8. Auditoria
-
-`audit_events` deve registrar:
-- ator;
-- entidade;
-- ação;
-- estado anterior;
-- estado posterior;
-- data.
-
-Prioridade inicial:
-- aprovação/rejeição de IA;
-- criação de conhecimento;
-- mudança de status;
-- alterações relevantes de chamados.
-
-## 9. Diagrama ER textual
+## 3. Relações principais
 
 ```
-SOLUTION 1 ─── N VERSION
-    |
-    +── N DEMAND ─── N ACTIVITY
-    |       |
-    |       +── N REQUIREMENT
-    |       |
-    |       +── N TICKET
-    |
-    +── N REQUIREMENT
-    |
-    +── N TICKET
-
-TICKET 1 ─── N AI_SUGGESTION
-TICKET 1 ─── N KNOWLEDGE
-
-PEOPLE 1 ─── N DEMAND / ACTIVITY / REQUIREMENT / TICKET
-PEOPLE 1 ─── N AI_SUGGESTION / KNOWLEDGE / COMMENTS
-
-ANY RECORD N ─── N ANY RECORD
-             via RECORD_LINKS
+Usuario ──< Demanda >── Demanda (processo_pai: melhoria)
+Demanda ──< FonteInformacao, Anexo
+Demanda ──< SessaoEntrevista ──< Pergunta ──1 Resposta
+Demanda ──< Sinal (cenario) ──▶ AnaliseCenario ──< Recomendacao ──▶ CenarioTecnico
+Demanda ──< Prototipo ──< Tela ──< Comentario ;  Tela ──▶ TemplateTela
+Demanda ──1 Solicitacao ──1 Viabilidade, ──< Reuniao, ──1 PlanoTrabalho ──▶ Metodologia
+Demanda ──< Requisito ;  Baseline ──< Requisito (versões aprovadas) ;  DocumentoRequisitos ──▶ Baseline
+Demanda ──< Produto ──< Versao ──▶ Baseline
+Versao ──< Chamado ──< Triagem ;  Chamado ──▶ Demanda (conversão)
+Chamado ──< ItemConhecimento ──< Trecho
+Job ──< LogIA ;  qualquer artefato ──▶ Job
+qualquer registro ──< VinculoRegistro >── qualquer registro
+qualquer mudança relevante ──▶ EventoAuditoria
 ```
 
-## 10. Critério de aceite
+## 4. Regras de integridade
 
-O modelo está coerente quando é possível iniciar em uma demanda, chegar ao requisito e à versão, abrir um chamado, recuperar contexto, registrar a decisão humana e transformar o resultado aprovado em conhecimento reutilizável.
+1. Versão pertence a um produto; produto aponta para o processo de origem.
+2. Documento de requisitos só referencia baseline fechada, e baseline só contém versões APROVADAS.
+3. Rejeição exige motivo.
+4. Não existe transição automática para APROVADO.
+5. Conhecimento originado de suporte aponta para o chamado de origem e exige validação humana.
+6. Chamado não é concluído sem a validação prevista.
+7. Viabilidade INVIAVEL exige justificativa e encerra o processo.
+8. Processo de melhoria referencia o processo pai ou o produto.
+9. Cliente só acessa os próprios processos (filtro por vínculo, não só por ID).
+10. Estados respeitam as transições permitidas por entidade.
+11. Eventos de auditoria nunca são alterados nem excluídos.
+12. Indicadores nunca usam IDs de demonstração fixos.
