@@ -1,0 +1,166 @@
+<div class="pagina">
+  <a routerLink="/fila" class="voltar"><nx-icon name="arrow-left" [size]="16" /> Fila</a>
+
+  @if (erro()) {
+    <nx-vazio icone="alert" titulo="Não foi possível abrir este chamado" [texto]="erro()">
+      <a routerLink="/fila" class="btn btn-secundario">Voltar para a fila</a>
+    </nx-vazio>
+  } @else if (c(); as c) {
+    <header class="detalhe-topo">
+      <div class="detalhe-titulo">
+        <span class="codigo mudo">{{ c.codigo }}</span>
+        <h1>{{ c.titulo }}</h1>
+        <p class="mudo">Aberto {{ relativo(c.abertoEm) }} por {{ pessoa(c.solicitanteId)?.nome }}</p>
+      </div>
+      <div class="detalhe-meta">
+        <nx-badge [tom]="ESTADO_CHAMADO[c.estado].tom">{{ ESTADO_CHAMADO[c.estado].rotulo }}</nx-badge>
+        <nx-badge [tom]="PRIORIDADE[c.prioridade].tom">Impacto {{ IMPACTO_CURTO[c.prioridade] }}</nx-badge>
+        @if (sessao.ehEquipe() && c.estado === 'NA_FILA') {
+          <button type="button" class="btn btn-primario" (click)="atender()"><nx-icon name="play" [size]="16" /> Atender</button>
+        }
+      </div>
+    </header>
+
+    <ol class="trilha" aria-label="Andamento do chamado">
+      @for (p of PASSOS; track p; let i = $index) {
+        <li [class.feita]="i < passo() || (i === 3 && passo() === 3)" [class.atual]="i === passo() && passo() !== 3">
+          <span class="trilha-marca">@if (i < passo() || (i === 3 && passo() === 3)) { <nx-icon name="check" [size]="12" [stroke]="2.5" /> }</span>
+          <span class="trilha-rotulo">{{ p }}</span>
+        </li>
+      }
+    </ol>
+
+    <div class="grade-2">
+      <div class="coluna">
+        @if (c.estado === 'NA_FILA' && c.posicao) {
+          <section class="posicao posicao-compacta">
+            <div class="posicao-numero"><span class="posicao-ordinal">{{ c.posicao }}<sup>º</sup></span><span class="mudo">na fila</span></div>
+            <div class="posicao-corpo">
+              <p>Espera estimada de <strong>{{ duracao(c.esperaEstimadaMin ?? 0) }}</strong>. Você recebe uma notificação quando o atendimento começar.</p>
+            </div>
+          </section>
+        }
+
+        <section class="secao">
+          <h2>O que aconteceu</h2>
+          <p>{{ c.descricao }}</p>
+        </section>
+
+        @if (sessao.ehEquipe() && c.estado !== 'NA_FILA') {
+          <section class="painel apoio-ia" aria-labelledby="apoio-ia-titulo">
+            <header class="apoio-ia-topo">
+              <h2 id="apoio-ia-titulo"><nx-icon name="spark" /> Apoio da IA</h2>
+              <span class="mudo">A IA sugere. Quem decide é você.</span>
+            </header>
+
+            @if (job(); as j) {
+              <div class="processando" aria-live="polite">
+                <p><strong>{{ j.etapa }}…</strong></p>
+                <div class="barra"><span [style.width.%]="j.percentual"></span></div>
+              </div>
+            } @else if (!c.sugestao) {
+              <p class="mudo">A IA recupera a demanda, os requisitos, a versão e chamados anteriores desta solução, e sugere uma possível causa e um procedimento.</p>
+              @if (c.estado === 'EM_ATENDIMENTO') {
+                <button type="button" class="btn btn-primario" (click)="analisar()"><nx-icon name="spark" [size]="16" /> Analisar com IA</button>
+              }
+            } @else {
+              @if (c.sugestao; as s) {
+                <div class="apoio-bloco">
+                  <h3>Contexto recuperado</h3>
+                  <ul class="fontes">
+                    @for (f of s.fontes; track f.codigo) {
+                      <li>
+                        @if (f.link) { <a [routerLink]="f.link" class="fonte-link"><span class="mudo">{{ f.tipo }}</span> <strong>{{ f.codigo }}</strong> {{ f.titulo }}</a> }
+                        @else { <span class="fonte-link"><span class="mudo">{{ f.tipo }}</span> <strong>{{ f.codigo }}</strong> {{ f.titulo }}</span> }
+                      </li>
+                    }
+                  </ul>
+                  @if (s.semHistorico) { <p class="aviso"><nx-icon name="alert" [size]="16" /> Não há solução anterior registrada para este problema. A sugestão parte só do contexto da solução.</p> }
+                </div>
+                <div class="apoio-bloco">
+                  <h3>Possível causa <span class="mudo">({{ s.categoria }}, confiança {{ (s.confianca * 100).toFixed(0) }}%)</span></h3>
+                  <p>{{ s.causa }}</p>
+                </div>
+                <div class="apoio-bloco">
+                  <h3>Procedimento sugerido</h3>
+                  <ol class="procedimento">@for (p of s.procedimento; track $index) { <li>{{ p }}</li> }</ol>
+                </div>
+
+                @switch (s.estado) {
+                  @case ('PROPOSTO') {
+                    @if (rejeitando()) {
+                      <div class="form">
+                        <label class="campo"><span>Por que rejeitar?</span><input class="input" [(ngModel)]="motivo" placeholder="Ex.: a causa é outra, verifiquei o horário do celular" /></label>
+                        <div class="form-acoes">
+                          <button type="button" class="btn btn-secundario" (click)="rejeitando.set(false)">Cancelar</button>
+                          <button type="button" class="btn btn-perigo" [disabled]="ocupado()" (click)="rejeitar()">Rejeitar sugestão</button>
+                        </div>
+                      </div>
+                    } @else {
+                      <div class="form-acoes apoio-acoes">
+                        <button type="button" class="btn btn-secundario" (click)="rejeitando.set(true)"><nx-icon name="x-circle" [size]="16" /> Rejeitar e revisar</button>
+                        <button type="button" class="btn btn-primario" [disabled]="ocupado()" (click)="aprovar()"><nx-icon name="check-circle" [size]="16" /> Aprovar sugestão</button>
+                      </div>
+                    }
+                  }
+                  @case ('APROVADO') { <p class="decisao decisao-ok"><nx-icon name="check-circle" [size]="16" /> Aprovada por {{ s.decididoPor }}, {{ dataHora(s.decididoEm) }}</p> }
+                  @case ('REJEITADO') { <p class="decisao decisao-nao"><nx-icon name="x-circle" [size]="16" /> Rejeitada por {{ s.decididoPor }}: {{ s.motivo }}</p> }
+                }
+              }
+            }
+          </section>
+
+          @if (c.estado === 'EM_ATENDIMENTO' && c.sugestao && c.sugestao.estado !== 'PROPOSTO') {
+            <section class="painel">
+              <h2>Resolver chamado</h2>
+              <div class="form">
+                <label class="campo"><span>Como foi resolvido</span>
+                  <textarea class="input" rows="3" [(ngModel)]="resolucao.texto" [class.invalido]="erroResolucao()"></textarea>
+                  @if (erroResolucao()) { <p class="erro-campo" role="alert">{{ erroResolucao() }}</p> }
+                </label>
+                @if (c.sugestao.estado === 'APROVADO') {
+                  <label class="checar"><input type="checkbox" [(ngModel)]="resolucao.registrar" /> Registrar o procedimento validado na base de conhecimento</label>
+                }
+                <div class="form-acoes"><button type="button" class="btn btn-primario" [disabled]="ocupado()" (click)="resolver()">Marcar como resolvido</button></div>
+              </div>
+            </section>
+          }
+          @if (c.estado === 'EM_ATENDIMENTO' && !c.sugestao && !job()) {
+            <p class="mudo">Para resolver, peça a análise da IA e registre sua decisão sobre ela.</p>
+          }
+        }
+
+        @if (kb(); as k) {
+          <section class="painel conhecimento">
+            <h2><nx-icon name="book" /> Virou conhecimento: {{ k.codigo }}</h2>
+            <p><strong>{{ k.titulo }}</strong></p>
+            <ol class="procedimento">@for (p of k.procedimento; track $index) { <li>{{ p }}</li> }</ol>
+            <p class="mudo">Validado por {{ k.validadoPor }}, {{ dataHora(k.validadoEm) }}. Reutilizado {{ k.usos }} {{ k.usos === 1 ? 'vez' : 'vezes' }}.</p>
+          </section>
+        }
+      </div>
+
+      <aside class="coluna">
+        <section class="secao">
+          <h2>Contexto</h2>
+          <dl class="detalhes">
+            <div><dt>Solução</dt><dd>@if (solucao(); as s) { <a class="link" [routerLink]="['/solucoes', s.id]">{{ s.nome }}</a> }</dd></div>
+            <div><dt>Versão</dt><dd>@if (versao(); as v) { v{{ v.numero }} }</dd></div>
+            <div><dt>Solicitante</dt><dd>@if (pessoa(c.solicitanteId); as p) { <span class="pessoa"><nx-avatar [nome]="p.nome" [tamanho]="22" /> {{ p.nome }}</span> }</dd></div>
+            <div><dt>Responsável</dt><dd>@if (pessoa(c.responsavelId); as p) { <span class="pessoa"><nx-avatar [nome]="p.nome" [tamanho]="22" /> {{ p.nome }}</span> } @else { <span class="mudo">Aguardando atendimento</span> }</dd></div>
+          </dl>
+        </section>
+        <section class="secao">
+          <h2>Histórico</h2>
+          <ol class="historico">
+            @for (h of c.historico.slice().reverse(); track $index) {
+              <li><span>{{ h.texto }}</span><small class="mudo">{{ h.autor }}, {{ relativo(h.data) }}</small></li>
+            }
+          </ol>
+        </section>
+      </aside>
+    </div>
+  } @else {
+    <div class="carregando" aria-busy="true"><span></span><span></span><span></span></div>
+  }
+</div>
