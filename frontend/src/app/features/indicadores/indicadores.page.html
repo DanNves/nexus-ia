@@ -1,0 +1,37 @@
+<div class="pagina">
+  <header class="pagina-topo"><div><span class="eyebrow">ACOMPANHAMENTO</span><h1>Indicadores</h1><p class="mudo">Leitura operacional do MVP. Estes números descrevem o estado da demonstração, não resultados experimentais.</p></div></header>
+
+  @if (dados(); as d) {
+    <section class="resumo-grid">
+      <article class="resumo-card blue"><span>Demandas ativas</span><strong>{{ d.numeros.demandasAtivas }}</strong><small>em andamento</small></article>
+      <article class="resumo-card orange"><span>Chamados na fila</span><strong>{{ d.numeros.naFila }}</strong><small>aguardando atendimento</small></article>
+      <article class="resumo-card purple"><span>Validações pendentes</span><strong>{{ d.numeros.validacoesPendentes }}</strong><small>decisão humana</small></article>
+      <article class="resumo-card green"><span>Conhecimentos validados</span><strong>{{ conhecimentos().length }}</strong><small>disponíveis para reuso</small></article>
+    </section>
+
+    <section class="indicadores-layout">
+      <article class="secao">
+        <div class="secao-topo"><div><span class="eyebrow">CONTINUIDADE</span><h2>Cobertura de contexto</h2></div><strong class="numero-grande">{{ cobertura() }}%</strong></div>
+        <div class="barra-progresso"><span [style.width.%]="cobertura()"></span></div>
+        <p class="mudo">Indica quantas demandas visíveis já possuem requisito ou solução registrada para sustentar a recuperação de contexto.</p>
+      </article>
+      <article class="secao">
+        <span class="eyebrow">IA + HUMANO</span><h2>Decisões do suporte</h2>
+        <div class="metricas-lista"><div><span>Pendentes</span><strong>{{ pendentesIa() }}</strong></div><div><span>Aprovadas</span><strong>{{ aprovadasIa() }}</strong></div><div><span>Rejeitadas</span><strong>{{ rejeitadasIa() }}</strong></div><div><span>Reuso</span><strong>{{ reusos() }}</strong></div></div>
+      </article>
+    </section>
+
+    <section class="secao">
+      <span class="eyebrow">RASTREABILIDADE</span><h2>Continuidade do contexto</h2>
+      <div class="fluxo-indicadores">
+        <span>Demandas <b>{{ d.demandas.length }}</b></span><i>→</i>
+        <span>Requisitos <b>{{ requisitos() }}</b></span><i>→</i>
+        <span>Versões <b>{{ versoes() }}</b></span><i>→</i>
+        <span>Chamados <b>{{ chamados().length }}</b></span><i>→</i>
+        <span>Conhecimento <b>{{ conhecimentos().length }}</b></span>
+      </div>
+    </section>
+  } @else {
+    <div class="carregando"><span></span><span></span><span></span></div>
+  }
+</div>
