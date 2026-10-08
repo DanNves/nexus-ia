@@ -1,50 +1,44 @@
 # NEXUS — Orientações de desenvolvimento
 
-Leia CLAUDE.md antes de qualquer alteração. Ele é a especificação mestra.
+O repositório oficial do NEXUS é a implementação **Angular 22** em `DanNves/nexus-ia`.
 
 ## Fonte do desenvolvimento
 
-- main é a branch de implementação oficial do MVP.
-- development é somente a referência usada para esta reconstrução e não deve ser modificada neste trabalho.
-- GitHub é a fonte oficial do código.
-- Não reescrever histórico publicado: sem force push, rebase, amend ou squash.
+- GitHub é a fonte principal do código.
+- Não regenerar o projeto no Lovable.
+- Lovable/preview antigo pode conter a implementação React/TanStack anterior e não representa o runtime oficial atual.
+- Não reescrever histórico publicado: não usar force push, rebase, amend ou squash em commits já enviados.
 
-## Arquitetura
+## Arquitetura atual
 
-- frontend/: Angular 22, standalone components, Signals, Router, TypeScript strict.
-- backend/: Django 6.1 + Django REST Framework.
-- Banco: SQLite local no MVP.
-- IA: porta LLMProvider, com fake_adapter para testes/demonstração e provedor real definido posteriormente.
-- API versionada em /api/v1/.
-- Monólito modular Django; módulos não importam models de outros módulos diretamente.
-- Detalhes: docs/ARQUITETURA.md.
+- Angular 22, standalone components e Signals.
+- Angular Router.
+- TypeScript strict.
+- Persistência em localStorage.
+- IA como simulação controlada.
+- Sem backend, PostgreSQL, autenticação completa, LLM real ou RAG vetorial no MVP.
 
-## Regra central
+## Regra central do produto
 
-IA propõe → humano valida → sistema consolida.
+**IA sugere → humano valida → sistema consolida.**
 
-Nenhuma implementação pode permitir que a IA aprove artefatos sozinha, conclua chamados, decida viabilidade/metodologia, publique conhecimento, altere infraestrutura ou execute comandos críticos.
+Nenhuma implementação deve permitir que a IA conclua chamados, publique conhecimento ou tome decisão crítica de forma autônoma.
 
 ## Antes de alterar
 
-1. Ler CLAUDE.md.
-2. Verificar se a funcionalidade pertence ao escopo.
-3. Verificar modelo, serviço, rota, componente e CSS existentes.
-4. Preservar rastreabilidade e máquina de estados.
-5. Preservar a identidade visual NEXUS.
-6. Garantir navegação real e responsiva.
-7. Rodar validações do frontend e backend.
+1. Ler `CLAUDE.md`.
+2. Verificar modelo, store, rotas, componente e CSS relacionados.
+3. Preservar rastreabilidade entre demanda, requisito, versão, chamado e conhecimento.
+4. Evitar adicionar funcionalidade fora do recorte do TCC.
+5. Executar `npm run check` e `npm run build` antes de considerar a alteração concluída.
 
-## Dados e segurança
+## Dados
 
-- SQLite é o banco do MVP local.
-- Segredos ficam em backend/.env; nunca no frontend ou Git.
-- Permissões devem ser aplicadas por perfil e objeto na API.
-- Dados de demonstração são fictícios.
-- Dados pessoais devem ser anonimizados antes de qualquer envio a provedor de IA.
-- Auditoria é append-only.
-- Migrações de schema são feitas pelo Django.
+Os registros de demonstração são fictícios e devem permanecer coerentes. Não apresentar dados de demonstração como resultados experimentais reais.
 
 ## Git
 
-Branches pequenas e commits objetivos. development não deve receber commits como parte da reconstrução da main.
+Preferir branches pequenas e commits objetivos. Nunca force histórico publicado.
+
+## Prévia no Lovable
+- A prévia serve o build oficial do Angular (`frontend/` de DanNves/nexus-ia): os arquivos montados ficam em `public/` e `src/nexus-angular.html`, e as rotas `src/routes/index.tsx` e `src/routes/$.tsx` devolvem esse HTML. Motivo: o Lovable não roda o Angular CLI, e assim a prévia mostra exatamente o código do repositório. Para atualizar, monte de novo o `frontend/` com Node >= 24.15 e copie os arquivos gerados.

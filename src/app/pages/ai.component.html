@@ -1,0 +1,124 @@
+<main class="page ai-page">
+  <section class="page-intro ai-intro">
+    <div>
+      <span class="eyebrow">INTELIGÊNCIA ARTIFICIAL</span>
+      <h1>IA de apoio ao suporte</h1>
+      <p>A IA recebe o chamado e o contexto recuperado da solução para analisar o problema, sugerir possíveis causas e orientar o próximo procedimento. A decisão continua com o profissional.</p>
+    </div>
+    <div class="ai-intro-badge"><nx-icon name="spark" [size]="17"/><span><strong>Simulação controlada</strong><small>pronta para demonstração do TCC</small></span></div>
+  </section>
+
+  <section class="ai-process">
+    <div class="ai-process-step active"><span>01</span><nx-icon name="ticket"/><div><strong>Chamado</strong><small>problema relatado</small></div></div>
+    <nx-icon name="arrow" [size]="15"/>
+    <div class="ai-process-step"><span>02</span><nx-icon name="link"/><div><strong>Contexto</strong><small>recuperação dos vínculos</small></div></div>
+    <nx-icon name="arrow" [size]="15"/>
+    <div class="ai-process-step"><span>03</span><nx-icon name="spark"/><div><strong>Análise da IA</strong><small>causa e procedimento</small></div></div>
+    <nx-icon name="arrow" [size]="15"/>
+    <div class="ai-process-step"><span>04</span><nx-icon name="check"/><div><strong>Humano</strong><small>aprova ou rejeita</small></div></div>
+  </section>
+
+  <section class="ai-layout">
+    <aside class="panel ai-ticket-list">
+      <header class="panel-head"><div><span class="section-kicker">ENTRADA DA IA</span><h2>Chamados para análise</h2><p>Selecione o problema que será analisado.</p></div><span class="ai-count">{{ tickets().length }}</span></header>
+      <div class="ai-ticket-items">
+        @for (ticket of tickets(); track ticket.id) {
+          <button [class.active]="activeTicket()?.id === ticket.id" (click)="open(ticket)">
+            <span class="row-icon orange"><nx-icon name="ticket" [size]="16"/></span>
+            <span><strong>{{ ticket.id }} · {{ ticket.title }}</strong><small>{{ ticket.description }}</small></span>
+            <span class="ticket-state">{{ ticket.aiStatus === 'approved' ? 'Validada' : ticket.aiStatus === 'rejected' ? 'Rejeitada' : 'Pendente' }}</span>
+          </button>
+        }
+      </div>
+    </aside>
+
+    @if (activeTicket(); as ticket) {
+      <section class="ai-workspace">
+        <article class="panel ai-input-card">
+          <header class="panel-head">
+            <div><span class="section-kicker">01 · O QUE A IA RECEBE</span><h2>{{ ticket.id }} · {{ ticket.title }}</h2><p>{{ ticket.description }}</p></div>
+            <span class="status" [class]="ticket.status.toLowerCase().replace(' ','-')">{{ ticket.status }}</span>
+          </header>
+          <div class="ai-input-grid">
+            <div class="ai-input-item"><span>Problema relatado</span><strong>{{ ticket.description }}</strong></div>
+            <div class="ai-input-item"><span>Solução</span><strong>{{ ticket.solution }}</strong></div>
+            <div class="ai-input-item"><span>Versão</span><strong>{{ ticket.version }}</strong></div>
+            <div class="ai-input-item"><span>Contexto</span><strong>{{ ticket.context }}</strong></div>
+          </div>
+        </article>
+
+        <article class="panel ai-recovery-card">
+          <header class="panel-head"><div><span class="section-kicker">02 · O QUE A IA RECUPERA</span><h2>Contexto completo da solução</h2><p>A IA percorre os vínculos do chamado e também considera os registros da mesma solução e versão. Assim, o atendimento não fica limitado a uma única tela.</p></div><span class="context-count">{{ activeContext().length }} fontes</span></header>
+          <div class="ai-context-overview">
+            <div><span>DEMANDA</span><strong>{{ contextCount(['Demanda']) }}</strong><small>origem da necessidade</small></div>
+            <div><span>ATIVIDADES</span><strong>{{ contextCount(['Atividade']) }}</strong><small>trabalho relacionado</small></div>
+            <div><span>REQUISITOS</span><strong>{{ contextCount(['Requisito']) }}</strong><small>regras e critérios</small></div>
+            <div><span>SOLUÇÃO / VERSÃO</span><strong>{{ contextCount(['Solução','Versão']) }}</strong><small>baseline publicada</small></div>
+            <div><span>CHAMADOS</span><strong>{{ contextCount(['Chamado']) }}</strong><small>ocorrências relacionadas</small></div>
+            <div><span>CONHECIMENTO</span><strong>{{ contextCount(['Conhecimento']) }}</strong><small>soluções validadas</small></div>
+          </div>
+          <div class="recovered-context">
+            @for (record of activeContext(); track record.id) {
+              <button (click)="store.select(record)">
+                <span class="recovered-icon"><nx-icon [name]="record.type === 'Conhecimento' ? 'knowledge' : record.type === 'Versão' || record.type === 'Solução' ? 'solution' : record.type === 'Requisito' ? 'requirement' : record.type === 'Chamado' ? 'ticket' : record.type === 'Atividade' ? 'activity' : 'demand'" [size]="15"/></span>
+                <span><strong>{{ record.id }} · {{ record.title }}</strong><small>{{ record.type }} · {{ record.context }}</small></span>
+                <nx-icon name="arrow" [size]="13"/>
+              </button>
+            }
+          </div>
+        </article>
+
+        <article class="panel ai-analysis-card">
+          <header class="panel-head">
+            <div><span class="section-kicker">03 · O QUE A IA FAZ</span><h2>Análise generativa do chamado</h2><p>Combina o problema informado com o contexto recuperado e produz uma orientação para validação.</p></div>
+            <div class="ai-header-actions"><span class="ai-status-pill" [class.approved]="ticket.aiStatus === 'approved'">{{ ticket.aiStatus === 'approved' ? 'Validada' : 'Aguardando decisão' }}</span><button class="btn primary ai-run-btn" (click)="analyze(ticket)"><nx-icon name="spark" [size]="14"/> Analisar com IA</button></div>
+          </header>
+          <div class="analysis-body">
+            <div class="ai-processing-note"><nx-icon name="link" [size]="15"/><span><strong>Entrada consolidada:</strong> {{ activeContext().length }} registros recuperados de todas as etapas relacionadas antes da sugestão.</span></div>
+            <div class="analysis-summary"><span class="analysis-icon"><nx-icon name="spark" [size]="20"/></span><div><span class="section-kicker">SÍNTESE DA ANÁLISE</span><strong>{{ ticket.aiSummary || 'A IA analisa o chamado a partir do contexto recuperado e prepara uma sugestão.' }}</strong></div></div>
+            <div class="analysis-grid">
+              <div><span>Classificação</span><strong>{{ ticket.aiCategory || 'Falha funcional / acesso' }}</strong></div>
+              <div><span>Confiança simulada</span><strong>{{ ticket.aiConfidence || 86 }}%</strong></div>
+              <div><span>Possível causa</span><strong>{{ ticket.aiCause || 'Aguardando análise.' }}</strong></div>
+            </div>
+            <div class="procedure-box"><span>PROCEDIMENTO SUGERIDO</span><ol>@for (step of (ticket.aiProcedure || []); track step){<li>{{ step }}</li>} @empty {<li>Execute a análise para gerar o procedimento sugerido.</li>}</ol></div>
+            <div class="evidence-box"><span>EVIDÊNCIAS CONSIDERADAS</span><div>@for (evidence of (ticket.aiEvidence || ticket.relatedIds); track evidence){<button (click)="store.selectById(evidence)"><nx-icon name="link" [size]="12"/>{{ evidence }}</button>}</div></div>
+          </div>
+        </article>
+
+        <article class="panel ai-validation-card">
+          <header class="panel-head"><div><span class="section-kicker">04 · DECISÃO HUMANA</span><h2>O profissional valida a sugestão</h2><p>A IA não encerra o chamado, não confirma a causa e não transforma conhecimento em oficial sem aprovação.</p></div><nx-icon name="check" [size]="18"/></header>
+          <div class="validation-actions">
+            <div class="validation-note">
+              <label for="ai-workspace-note">Observação ou ajuste do profissional</label>
+              <textarea id="ai-workspace-note"
+                        [(ngModel)]="humanNote"
+                        placeholder="Ajuste a orientação ou informe o motivo da rejeição."></textarea>
+              <small>Texto preenchido e aprovado será registrado como ajuste humano.</small>
+              @if (validationError) { <span class="validation-error">{{ validationError }}</span> }
+            </div>
+            <div class="validation-buttons">
+              <button class="btn secondary" (click)="reject(ticket)" [disabled]="ticket.aiStatus === 'approved' || !ticket.aiSummary"><nx-icon name="close"/> Rejeitar e revisar</button>
+              <button class="btn primary" (click)="approve(ticket)" [disabled]="ticket.aiStatus === 'approved' || !ticket.aiSummary"><nx-icon name="check"/> Aprovar sugestão</button>
+            </div>
+          </div>
+          @if(ticket.aiStatus === 'rejected'){
+            <div class="ai-approved-note rejected">
+              <nx-icon name="close" [size]="15"/>
+              <span>
+                <strong>Sugestão rejeitada.</strong>
+                {{ ticket.aiValidationNote || 'Decisão humana registrada.' }}
+                @if (ticket.aiHumanNote) { <small>Ajuste/observação: {{ ticket.aiHumanNote }}</small> }
+              </span>
+            </div>
+          }
+          @if(ticket.aiStatus === 'approved'){
+            <div class="ai-next-step"><nx-icon name="knowledge" [size]="17"/><div><strong>Próximo passo: registrar conhecimento</strong><span>O procedimento validado pode virar um conhecimento reutilizável no suporte.</span></div><button class="btn primary" (click)="store.registerKnowledge(ticket.id)">Registrar conhecimento</button></div>
+          }
+        </article>
+      </section>
+    } @else {
+      <section class="panel empty-state"><nx-icon name="spark" [size]="28"/><strong>Nenhum chamado disponível para análise.</strong></section>
+    }
+  </section>
+</main>

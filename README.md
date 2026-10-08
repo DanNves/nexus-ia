@@ -1,126 +1,35 @@
 # NEXUS — Conexão entre Demanda, Desenvolvimento e Suporte
 
-Plataforma web para acompanhar a necessidade de software desde o levantamento até o suporte pós-entrega, preservando o contexto entre as etapas.
+Plataforma web para preservar o contexto produzido durante o desenvolvimento de uma solução de software e utilizá-lo no atendimento de chamados de suporte.
 
-**Regra central:** IA propõe → humano valida → sistema consolida.
+## MVP
+Demanda → Requisitos → Versão da solução → Chamado → Recuperação do contexto → IA generativa → Sugestão → Validação humana → Base de conhecimento
 
-## Arquitetura oficial da main
+**Regra central:** IA sugere → humano valida → sistema consolida.
 
-A main foi reconstruída a partir da especificação atualmente mantida na branch development. A branch development permanece somente como referência e não deve ser alterada como parte desta migração.
+O GitHub é a fonte principal do desenvolvimento. O escopo poderá evoluir durante o TCC sem perder o foco central.
 
-```
-frontend/   Angular 22 — interface e navegação
-backend/    Django 6.1 + Django REST Framework — API
-SQLite      banco local do MVP
-docs/       especificação e arquitetura
-```
 
-O frontend está atualmente em modo de backend simulado para preservar o fluxo demonstrável enquanto a API Django é implementada. A meta da próxima etapa é substituir o interceptor mock pela API real sem alterar o contrato visual/funcional.
+## Arquitetura atual
 
-### Fluxo do produto
+O MVP oficial usa **Angular 22**, standalone components, Signals, Angular Router, TypeScript strict e persistência em `localStorage`. A aplicação utiliza o application builder do Angular e possui fallback de SPA configurado para publicação na Vercel.
 
-```
-NECESSIDADE
-   ↓
-ENTREVISTA GUIADA
-   ↓
-CENÁRIO
-   ↓
-PROTÓTIPO
-   ↓
-SOLICITAÇÃO
-   ↓
-VIABILIDADE / REUNIÃO / METODOLOGIA
-   ↓
-REQUISITOS
-   ↓
-DOCUMENTO
-   ↓
-PRODUTO / VERSÃO
-   ↓
-CHAMADO
-   ↓
-RECUPERAÇÃO DO CONTEXTO
-   ↓
-IA SUGERE
-   ↓
-HUMANO VALIDA
-   ↓
-CONHECIMENTO
-   ↓
-REUSO
-```
-
-## Banco de dados
-
-O MVP utiliza SQLite local por decisão arquitetural atual. Django suporta SQLite oficialmente e o utiliza como opção padrão; a arquitetura deixa aberta uma migração futura para PostgreSQL quando houver necessidade de ambiente compartilhado.
-
-Não utilizar Supabase nesta arquitetura.
-
-## Interface
-
-A identidade NEXUS é preservada:
-- Navy #020A1D
-- Azul #0878FF
-- Fundo claro NEXUS
-- Verde #159B70
-- Laranja #C27A16
-- Roxo #7355C8
-
-A navegação e a organização das telas seguem a especificação consolidada da arquitetura.
-
-## Rodar
-
-### Frontend
-
-```bash
-cd frontend
-npm ci
-npm start
-```
-
-Abre em http://localhost:4200.
-
-### Backend
-
-Requer Python 3.12+ para Django 6.1.
-
-```bash
-cd backend
-python -m venv venv
-venv\Scripts\activate
-pip install -r requirements.txt
-python manage.py migrate
-python manage.py runserver
-```
-
-API: http://localhost:8000/api/v1/
+A IA do MVP é uma **simulação controlada**: ela demonstra recuperação de contexto, classificação, possíveis causas e procedimentos sugeridos, sempre com validação humana. Não há LLM real, RAG vetorial ou backend nesta etapa.
 
 ## Qualidade
 
+Antes de concluir alterações:
+
 ```bash
-cd frontend
+npm ci
 npm run check
 npm run build
 ```
 
-Backend:
+O `check` verifica alguns contratos arquiteturais do MVP, como ausência de `!important`, `100vh` e `$any()` no código da aplicação. O GitHub Actions executa essa verificação antes do build.
 
-```bash
-cd backend
-python manage.py check
-python manage.py makemigrations --check
-python manage.py test
-```
+## Fluxo demonstrável
 
-## Documentação
+**Demanda → Requisito → Versão → Chamado → Recuperação do contexto → IA sugere → Humano valida → Conhecimento**
 
-- Especificação mestra: CLAUDE.md
-- Orientações: AGENTS.md
-- Arquitetura: docs/ARQUITETURA.md
-- Fluxo: docs/FLUXO.md
-- Modelo de dados: docs/MODELO_DADOS.md
-- Status: docs/STATUS_PROJETO.md
-- Histórico: docs/historico/
-
-Os dados de demonstração são fictícios e não representam resultados experimentais do TCC.
+O cenário de demonstração utiliza dados fictícios. Indicadores e reuso iniciais são dados do MVP e não representam resultados experimentais do TCC.
