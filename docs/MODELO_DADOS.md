@@ -1,7 +1,9 @@
 # NEXUS — Modelo de dados (proposta)
 
-Base: `docs/ARQUITETURA.md` §5 e §11 + fluxo em `docs/FLUXO.md`.
-**Status: proposta para revisão do back-senior e do PO antes da implementação.** Campos podem mudar; os princípios não.
+Base: docs/ARQUITETURA.md §5 e §11 + fluxo em docs/FLUXO.md.
+**Status: baseline de implementação da main.** Campos podem mudar durante as fases do backend; os princípios de rastreabilidade, validação humana e auditoria não devem ser removidos.
+
+O modelo é compatível com SQLite. Recursos exclusivos de PostgreSQL, como ArrayField e pgvector, não fazem parte do MVP local.
 
 ## 1. Convenções
 
