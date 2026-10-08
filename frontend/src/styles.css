@@ -32,7 +32,7 @@ h1,h2,h3,p{margin-top:0}
 .btn-icone{width:36px;height:36px;border:1px solid var(--border);border-radius:9px;background:#fff;color:#60718A;display:grid;place-items:center;position:relative}
 .btn-icone:hover{background:#F7FAFD;color:var(--blue)}
 .ponto{position:absolute;right:8px;top:7px;width:6px;height:6px;border-radius:50%;background:#E58B22;border:1px solid #fff}
-.btn-nova{height:38px!important}
+.btn-nova{height:38px}
 .usuario{border:0;background:transparent;padding:2px}
 .avatar{display:grid;place-items:center;border-radius:8px;color:#fff;font-size:10px;font-weight:800}
 .menu-ancora{position:relative}
@@ -191,7 +191,7 @@ h1,h2,h3,p{margin-top:0}
 }
 @media(max-width:520px){
   .topo-inner{height:62px}.marca{min-width:auto}.marca span{font-size:14px}.marca img{width:31px;height:31px}.conteudo{min-height:calc(100dvh - 62px)}
-  .topo-acoes{gap:3px}.btn-nova{width:36px!important;padding:0!important;font-size:0}.btn-nova span{display:none}
+  .topo-acoes{gap:3px}.topo-acoes .btn-nova{width:36px;padding:0;font-size:0}.btn-nova span{display:none}
   .numeros,.resumo-grid{grid-template-columns:1fr 1fr;gap:8px}.pagina-topo h1{font-size:24px}.mudo{font-size:10px}
   .lista-item{grid-template-columns:30px minmax(0,1fr);gap:8px}.lista-item>.btn,.lista-item>.badge{grid-column:2;justify-self:start}.cards-conhecimento{grid-template-columns:1fr}
   .campos-2{grid-template-columns:1fr}.dialog{width:96vw}.toasts{left:10px;right:10px}.toast{min-width:0;max-width:none}
