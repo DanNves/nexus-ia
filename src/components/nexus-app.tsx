@@ -17,7 +17,7 @@ function Intro({label,title,description,children}: {label:string,title:string,de
 function App({view}: {view:string}) {
  const store=useNexus(),navigate=useNavigate(),[searchOpen,setSearchOpen]=useState(false),[notifications,setNotifications]=useState(false),[more,setMore]=useState(false),[mobile,setMobile]=useState(false),[query,setQuery]=useState('');
  const pathname=useRouterState({select:s=>s.location.pathname});
- const go=(key:string)=>{if(key==='dashboard')navigate({to:'/'});else navigate({to:'/$view',params:{view:key}});setMobile(false);setMore(false)};
+ const go=(key:string)=>{if(key==='dashboard')navigate({to:'/'});else navigate({to:'/$',params:{_splat:key}});setMobile(false);setMore(false)};
  useEffect(()=>{const close=(e:KeyboardEvent)=>{if(e.key==='Escape'){setSearchOpen(false);store.setSelected(null);store.setWizard(null)}};window.addEventListener('keydown',close);return()=>window.removeEventListener('keydown',close)},[store]);
  const pending=store.records.filter(r=>r.type==='Chamado'&&r.aiStatus==='pending'||r.type!=='Chamado'&&r.status==='Em validação');
  const matches=store.records.filter(r=>[r.id,r.title,r.description,r.solution,r.version].join(' ').toLowerCase().includes(query.trim().toLowerCase())).slice(0,7);
