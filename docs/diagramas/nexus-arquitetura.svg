@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
+<rect width="1600" height="900" fill="#f5f8fc"/>
+<text x="80" y="85" font-family="Arial, sans-serif" font-size="42" font-weight="700" fill="#020a1d">NEXUS — Arquitetura e Fluxo do MVP</text>
+<text x="80" y="125" font-family="Arial, sans-serif" font-size="20" fill="#718198">Main consolidada · Angular 22 + Django/DRF + SQLite · IA com validação humana</text>
+<g font-family="Arial, sans-serif" font-size="20" font-weight="700" text-anchor="middle">
+<rect x="80" y="190" rx="14" width="230" height="80" fill="#fff" stroke="#e1e8f0"/><text x="195" y="238" fill="#1f3550">Necessidade</text>
+<rect x="350" y="190" rx="14" width="230" height="80" fill="#fff" stroke="#e1e8f0"/><text x="465" y="238" fill="#1f3550">Entrevista</text>
+<rect x="620" y="190" rx="14" width="230" height="80" fill="#fff" stroke="#e1e8f0"/><text x="735" y="238" fill="#1f3550">Cenário</text>
+<rect x="890" y="190" rx="14" width="230" height="80" fill="#fff" stroke="#e1e8f0"/><text x="1005" y="238" fill="#1f3550">Protótipo</text>
+<rect x="1160" y="190" rx="14" width="300" height="80" fill="#fff" stroke="#e1e8f0"/><text x="1310" y="238" fill="#1f3550">Solicitação / Requisitos</text>
+</g>
+<g stroke="#0878ff" stroke-width="4" fill="none">
+<path d="M310 230h40"/><path d="M580 230h40"/><path d="M850 230h40"/><path d="M1120 230h40"/>
+</g>
+<g font-family="Arial, sans-serif" font-size="19" font-weight="700" text-anchor="middle">
+<rect x="180" y="360" rx="14" width="330" height="95" fill="#fff" stroke="#e1e8f0"/><text x="345" y="405" fill="#1f3550">Produto / Versão</text><text x="345" y="432" fill="#718198" font-size="15">ponte desenvolvimento → suporte</text>
+<rect x="635" y="360" rx="14" width="330" height="95" fill="#fff" stroke="#e1e8f0"/><text x="800" y="405" fill="#1f3550">Chamado</text><text x="800" y="432" fill="#718198" font-size="15">recupera todo o contexto</text>
+<rect x="1090" y="360" rx="14" width="330" height="95" fill="#f3f8ff" stroke="#a9cbfb"/><text x="1255" y="405" fill="#0878ff">IA PROPÕE</text><text x="1255" y="432" fill="#718198" font-size="15">causa · procedimento · evidências</text>
+</g>
+<g stroke="#0878ff" stroke-width="4" fill="none">
+<path d="M1310 270v55"/><path d="M345 270v90"/><path d="M510 407h125"/><path d="M965 407h125"/>
+</g>
+<rect x="500" y="530" rx="18" width="600" height="115" fill="#fff" stroke="#159b70" stroke-width="2"/>
+<text x="800" y="575" font-family="Arial, sans-serif" font-size="28" font-weight="700" text-anchor="middle" fill="#159b70">HUMANO VALIDA</text>
+<text x="800" y="610" font-family="Arial, sans-serif" font-size="17" text-anchor="middle" fill="#718198">aprova · edita · rejeita com motivo</text>
+<path d="M1255 455v45H800v30" stroke="#159b70" stroke-width="4" fill="none"/>
+<rect x="590" y="705" rx="16" width="420" height="85" fill="#fff" stroke="#7355c8" stroke-width="2"/>
+<text x="800" y="750" font-family="Arial, sans-serif" font-size="25" font-weight="700" text-anchor="middle" fill="#7355c8">CONHECIMENTO → REUSO</text>
+<path d="M800 645v60" stroke="#7355c8" stroke-width="4" fill="none"/>
+<g font-family="Arial, sans-serif">
+<rect x="90" y="525" width="300" height="230" rx="16" fill="#020a1d"/>
+<text x="115" y="565" font-size="22" font-weight="700" fill="#fff">Arquitetura técnica</text>
+<text x="115" y="605" font-size="17" fill="#d6e2f3">Angular 22</text>
+<text x="115" y="638" font-size="17" fill="#d6e2f3">Django + DRF</text>
+<text x="115" y="671" font-size="17" fill="#d6e2f3">SQLite</text>
+<text x="115" y="704" font-size="17" fill="#d6e2f3">API /api/v1/</text>
+<text x="115" y="737" font-size="17" fill="#d6e2f3">LLMProvider</text>
+</g>
+</svg>
