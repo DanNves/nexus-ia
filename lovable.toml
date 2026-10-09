@@ -1,2 +1,4 @@
 [run]
 dev = "node .lovable/preview-server.mjs"
+"build:dev" = "test -f .lovable/preview-dist/browser/index.html"
+build = "test -f .lovable/preview-dist/browser/index.html"
