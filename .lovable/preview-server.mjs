@@ -1,5 +1,5 @@
 import http from 'node:http'; import fs from 'node:fs'; import path from 'node:path';
-const root = path.resolve('frontend/dist/nexus-ia/browser');
+const root = path.resolve('.lovable/preview-dist/browser');
 const types = {'.html':'text/html','.js':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.ico':'image/x-icon','.txt':'text/plain'};
 http.createServer((q,r)=>{let f=path.join(root,decodeURIComponent(q.url.split('?')[0]));
  if(!f.startsWith(root)||!fs.existsSync(f)||fs.statSync(f).isDirectory()) f=path.join(root,'index.html');
