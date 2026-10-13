@@ -650,6 +650,8 @@ rota('POST', '/chamados/:id/resolver', (ctx, [id], b) => {
   return { body: comPosicao(c) };
 });
 
+rota('GET', '/conhecimentos', () => ({ body: db.conhecimentos.slice() }));
+
 rota('GET', '/conhecimentos/:id', (_ctx, [id]) => {
   const k = db.conhecimentos.find((x) => x.id === id);
   if (!k) throw new ApiErro(404, 'Conhecimento não encontrado.');
