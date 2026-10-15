@@ -68,8 +68,8 @@
               }
             </ul>
           } @else {
-            <nx-vazio icone="demand" titulo="Nenhuma demanda ainda" texto="Conte o que você precisa e o NEXUS guia o resto.">
-              <a routerLink="/demandas/nova" class="btn btn-primario"><nx-icon name="plus" [size]="16" /> Nova demanda</a>
+            <nx-vazio icone="demand" titulo="Nenhuma demanda ainda" [texto]="sessao.ehEquipe() ? 'As demandas dos clientes aparecem aqui quando forem abertas.' : 'Conte o que você precisa e o NEXUS guia o resto.'">
+              @if (!sessao.ehEquipe()) { <a routerLink="/demandas/nova" class="btn btn-primario"><nx-icon name="plus" [size]="16" /> Nova demanda</a> }
             </nx-vazio>
           }
         </section>

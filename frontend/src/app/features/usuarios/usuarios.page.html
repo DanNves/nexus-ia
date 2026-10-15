@@ -1,0 +1,178 @@
+<div class="pagina">
+  <header class="pagina-topo">
+    <div>
+      <h1>Usuários</h1>
+      <p class="mudo">Quem acessa o NEXUS e o que cada pessoa pode fazer. Clientes veem só os próprios pedidos; a equipe avalia e valida; administradores também gerenciam esta lista.</p>
+    </div>
+    <button type="button" class="btn btn-primario" (click)="abrirNovo()"><nx-icon name="plus" [size]="16" /> Novo usuário</button>
+  </header>
+
+  @if (erroCarga()) {
+    <nx-vazio icone="alert" titulo="Não foi possível carregar os usuários" [texto]="erroCarga()">
+      <button type="button" class="btn btn-primario" (click)="carregar()"><nx-icon name="refresh" [size]="16" /> Tentar de novo</button>
+    </nx-vazio>
+  } @else if (usuarios()) {
+    <dl class="numeros numeros-compactos">
+      <div><dt>Ativos</dt><dd>{{ numeros().total }}</dd></div>
+      <div><dt>Equipe</dt><dd>{{ numeros().equipe }}</dd></div>
+      <div><dt>Clientes</dt><dd>{{ numeros().clientes }}</dd></div>
+      <div><dt>Administradores</dt><dd>{{ numeros().admins }}</dd></div>
+    </dl>
+
+    <div class="barra-ferramentas">
+      <label class="campo-icone campo-busca">
+        <nx-icon name="search" [size]="16" />
+        <input type="search" [ngModel]="busca()" (ngModelChange)="busca.set($event)" placeholder="Buscar por nome, usuário, e-mail…" aria-label="Buscar usuário" />
+      </label>
+      <div class="filtros" role="group" aria-label="Filtrar usuários">
+        @for (f of FILTROS; track f.id) {
+          <button type="button" class="filtro" [class.ativo]="filtro() === f.id" (click)="filtro.set(f.id)">{{ f.rotulo }} <span class="mudo">{{ contagem(f.id) }}</span></button>
+        }
+      </div>
+    </div>
+
+    @if (filtrados().length) {
+      <div class="tabela-wrap">
+        <table class="tabela">
+          <thead>
+            <tr><th>Pessoa</th><th>Acesso</th><th class="col-opc">Organização</th><th class="col-opc">Último acesso</th><th></th></tr>
+          </thead>
+          <tbody>
+            @for (u of filtrados(); track u.id) {
+              <tr class="linha-link" [class.inativo]="!u.ativo" (click)="abrirEdicao(u)">
+                <td>
+                  <span class="pessoa">
+                    <nx-avatar [nome]="u.nome" [tamanho]="30" />
+                    <span class="lista-texto">
+                      <strong class="tabela-titulo">{{ u.nome }} @if (u.id === euId()) { <span class="mudo">(você)</span> }</strong>
+                      <span class="mudo">{{ u.usuario }} · {{ u.email }}</span>
+                    </span>
+                  </span>
+                </td>
+                <td>
+                  <span class="acesso">
+                    <nx-badge [tom]="u.perfil === 'EQUIPE' ? 'roxo' : 'azul'">{{ u.perfil === 'EQUIPE' ? 'Equipe' : 'Cliente' }}</nx-badge>
+                    @if (u.admin) { <nx-badge tom="laranja">Administrador</nx-badge> }
+                    @if (!u.ativo) { <nx-badge>Inativo</nx-badge> }
+                  </span>
+                </td>
+                <td class="col-opc">{{ u.organizacao || '—' }}</td>
+                <td class="col-opc mudo">{{ u.ultimoAcesso ? relativo(u.ultimoAcesso) : 'Nunca entrou' }}</td>
+                <td class="col-acao"><button type="button" class="btn btn-secundario btn-p" (click)="$event.stopPropagation(); abrirEdicao(u)">Editar</button></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <nx-vazio icone="users" titulo="Ninguém encontrado" texto="Mude a busca ou o filtro." />
+    }
+  } @else {
+    <div class="carregando" aria-busy="true"><span></span><span></span><span></span></div>
+  }
+</div>
+
+<!-- Novo usuário -->
+<nx-dialog titulo="Novo usuário" [aberto]="novoAberto()" (fechou)="novoAberto.set(false)">
+  <form class="form" (ngSubmit)="criar()" novalidate autocomplete="off">
+    <div class="campos-2">
+      <label class="campo"><span>Nome</span>
+        <input class="input" name="nome" [(ngModel)]="novo.nome" maxlength="120" [class.invalido]="erros()['nome']" />
+        <nx-erro-campo [mensagens]="erros()['nome']" />
+      </label>
+      <label class="campo"><span>Usuário (para entrar)</span>
+        <input class="input" name="usuario" [(ngModel)]="novo.usuario" maxlength="30" placeholder="ex.: joana.alves" [class.invalido]="erros()['usuario']" />
+        <nx-erro-campo [mensagens]="erros()['usuario']" />
+      </label>
+    </div>
+    <div class="campos-2">
+      <label class="campo"><span>E-mail</span>
+        <input class="input" type="email" name="email" [(ngModel)]="novo.email" maxlength="254" [class.invalido]="erros()['email']" />
+        <nx-erro-campo [mensagens]="erros()['email']" />
+      </label>
+      <label class="campo"><span>Organização <span class="mudo">(opcional)</span></span>
+        <input class="input" name="organizacao" [(ngModel)]="novo.organizacao" maxlength="120" />
+      </label>
+    </div>
+    <fieldset class="campo">
+      <legend>Perfil</legend>
+      <div class="opcoes-cartao opcoes-2">
+        <label class="opcao" [class.marcada]="novo.perfil === 'CLIENTE'">
+          <input type="radio" name="perfil" value="CLIENTE" [ngModel]="novo.perfil" (ngModelChange)="perfilNovo($event)" />
+          <strong>Cliente</strong><span class="mudo">Abre demandas e chamados e vê só os próprios.</span>
+        </label>
+        <label class="opcao" [class.marcada]="novo.perfil === 'EQUIPE'">
+          <input type="radio" name="perfil" value="EQUIPE" [ngModel]="novo.perfil" (ngModelChange)="perfilNovo($event)" />
+          <strong>Equipe</strong><span class="mudo">Avalia solicitações, valida o que a IA sugere e atende chamados.</span>
+        </label>
+      </div>
+    </fieldset>
+    <label class="checar" [class.desabilitado]="novo.perfil !== 'EQUIPE'">
+      <input type="checkbox" name="admin" [(ngModel)]="novo.admin" [disabled]="novo.perfil !== 'EQUIPE'" />
+      Administrador: também gerencia usuários
+    </label>
+    <nx-erro-campo [mensagens]="erros()['admin']" />
+    <label class="campo"><span>Senha inicial</span>
+      <input class="input" type="password" name="senha" [(ngModel)]="novo.senha" maxlength="128" autocomplete="new-password" [class.invalido]="erros()['senha']" />
+      <nx-erro-campo [mensagens]="erros()['senha']" />
+    </label>
+    <div class="form-acoes">
+      <button type="button" class="btn btn-secundario" (click)="novoAberto.set(false)">Cancelar</button>
+      <button type="submit" class="btn btn-primario" [disabled]="salvando()">{{ salvando() ? 'Cadastrando…' : 'Cadastrar' }}</button>
+    </div>
+  </form>
+</nx-dialog>
+
+<!-- Editar usuário -->
+<nx-dialog [titulo]="editando()?.nome ?? 'Usuário'" [aberto]="!!editando()" (fechou)="editando.set(null)">
+  @if (editando(); as u) {
+    <p class="mudo usuario-sub">{{ u.usuario }} · cadastrado {{ relativo(u.criadoEm) }}</p>
+    <form class="form" (ngSubmit)="salvar()" novalidate autocomplete="off">
+      <div class="campos-2">
+        <label class="campo"><span>Nome</span>
+          <input class="input" name="nome" [(ngModel)]="edicao.nome" maxlength="120" [class.invalido]="erros()['nome']" />
+          <nx-erro-campo [mensagens]="erros()['nome']" />
+        </label>
+        <label class="campo"><span>E-mail</span>
+          <input class="input" type="email" name="email" [(ngModel)]="edicao.email" maxlength="254" [class.invalido]="erros()['email']" />
+          <nx-erro-campo [mensagens]="erros()['email']" />
+        </label>
+      </div>
+      <label class="campo"><span>Organização</span>
+        <input class="input" name="organizacao" [(ngModel)]="edicao.organizacao" maxlength="120" />
+      </label>
+
+      <fieldset class="campo" [disabled]="souEu()">
+        <legend>Acesso</legend>
+        @if (souEu()) { <p class="aviso-dados"><nx-icon name="shield" [size]="14" /> Você não pode mudar o seu próprio perfil nem se desativar.</p> }
+        <div class="segmentado" role="radiogroup" aria-label="Perfil">
+          <label [class.marcada]="edicao.perfil === 'CLIENTE'"><input type="radio" name="perfil" value="CLIENTE" [ngModel]="edicao.perfil" (ngModelChange)="perfilEdicao($event)" /> Cliente</label>
+          <label [class.marcada]="edicao.perfil === 'EQUIPE'"><input type="radio" name="perfil" value="EQUIPE" [ngModel]="edicao.perfil" (ngModelChange)="perfilEdicao($event)" /> Equipe</label>
+        </div>
+        <label class="checar" [class.desabilitado]="edicao.perfil !== 'EQUIPE'">
+          <input type="checkbox" name="admin" [(ngModel)]="edicao.admin" [disabled]="edicao.perfil !== 'EQUIPE' || souEu()" /> Administrador: também gerencia usuários
+        </label>
+        <label class="checar">
+          <input type="checkbox" name="ativo" [(ngModel)]="edicao.ativo" [disabled]="souEu()" /> Conta ativa (desmarque para bloquear o acesso)
+        </label>
+        <nx-erro-campo [mensagens]="erros()['admin']" />
+      </fieldset>
+
+      <div class="form-acoes">
+        <button type="button" class="btn btn-secundario" (click)="editando.set(null)">Cancelar</button>
+        <button type="submit" class="btn btn-primario" [disabled]="salvando()">{{ salvando() ? 'Salvando…' : 'Salvar' }}</button>
+      </div>
+    </form>
+
+    <form class="form senha-bloco" (ngSubmit)="redefinirSenha()" novalidate autocomplete="off">
+      <label class="campo"><span>Redefinir senha</span>
+        <input class="input" type="password" name="novaSenha" [(ngModel)]="novaSenha" maxlength="128" autocomplete="new-password" placeholder="Nova senha" [class.invalido]="erros()['senha']" />
+        <nx-erro-campo [mensagens]="erros()['senha']" />
+      </label>
+      <div class="form-acoes">
+        <span class="salvo-auto">As sessões abertas da pessoa são encerradas.</span>
+        <button type="submit" class="btn btn-secundario" [disabled]="salvando() || !novaSenha">Redefinir senha</button>
+      </div>
+    </form>
+  }
+</nx-dialog>

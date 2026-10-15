@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { EMPTY, Observable, defer, expand, filter, retry, switchMap, take, throwError, timer } from 'rxjs';
 import {
   Atividade, Chamado, Conhecimento, Demanda, ErroApi, EstadoAtividade, Evento, FilaResumo, Job, Notificacao,
-  Pergunta, Pessoa, Prioridade, ProximaPergunta, ResultadoBusca, Solucao, TipoEvento, VisaoGeral,
+  Perfil, Pergunta, Pessoa, Prioridade, ProximaPergunta, ResultadoBusca, Solucao, TipoEvento, UsuarioGestao, VisaoGeral,
 } from './models';
 
 const API = '/api/v1';
@@ -86,6 +86,22 @@ export class NexusApi {
   decidirSugestao(id: string, body: { decisao: 'APROVAR' | 'REJEITAR'; motivo?: string }) { return this.http.post<Chamado>(`${API}/chamados/${id}/sugestao/decisao`, body); }
   resolver(id: string, body: { solucao: string; registrarConhecimento: boolean }) { return this.http.post<Chamado>(`${API}/chamados/${id}/resolver`, body); }
   conhecimento(id: string) { return this.http.get<Conhecimento>(`${API}/conhecimentos/${id}`); }
+
+  // Usuários (rotas reais no Django; só administrador)
+  usuarios(filtro: { q?: string; perfil?: Perfil | ''; ativo?: boolean } = {}) {
+    const params: Record<string, string> = {};
+    if (filtro.q) params['q'] = filtro.q;
+    if (filtro.perfil) params['perfil'] = filtro.perfil;
+    if (filtro.ativo !== undefined) params['ativo'] = String(filtro.ativo);
+    return this.http.get<UsuarioGestao[]>(`${API}/usuarios`, { params });
+  }
+  criarUsuario(body: { nome: string; usuario: string; email: string; organizacao: string; perfil: Perfil; admin: boolean; senha: string }) {
+    return this.http.post<UsuarioGestao>(`${API}/usuarios`, body);
+  }
+  alterarUsuario(id: string, body: Partial<Pick<UsuarioGestao, 'nome' | 'email' | 'organizacao' | 'perfil' | 'admin' | 'ativo'>>) {
+    return this.http.patch<UsuarioGestao>(`${API}/usuarios/${id}`, body);
+  }
+  redefinirSenha(id: string, senha: string) { return this.http.post<void>(`${API}/usuarios/${id}/senha`, { senha }); }
 
   // Operação longa: 202 + job_id, depois polling até CONCLUIDO/FALHOU.
   // Intervalo crescente: 1 s, 1,4 s, 2 s, 2,7 s e depois 3 s fixos. O CLAUDE.md §8 fala em "a partir de 2 s";

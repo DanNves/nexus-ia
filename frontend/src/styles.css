@@ -189,12 +189,19 @@ kbd { font: inherit; font-size: 11px; color: var(--texto-2); border: 1px solid v
   height: 2px; border-radius: 2px 2px 0 0; background: var(--azul);
 }
 .topo-acoes { margin-left: auto; display: flex; align-items: center; gap: 6px; }
-.busca-gatilho {
-  display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 8px 0 10px; margin-right: 4px;
-  border: 1px solid var(--borda); border-radius: var(--r-1); background: var(--fundo); color: var(--texto-2); min-width: 180px;
+/* Visão ativa (só equipe alterna): Cliente | Equipe. Na visão da equipe o topo ganha uma linha roxa,
+   para ninguém confundir em que lado está. */
+.topo[data-visao='EQUIPE'] { box-shadow: inset 0 3px 0 var(--roxo); }
+.visao { display: inline-flex; padding: 3px; gap: 2px; border: 1px solid var(--borda); border-radius: 999px; background: var(--fundo); margin-right: 6px; }
+.visao-opcao {
+  display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 12px; border-radius: 999px;
+  font-size: 13px; font-weight: 500; color: var(--texto-2); transition: background-color 0.15s, color 0.15s;
 }
-.busca-gatilho:hover { border-color: var(--borda-forte); }
-.busca-texto { flex: 1; text-align: left; }
+.visao-opcao:hover:not(.ativo) { color: var(--texto); }
+.visao-opcao.ativo { background: var(--superficie); color: var(--azul-escuro); box-shadow: var(--sombra-sup); }
+.visao-opcao.ativo:last-child { color: var(--tom-roxo-tx); }
+.menu-papel { font-size: 12px; font-weight: 500; color: var(--tom-roxo-tx); margin-top: 4px; }
+.menu-atalho { margin-left: auto; }
 .ponto { position: absolute; top: 8px; right: 9px; width: 7px; height: 7px; border-radius: 50%; background: var(--vermelho); box-shadow: 0 0 0 2px var(--superficie); }
 .btn-nova { margin: 0 6px; }
 .usuario { border-radius: 50%; }
@@ -300,7 +307,7 @@ kbd { font: inherit; font-size: 11px; color: var(--texto-2); border: 1px solid v
 
 /* ---------- Superfícies ---------- */
 .lista, .painel, .tabela-wrap, .solucao, .requisito, .fonte, .calendario, .ranking, .fila-lista,
-.cartao-atividade, .anexo, .opcao, .resposta, .escolha, .documento, .busca-gatilho { box-shadow: var(--sombra-sup); }
+.cartao-atividade, .anexo, .opcao, .resposta, .escolha, .documento { box-shadow: var(--sombra-sup); }
 
 /* ---------- Listas ---------- */
 .lista { display: flex; flex-direction: column; background: var(--superficie); border: 1px solid var(--borda); border-radius: var(--r-2); }
@@ -409,8 +416,11 @@ textarea.input { resize: vertical; line-height: 1.5; }
 .select-p { min-height: 28px; height: 28px; padding: 2px 28px 2px 8px; font-size: 12px; width: auto; }
 .checar { display: flex; align-items: center; gap: 8px; }
 .checar input { width: 16px; height: 16px; accent-color: var(--azul); }
+.checar.desabilitado { color: var(--texto-fraco); }
+fieldset:disabled .segmentado label { cursor: not-allowed; opacity: 0.6; }
 
 .opcoes-cartao { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.opcoes-2 { grid-template-columns: 1fr 1fr; }
 .opcoes-lista { display: flex; flex-direction: column; gap: 6px; }
 .opcao {
   display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; border-radius: var(--r-2);
@@ -484,6 +494,13 @@ textarea.input { resize: vertical; line-height: 1.5; }
 .linha-link { cursor: pointer; transition: background-color 0.12s; }
 .linha-link:hover { background: var(--fundo); }
 .tabela-titulo { display: block; font-weight: 500; color: var(--titulo); }
+.tabela tr.inativo td { opacity: 0.6; }
+.col-acao { text-align: right; width: 1%; white-space: nowrap; }
+.acesso { display: inline-flex; gap: 4px; flex-wrap: wrap; }
+
+/* Gestão de usuários */
+.usuario-sub { margin-top: -10px; font-size: 13px; }
+.senha-bloco { padding-top: 16px; border-top: 1px solid var(--borda); }
 a.tabela-titulo:hover { color: var(--azul-escuro); }
 
 /* ---------- Quadro de atividades ---------- */
@@ -793,13 +810,9 @@ a.fonte-link:hover { background: var(--azul-suave); color: var(--azul-escuro); }
 .conhecimento h2 { display: flex; align-items: center; gap: 8px; color: var(--tom-verde-tx); }
 
 /* ---------- Responsivo ---------- */
-@media (max-width: 1280px) {
-  .busca-gatilho { min-width: 140px; }
-}
-
 @media (max-width: 1120px) {
-  .busca-gatilho { min-width: 0; }
-  .busca-texto, .busca-gatilho kbd { display: none; }
+  .visao-opcao span { display: none; }
+  .visao-opcao { padding: 0 9px; }
   .topo-inner { gap: 16px; }
   .nav-item { --nav-pad: 8px; }
   .solucao-meta { display: none; }

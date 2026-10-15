@@ -16,8 +16,10 @@ const MENU_MOBILE = {
   dica: 'Nesta largura de tela, as abas ficam no botão de menu.',
 };
 
-function passosGlobais(equipe: boolean): PassoTour[] {
-  return [
+export interface OpcoesTour { equipe: boolean; podeAlternarVisao: boolean; admin: boolean }
+
+function passosGlobais({ equipe, podeAlternarVisao, admin }: OpcoesTour): PassoTour[] {
+  const passos: PassoTour[] = [
     {
       id: 'visao-geral',
       seletor: '.nav a[href="/visao-geral"]',
@@ -64,14 +66,6 @@ function passosGlobais(equipe: boolean): PassoTour[] {
       alternativa: MENU_MOBILE,
     },
     {
-      id: 'buscar',
-      seletor: '.busca-gatilho',
-      titulo: 'Buscar',
-      texto: equipe
-        ? 'Encontre qualquer demanda, atividade, chamado ou solução pelo nome ou pelo código. Atalho: Ctrl K.'
-        : 'Encontre suas demandas, chamados e soluções pelo nome ou pelo código. Atalho: Ctrl K.',
-    },
-    {
       id: 'notificacoes',
       seletor: 'button[aria-label="Notificações"]',
       titulo: 'Notificações',
@@ -80,21 +74,43 @@ function passosGlobais(equipe: boolean): PassoTour[] {
         : 'Avisos sobre o que é seu: resposta da equipe à sua solicitação, reunião marcada, requisito aprovado, chamado em atendimento ou resolvido. O ponto vermelho indica que há algo não lido.',
     },
     {
-      id: 'nova-demanda',
-      seletor: '.btn-nova',
-      titulo: 'Nova demanda',
-      texto: equipe
-        ? 'Abre uma demanda pelo mesmo caminho do cliente: descrição da necessidade, ata em .txt e entrevista guiada.'
-        : 'Comece aqui quando precisar de algo novo. Você descreve o que precisa (ou anexa a ata da reunião em .txt) e o NEXUS faz perguntas simples, com opções, para entender o que se encaixa.',
-      alternativa: MENU_MOBILE,
-    },
-    {
       id: 'usuario',
       seletor: '.usuario',
       titulo: 'Seu menu',
-      texto: 'Veja com qual conta você entrou, ligue o modo escuro ou saia do NEXUS.',
+      texto: 'Veja com qual conta você entrou e o seu perfil, busque qualquer registro (atalho Ctrl K), ligue o modo escuro ou saia do NEXUS.',
     },
   ];
+  // Abrir demanda é coisa de cliente: o botão só existe na visão do cliente.
+  if (!equipe) {
+    passos.splice(passos.length - 1, 0, {
+      id: 'nova-demanda',
+      seletor: '.btn-nova',
+      titulo: 'Nova demanda',
+      texto: 'Comece aqui quando precisar de algo novo. Você descreve o que precisa (ou anexa a ata da reunião em .txt) e o NEXUS faz perguntas simples, com opções, para entender o que se encaixa.',
+      alternativa: MENU_MOBILE,
+    });
+  }
+  if (admin && equipe) {
+    passos.splice(5, 0, {
+      id: 'usuarios',
+      seletor: '.nav a[href="/usuarios"]',
+      titulo: 'Usuários',
+      texto: 'Só para administradores: cadastre pessoas, defina quem é cliente e quem é da equipe, desative contas e redefina senhas.',
+      alternativa: MENU_MOBILE,
+    });
+  }
+  // Primeiro passo para quem é da equipe: deixar claro de que lado está.
+  if (podeAlternarVisao) {
+    passos.unshift({
+      id: 'visao',
+      seletor: '[data-tour="visao"]',
+      titulo: 'Cliente ou equipe?',
+      texto: equipe
+        ? 'Você está na visão da EQUIPE (linha roxa no topo): solicitações, validações e atendimento. Clique em "Cliente" para ver o NEXUS exatamente como um cliente vê.'
+        : 'Você está na visão do CLIENTE: vê só o que um cliente veria e pode abrir demandas. Clique em "Equipe" para voltar ao trabalho da equipe.',
+    });
+  }
+  return passos;
 }
 
 function passosListaDemandas(equipe: boolean): PassoTour[] {
@@ -176,9 +192,10 @@ function passosDetalheDemanda(equipe: boolean): PassoTour[] {
 }
 
 /** Passos do tour: abas principais primeiro e, depois, as abas da página atual (se houver). */
-export function passosDoTour(url: string, equipe: boolean): PassoTour[] {
+export function passosDoTour(url: string, opcoes: OpcoesTour): PassoTour[] {
+  const { equipe } = opcoes;
   const caminho = url.split(/[?#]/)[0].replace(/\/+$/, '');
-  const passos = passosGlobais(equipe);
+  const passos = passosGlobais(opcoes);
   if (caminho === '/demandas') return [...passos, ...passosListaDemandas(equipe)];
   if (/^\/demandas\/(?!nova$)[^/]+(\/[^/]+)?$/.test(caminho)) return [...passos, ...passosDetalheDemanda(equipe)];
   return passos;

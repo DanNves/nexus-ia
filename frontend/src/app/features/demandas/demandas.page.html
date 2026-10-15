@@ -4,8 +4,10 @@
       <h1>Demandas</h1>
       <p class="mudo">{{ sessao.ehEquipe() ? 'Tudo o que foi pedido e o trabalho para entregar.' : 'Tudo o que você pediu e em que etapa cada pedido está.' }}</p>
     </div>
-    @if (abaAtual() === 'atividades' && sessao.ehEquipe()) {
-      <button type="button" class="btn btn-secundario" (click)="abrirNova()"><nx-icon name="plus" [size]="16" /> Nova atividade</button>
+    @if (sessao.ehEquipe()) {
+      @if (abaAtual() === 'atividades') {
+        <button type="button" class="btn btn-secundario" (click)="abrirNova()"><nx-icon name="plus" [size]="16" /> Nova atividade</button>
+      }
     } @else {
       <a routerLink="/demandas/nova" class="btn btn-primario"><nx-icon name="plus" [size]="16" /> Nova demanda</a>
     }
@@ -77,8 +79,8 @@
           </table>
         </div>
       } @else {
-        <nx-vazio icone="demand" titulo="Nenhuma demanda encontrada" texto="Mude o filtro ou crie uma nova demanda.">
-          <a routerLink="/demandas/nova" class="btn btn-primario">Nova demanda</a>
+        <nx-vazio icone="demand" titulo="Nenhuma demanda encontrada" [texto]="sessao.ehEquipe() ? 'Mude a busca ou o filtro.' : 'Mude o filtro ou crie uma nova demanda.'">
+          @if (!sessao.ehEquipe()) { <a routerLink="/demandas/nova" class="btn btn-primario">Nova demanda</a> }
         </nx-vazio>
       }
     } @else {

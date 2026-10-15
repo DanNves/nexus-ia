@@ -82,6 +82,19 @@ def sair(refresh_bruto: str | None) -> None:
         return
 
 
+def revogar_todas(usuario) -> int:
+    """Revoga todas as sessões (refresh tokens) do usuário: desativação, troca de senha ou de perfil.
+
+    O access token que já está com ele vence em até 15 minutos; usuário inativo já é recusado na hora.
+    """
+    pendentes = OutstandingToken.objects.filter(user=usuario).exclude(blacklistedtoken__isnull=False)
+    total = 0
+    for pendente in pendentes:
+        _, criado = BlacklistedToken.objects.get_or_create(token=pendente)
+        total += int(criado)
+    return total
+
+
 def _revogar(token: RefreshToken) -> bool:
     """Coloca o token na blacklist. Devolve False se ele já estava revogado."""
     jti = token.payload[api_settings.JTI_CLAIM]

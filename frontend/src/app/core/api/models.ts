@@ -324,6 +324,20 @@ export interface ResultadoBusca {
   link: string;
 }
 
+/** Usuário na gestão de usuários (GET /usuarios, só administrador). Rota real no Django. */
+export interface UsuarioGestao {
+  id: string;
+  usuario: string;
+  nome: string;
+  email: string;
+  organizacao: string;
+  perfil: Perfil;
+  admin: boolean;
+  ativo: boolean;
+  ultimoAcesso: string | null;
+  criadoEm: string;
+}
+
 export interface ErroApi {
   mensagem: string;
   campos?: Record<string, string[]>;

@@ -323,11 +323,12 @@ Front faz polling com intervalo crescente (implementado: começa em ~1 s, ×1,4,
 /calendario                    mês + agenda do dia + novo compromisso
 /solucoes, /solucoes/:id       versões, demanda de origem, chamados
 /fila, /fila/:id               posição na fila (cliente), fila ordenada e atendimento com IA (equipe)
+/usuarios                      gestão de usuários (só administrador, na visão da equipe): cadastrar, perfil, admin, ativar/desativar, redefinir senha
 /entrar, /criar-conta          acesso (públicas; demais rotas exigem sessão). Cadastro público cria sempre CLIENTE
 **                             página não encontrada
 ```
 
-Perfil: vem do usuário logado (JWT). Usuários de demonstração: `EquipeAdmin` (Equipe responsável) e `Usuario` (Cliente), senha `123`, só em desenvolvimento. O botão **Ajuda** no topo abre o tour guiado aba por aba (`shared/ajuda/`).
+Perfil: vem do usuário logado (JWT). **Visão (2026-10-15):** quem é da equipe alterna no topo entre **Cliente** (vê exatamente o que um cliente vê, pode abrir demandas) e **Equipe** (linha roxa no topo; sem "Nova demanda"). Cliente só tem a visão de cliente. **Administrador** = equipe + `is_staff`; vê o item Usuários. Usuários de demonstração: `EquipeAdmin` (Equipe responsável) e `Usuario` (Cliente), senha `123`, só em desenvolvimento. O botão **Ajuda** no topo abre o tour guiado aba por aba (`shared/ajuda/`).
 
 Proposta original do novo escopo (referência para itens ainda não implementados, como validações, indicadores e ADM):
 
@@ -371,7 +372,7 @@ A navbar principal deve ser **horizontal, limpa e contínua**.
 
 ### USAR
 Marca NEXUS à esquerda; itens principais ao centro; à direita: **Novo processo | Busca | Notificações | Usuário**.
-Itens principais (implementado): **Visão geral | Demandas | Calendário | Soluções | Fila**. Busca (Ctrl K), **Ajuda** (tour guiado), notificações, **Nova demanda** e menu do usuário (modo escuro, sair) à direita. Indicadores, ADM e Configurações: ainda não implementados.
+Itens principais (implementado): **Visão geral | Demandas | Calendário | Soluções | Fila** (+ **Usuários** para administrador na visão da equipe). À direita: seletor de visão **Cliente | Equipe** (só equipe), **Ajuda** (tour guiado), notificações, **Nova demanda** (só na visão do cliente) e menu do usuário (perfil, busca Ctrl K, modo escuro, sair). O campo de busca saiu da barra (2026-10-15): fica no atalho Ctrl K e no menu do usuário. Indicadores, ADM e Configurações: ainda não implementados.
 Os itens visíveis dependem do perfil (cliente não vê Solicitações/Validações/ADM). Toda rota deve ter acesso pela navegação do perfil que a usa.
 
 Item atual: texto azul, fundo azul muito suave, linha inferior azul, ícone azul.

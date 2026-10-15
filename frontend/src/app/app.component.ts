@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Subject, debounceTime, distinctUntilChanged, filter, switchMap } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NexusApi } from './core/api/nexus-api.service';
-import { Notificacao, ResultadoBusca } from './core/api/models';
+import { Notificacao, Perfil, ResultadoBusca } from './core/api/models';
 import { AuthService } from './core/auth/auth.service';
 import { SessionService } from './core/session.service';
 import { TemaService } from './core/tema.service';
@@ -29,13 +29,18 @@ export class AppComponent {
   private router = inject(Router);
   private rascunhos = inject(RascunhoService);
 
-  readonly nav = [
-    { rotulo: 'Visão geral', link: '/visao-geral', icone: 'home' },
-    { rotulo: 'Demandas', link: '/demandas', icone: 'demand' },
-    { rotulo: 'Calendário', link: '/calendario', icone: 'calendar' },
-    { rotulo: 'Soluções', link: '/solucoes', icone: 'layers' },
-    { rotulo: 'Fila', link: '/fila', icone: 'queue' },
-  ];
+  // Itens conforme a visão ativa: o cliente vê os próprios pedidos; a equipe, o trabalho; o administrador, também Usuários.
+  readonly nav = computed(() => {
+    const itens = [
+      { rotulo: 'Visão geral', link: '/visao-geral', icone: 'home' },
+      { rotulo: 'Demandas', link: '/demandas', icone: 'demand' },
+      { rotulo: 'Calendário', link: '/calendario', icone: 'calendar' },
+      { rotulo: 'Soluções', link: '/solucoes', icone: 'layers' },
+      { rotulo: 'Fila', link: '/fila', icone: 'queue' },
+    ];
+    if (this.sessao.ehEquipe() && this.sessao.ehAdmin()) itens.push({ rotulo: 'Usuários', link: '/usuarios', icone: 'users' });
+    return itens;
+  });
 
   // /entrar e /criar-conta: só o conteúdo da página e os avisos, sem o topo.
   private readonly rotaPublica = signal(ehRotaPublica(location.pathname));
@@ -57,9 +62,10 @@ export class AppComponent {
       this.rotaPublica.set(ehRotaPublica(e.urlAfterRedirects));
       this.fecharMenus();
     });
-    // Notificações do usuário logado; sem sessão não há o que buscar.
+    // Notificações do usuário logado (e da visão ativa); sem sessão não há o que buscar.
     effect(() => {
       const u = this.auth.usuario();
+      this.sessao.perfil();
       untracked(() => (u ? this.carregarNotificacoes() : this.notificacoes.set([])));
     });
     this.termo$.pipe(
@@ -97,6 +103,15 @@ export class AppComponent {
       this.carregarNotificacoes();
       void this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => this.router.navigateByUrl('/visao-geral'));
     });
+  }
+
+  /** Equipe alterna entre ver o NEXUS como cliente ou como equipe. Volta para a visão geral (a página atual pode não existir na outra visão). */
+  trocarVisao(v: Perfil) {
+    if (this.sessao.perfil() === v) return;
+    this.sessao.trocarVisao(v);
+    this.fecharMenus();
+    this.toast.ok(v === 'CLIENTE' ? 'Visão do cliente: você vê o NEXUS como um cliente vê.' : 'Visão da equipe: solicitações, validações e atendimento.');
+    void this.router.navigateByUrl('/visao-geral');
   }
 
   sair() {

@@ -1,7 +1,7 @@
 @if (mostrarTopo()) {
 <a class="pular" href="#conteudo">Pular para o conteúdo</a>
 
-<header class="topo">
+<header class="topo" [attr.data-visao]="sessao.perfil()">
   <div class="topo-inner">
     <a routerLink="/visao-geral" class="marca" aria-label="NEXUS, ir para a visão geral">
       <img src="nexus-logo.svg" alt="" width="22" height="22" />
@@ -9,7 +9,7 @@
     </a>
 
     <nav class="nav" aria-label="Principal">
-      @for (item of nav; track item.link) {
+      @for (item of nav(); track item.link) {
         <a [routerLink]="item.link" routerLinkActive="ativo" class="nav-item">
           <nx-icon [name]="item.icone" [size]="17" />
           {{ item.rotulo }}
@@ -18,11 +18,17 @@
     </nav>
 
     <div class="topo-acoes">
-      <button type="button" class="busca-gatilho" (click)="abrirBusca()" aria-label="Buscar">
-        <nx-icon name="search" [size]="16" />
-        <span class="busca-texto">Buscar</span>
-        <kbd>Ctrl K</kbd>
-      </button>
+      <!-- Só a equipe alterna: ver o NEXUS como um cliente vê ou como a equipe trabalha. -->
+      @if (sessao.podeAlternarVisao()) {
+        <div class="visao" role="radiogroup" aria-label="Ver o NEXUS como" data-tour="visao">
+          <button type="button" role="radio" class="visao-opcao" [class.ativo]="!sessao.ehEquipe()" [attr.aria-checked]="!sessao.ehEquipe()" (click)="trocarVisao('CLIENTE')" title="Ver como cliente">
+            <nx-icon name="user" [size]="15" /><span>Cliente</span>
+          </button>
+          <button type="button" role="radio" class="visao-opcao" [class.ativo]="sessao.ehEquipe()" [attr.aria-checked]="sessao.ehEquipe()" (click)="trocarVisao('EQUIPE')" title="Ver como equipe">
+            <nx-icon name="users" [size]="15" /><span>Equipe</span>
+          </button>
+        </div>
+      }
 
       <nx-ajuda />
 
@@ -46,10 +52,13 @@
         }
       </div>
 
-      <a routerLink="/demandas/nova" class="btn btn-primario btn-nova">
-        <nx-icon name="plus" [size]="16" />
-        <span>Nova demanda</span>
-      </a>
+      <!-- Abrir demanda é coisa de cliente: na visão da equipe o botão some. -->
+      @if (!sessao.ehEquipe()) {
+        <a routerLink="/demandas/nova" class="btn btn-primario btn-nova">
+          <nx-icon name="plus" [size]="16" />
+          <span>Nova demanda</span>
+        </a>
+      }
 
       <div class="menu-ancora">
         <button type="button" class="usuario" (click)="alternarUsuario()" [attr.aria-expanded]="menuUsuario()" aria-label="Menu do usuário">
@@ -59,12 +68,15 @@
           <div class="menu menu-usuario" role="menu">
             <div class="menu-perfil">
               <strong>{{ sessao.usuario.nome }}</strong>
-              @if (auth.usuario(); as u) {
-                <span class="mudo">{{ u.email }}</span>
-                <span class="mudo">{{ u.perfil === 'EQUIPE' ? 'Equipe responsável' : 'Cliente' }}@if (u.perfil === 'CLIENTE' && u.organizacao) { · {{ u.organizacao }} }</span>
+              @if (auth.usuario(); as u) { <span class="mudo">{{ u.email }}</span> }
+              <span class="menu-papel">{{ sessao.usuario.papel }}</span>
+              @if (sessao.podeAlternarVisao()) {
+                <span class="mudo">Vendo agora como {{ sessao.ehEquipe() ? 'equipe' : 'cliente' }}</span>
               }
             </div>
-            <hr />
+            <button type="button" class="menu-opcao" (click)="abrirBusca()">
+              <nx-icon name="search" [size]="16" /> Buscar <kbd class="menu-atalho">Ctrl K</kbd>
+            </button>
             <button type="button" class="switch" role="switch" [attr.aria-checked]="tema.escuro()" (click)="tema.alternar()">
               <nx-icon [name]="tema.escuro() ? 'moon' : 'sun'" [size]="16" /> Modo escuro
               <span class="switch-trilho" aria-hidden="true"></span>
@@ -92,15 +104,17 @@
 
   @if (menuMobile()) {
     <nav class="nav-mobile" aria-label="Principal">
-      @for (item of nav; track item.link) {
+      @for (item of nav(); track item.link) {
         <a [routerLink]="item.link" routerLinkActive="ativo" class="nav-mobile-item">
           <nx-icon [name]="item.icone" />
           {{ item.rotulo }}
         </a>
       }
-      <a routerLink="/demandas/nova" class="btn btn-primario">
-        <nx-icon name="plus" [size]="16" /> Nova demanda
-      </a>
+      @if (!sessao.ehEquipe()) {
+        <a routerLink="/demandas/nova" class="btn btn-primario">
+          <nx-icon name="plus" [size]="16" /> Nova demanda
+        </a>
+      }
     </nav>
   }
 </header>

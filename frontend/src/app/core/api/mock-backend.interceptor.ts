@@ -1,5 +1,5 @@
 // Backend HÍBRIDO. Intercepta /api/v1/* e responde o domínio (demandas, chamados...) como o Django responderia.
-// Passam direto para o Django real (proxy do ng serve): /auth/*, /me, /ia/* e /jobs/:id de jobs reais.
+// Passam direto para o Django real (proxy do ng serve): /auth/*, /me, /ia/*, /usuarios* e /jobs/:id de jobs reais.
 // Requisitos e sugestão de suporte usam a IA real: o mock monta a entrada, cria o job no Django
 // (POST /ia/jobs) e aplica o resultado no "banco" local quando o polling recebe CONCLUIDO.
 // Cenário, protótipo e entrevista continuam determinísticos aqui (mock-ia.ts).
@@ -14,7 +14,7 @@ import {
 import { MockDb, NotificacaoMock, VERSAO_SEED, criarSeed } from './mock-seed';
 import { gerarPrototipo, gerarRanking, gerarSugestao, nomeCenario, perguntaPorId, proximaPergunta } from './mock-ia';
 import { AuthService, Usuario } from '../auth/auth.service';
-import { pessoaIdDe } from '../session.service';
+import { SessionService, pessoaIdDe } from '../session.service';
 
 const CHAVE = 'nexus.mockdb';
 
@@ -1021,7 +1021,7 @@ rota('GET', '/busca', (ctx, _p, _b, q) => {
 // ---------- Interceptor ----------
 
 const PREFIXO = '/api/v1';
-const DIRETO_PARA_DJANGO = [/^\/auth\//, /^\/me$/, /^\/ia\//];
+const DIRETO_PARA_DJANGO = [/^\/auth\//, /^\/me$/, /^\/ia\//, /^\/usuarios(\/|$)/];
 const ROTA_JOB = /^\/jobs\/([^/]+)$/;
 
 export const mockBackendInterceptor: HttpInterceptorFn = (req, next) => {
@@ -1032,7 +1032,8 @@ export const mockBackendInterceptor: HttpInterceptorFn = (req, next) => {
   const usuario = inject(AuthService).usuario();
   if (!usuario) return erroHttp(new ApiErro(401, 'Sua sessão expirou. Entre novamente.'), req.url);
   const userId = sincronizarPessoa(usuario);
-  const ctx: Ctx = { perfil: usuario.perfil, userId, nome: usuario.nome, req, next };
+  // Responde pela VISÃO ativa (equipe vendo como cliente recebe exatamente o que um cliente receberia).
+  const ctx: Ctx = { perfil: inject(SessionService).perfil(), userId, nome: usuario.nome, req, next };
 
   // Job real (não criado por este mock): consulta no Django e aplica o resultado pendente antes de responder.
   const job = ROTA_JOB.exec(caminho);
