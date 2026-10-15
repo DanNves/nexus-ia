@@ -1,0 +1,105 @@
+/* Estilos do formulário das telas de acesso (Entrar e Criar conta).
+   Usado via styleUrl pelas duas páginas (cada uma recebe sua cópia encapsulada).
+   Usa os componentes oficiais (.campo, .input, .btn, nx-erro-campo) e só acrescenta o que é exclusivo daqui. */
+
+.cabeca { display: flex; flex-direction: column; gap: 8px; margin-bottom: 28px; }
+.cabeca h1 { font-size: 28px; }
+.cabeca p { color: var(--texto-2); font-size: 15px; line-height: 1.5; }
+
+.form { gap: 18px; }
+/* Regiões aria-live e nx-erro-campo vazias continuam no DOM (para anunciar quando aparecerem),
+   mas não podem somar o gap do flex. */
+.form > div:empty { margin-top: -18px; }
+.campo > nx-erro-campo:empty, .campo > div:empty { margin-top: -6px; }
+
+.campo > label { font-weight: 500; font-size: 13px; color: var(--texto); }
+.rotulo-linha { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.opcional { font-size: 12px; color: var(--texto-2); font-weight: 400; }
+.dica { font-size: 12.5px; color: var(--texto-2); line-height: 1.45; }
+
+/* Inputs com foco luminoso (exclusivo da tela de acesso). */
+.input { min-height: 42px; padding: 9px 12px; }
+.input:focus {
+  border-color: var(--azul);
+  box-shadow: 0 0 0 3px var(--azul-suave), 0 0 22px -6px rgb(8 120 255 / 0.55);
+}
+.input.invalido:focus { box-shadow: 0 0 0 3px var(--tom-vermelho-bg); }
+
+/* Senha com botão mostrar/ocultar dentro do campo. */
+.senha { position: relative; }
+.senha .input { padding-right: 46px; }
+.olho {
+  position: absolute; right: 3px; top: 3px;
+  display: grid; place-items: center; width: 36px; height: 36px; border-radius: var(--r-1);
+  color: var(--texto-2);
+}
+.olho:hover { color: var(--texto); background: var(--tom-cinza-bg); }
+
+.caps { display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 500; color: var(--tom-laranja-tx); }
+
+/* Regras da senha que vão ficando verdes enquanto a pessoa digita. */
+.regras { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12.5px; color: var(--texto-2); }
+.regras li { display: inline-flex; align-items: center; gap: 5px; transition: color 0.15s; }
+.regras li.ok { color: var(--tom-verde-tx); }
+.regras .marcador { width: 6px; height: 6px; margin: 0 4px; border-radius: 50%; background: var(--borda-forte); }
+
+.erro-geral {
+  display: flex; align-items: flex-start; gap: 8px; padding: 10px 12px; border-radius: var(--r-1);
+  font-size: 13.5px; color: var(--tom-vermelho-tx); background: var(--tom-vermelho-bg);
+}
+
+.nota {
+  display: flex; align-items: flex-start; gap: 10px; padding: 11px 13px; border-radius: var(--r-2);
+  font-size: 13px; line-height: 1.5; color: var(--texto); background: var(--tom-azul-bg);
+}
+.nota nx-icon { color: var(--tom-azul-tx); margin-top: 1px; }
+
+/* Botão principal com reflexo percorrendo as bordas (StarBorder). Continua sendo o .btn-primario oficial. */
+.btn-acesso { position: relative; overflow: hidden; isolation: isolate; width: 100%; height: 44px; font-size: 15px; margin-top: 4px; }
+.btn-acesso > span { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 8px; }
+.btn-acesso::before, .btn-acesso::after {
+  content: ''; position: absolute; z-index: 0; width: 45%; height: 60%; border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(255 255 255 / 0.55), transparent);
+  pointer-events: none; opacity: 0.8;
+}
+.btn-acesso::before { bottom: -38%; right: -45%; animation: estrela-baixo 5s linear infinite alternate; }
+.btn-acesso::after { top: -38%; left: -45%; animation: estrela-cima 5s linear infinite alternate; }
+@keyframes estrela-baixo { to { translate: -320% 0; } }
+@keyframes estrela-cima { to { translate: 320% 0; } }
+.btn-acesso:disabled::before, .btn-acesso:disabled::after { animation: none; opacity: 0; }
+
+.giro { width: 15px; height: 15px; border-radius: 50%; border: 2px solid rgb(255 255 255 / 0.35); border-top-color: #fff; animation: giro 0.7s linear infinite; }
+@keyframes giro { to { rotate: 360deg; } }
+
+.alternar { margin-top: 24px; text-align: center; color: var(--texto-2); font-size: 14px; }
+
+.esqueceu { font-size: 12.5px; color: var(--texto-2); }
+
+/* Contas de demonstração (só em desenvolvimento). */
+.demo { margin-top: 28px; padding-top: 18px; border-top: 1px dashed var(--borda-forte); display: flex; flex-direction: column; gap: 10px; }
+.demo-topo { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 8px; }
+.demo-topo h2 { font-size: 13px; font-weight: 600; color: var(--texto); }
+.demo-topo span { font-size: 12px; color: var(--texto-2); }
+.demo-contas { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.demo-conta {
+  display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: var(--r-2); text-align: left;
+  border: 1px solid var(--borda); background: var(--superficie); transition: border-color 0.15s, background-color 0.15s;
+}
+.demo-conta:hover { border-color: var(--azul-borda); background: var(--hover-sup); }
+.demo-conta.usada { border-color: var(--azul); background: var(--azul-suave); }
+.demo-conta strong { display: block; font-size: 13px; font-weight: 500; color: var(--titulo); }
+.demo-conta small { display: block; font-size: 12px; color: var(--texto-2); }
+.demo-icone { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0; background: var(--tom-azul-bg); color: var(--tom-azul-tx); }
+.demo-icone[data-tom='roxo'] { background: var(--tom-roxo-bg); color: var(--tom-roxo-tx); }
+
+@media (max-width: 520px) {
+  .cabeca { margin-bottom: 22px; }
+  .cabeca h1 { font-size: 24px; }
+  .demo-contas { grid-template-columns: 1fr; }
+  .demo-topo { flex-direction: column; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-acesso::before, .btn-acesso::after { animation: none; opacity: 0; }
+  .giro { animation-duration: 1.6s; }
+}

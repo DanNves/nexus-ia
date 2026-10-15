@@ -1,0 +1,72 @@
+<div class="fundo">
+  <div class="aurora"><i class="blob b1"></i><i class="blob b2"></i><i class="blob b3"></i></div>
+  <div class="grade">
+    @for (c of celulas; track $index) {
+      <i class="celula" [style.--c]="c[0]" [style.--l]="c[1]" [style.--d]="c[2] + 's'"></i>
+    }
+  </div>
+  <div class="foco"></div>
+</div>
+
+<div class="cabeca">
+  <div class="marca">
+    <img src="nexus-logo.svg" alt="" width="28" height="28" />
+    <span>NEXUS</span>
+  </div>
+
+  <div class="cartao-ia">
+    <div class="cartao-topo">
+      <span class="selo"><nx-icon name="spark" [size]="13" /> Sugestão da IA</span>
+      <span class="cartao-codigo">REQ-014</span>
+    </div>
+    <p class="cartao-texto">Permitir recuperar a senha por e-mail, com link válido por 30 minutos.</p>
+    <div class="cartao-estado">
+      <span class="estado estado-aguardando"><span class="pontos"><i></i><i></i><i></i></span> Aguardando validação humana</span>
+      <span class="estado estado-aprovado"><nx-icon name="check-circle" [size]="15" /> Aprovado pela equipe</span>
+    </div>
+  </div>
+</div>
+
+<div class="palco">
+  <div class="sistema">
+    <span class="anel anel-externo"></span>
+    <span class="anel anel-interno"></span>
+
+    <div class="orbita orbita-interna">
+      @for (e of interno; track e.rotulo) {
+        <div class="no" [style.--a]="e.angulo + 'deg'">
+          <span class="etapa">
+            <span class="etapa-icone"><nx-icon [name]="e.icone" [size]="15" /></span>
+            {{ e.rotulo }}
+          </span>
+        </div>
+      }
+    </div>
+
+    <div class="orbita orbita-externa">
+      @for (e of externo; track e.rotulo) {
+        <div class="no" [style.--a]="e.angulo + 'deg'">
+          <span class="etapa etapa-pos">
+            <span class="etapa-icone"><nx-icon [name]="e.icone" [size]="15" /></span>
+            {{ e.rotulo }}
+          </span>
+        </div>
+      }
+    </div>
+
+    <div class="nucleo">
+      <span class="nucleo-pulso"></span>
+      <img src="nexus-logo.svg" alt="" />
+    </div>
+  </div>
+</div>
+
+<div class="texto">
+  <p class="titulo"><span class="brilho">Do primeiro relato ao suporte, </span><span class="gradiente">nenhum contexto se perde.</span></p>
+  <p class="sub">O NEXUS conduz a necessidade até virar software e guarda cada decisão para quando surgir um chamado.</p>
+  <ol class="ciclo">
+    <li><i data-tom="roxo"></i>IA propõe</li>
+    <li><i data-tom="azul"></i>Pessoa valida</li>
+    <li><i data-tom="verde"></i>Sistema consolida</li>
+  </ol>
+</div>

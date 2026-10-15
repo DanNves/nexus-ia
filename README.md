@@ -6,7 +6,7 @@ O cliente descreve a necessidade (texto ou ata/transcrição). O NEXUS conduz um
 
 **Regra central:** IA propõe → humano valida → sistema consolida.
 
-> Fase atual: **documentação**. Ver [`docs/STATUS_PROJETO.md`](docs/STATUS_PROJETO.md).
+> Fase atual: **backend iniciado** — autenticação e IA (Gemini) reais no Django; o restante do domínio ainda é simulado no frontend. Ver [`docs/STATUS_PROJETO.md`](docs/STATUS_PROJETO.md).
 
 ## Estrutura
 

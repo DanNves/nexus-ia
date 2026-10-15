@@ -1,6 +1,6 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, filter, switchMap, take, takeWhile, timer } from 'rxjs';
+import { EMPTY, Observable, defer, expand, filter, retry, switchMap, take, throwError, timer } from 'rxjs';
 import {
   Atividade, Chamado, Conhecimento, Demanda, ErroApi, EstadoAtividade, Evento, FilaResumo, Job, Notificacao,
   Pergunta, Pessoa, Prioridade, ProximaPergunta, ResultadoBusca, Solucao, TipoEvento, VisaoGeral,
@@ -88,19 +88,49 @@ export class NexusApi {
   conhecimento(id: string) { return this.http.get<Conhecimento>(`${API}/conhecimentos/${id}`); }
 
   // Operação longa: 202 + job_id, depois polling até CONCLUIDO/FALHOU.
+  // Intervalo crescente: 1 s, 1,4 s, 2 s, 2,7 s e depois 3 s fixos. O CLAUDE.md §8 fala em "a partir de 2 s";
+  // começamos em 1 s porque os jobs simulados duram ~3 s e a IA real costuma levar poucos segundos.
+  // Falha transitória (servidor fora/reiniciando: 0, 502, 503, 504) não encerra o acompanhamento: tenta de novo
+  // até 5 vezes com espera crescente (~22 s no total). Desistindo, o erro sobe e a tela mostra lerErro();
+  // a pendência no mock é reconsultada quando a demanda/o chamado for aberto de novo.
   acompanharJob(jobId: string): Observable<Job> {
-    return timer(0, 700).pipe(
-      switchMap(() => this.http.get<Job>(`${API}/jobs/${jobId}`)),
-      takeWhile((j) => j.estado !== 'CONCLUIDO' && j.estado !== 'FALHOU', true),
-    );
+    return defer(() => {
+      let tentativa = 0;
+      const consultar = () => timer(intervaloPolling(tentativa++)).pipe(
+        switchMap(() => this.http.get<Job>(`${API}/jobs/${jobId}`).pipe(
+          retry({ count: 5, delay: (e: unknown, n: number) => (falhaTransitoria(e) ? timer(1500 * n) : throwError(() => e)) }),
+        )),
+      );
+      return consultar().pipe(expand((j) => (jobTerminou(j) ? EMPTY : consultar())));
+    });
   }
 
   aguardarJob(jobId: string): Observable<Job> {
-    return this.acompanharJob(jobId).pipe(filter((j) => j.estado === 'CONCLUIDO' || j.estado === 'FALHOU'), take(1));
+    return this.acompanharJob(jobId).pipe(filter(jobTerminou), take(1));
   }
 }
 
+export const falhaTransitoria = (e: unknown) => e instanceof HttpErrorResponse && [0, 502, 503, 504].includes(e.status);
+
+export const jobTerminou = (j: Job) => j.estado === 'CONCLUIDO' || j.estado === 'FALHOU';
+
+export function intervaloPolling(tentativa: number) {
+  return Math.min(3000, Math.round(1000 * 1.4 ** tentativa));
+}
+
+const SEM_SERVIDOR = 'Não foi possível falar com o servidor. Verifique se o backend está rodando.';
+
 export function lerErro(e: unknown): ErroApi {
-  if (e instanceof HttpErrorResponse && e.error && typeof e.error === 'object' && 'mensagem' in e.error) return e.error as ErroApi;
+  if (!(e instanceof HttpErrorResponse)) return { mensagem: 'Não foi possível concluir. Tente de novo.' };
+  const corpo: unknown = e.error;
+  if (corpo && typeof corpo === 'object') {
+    if ('mensagem' in corpo && typeof corpo.mensagem === 'string') return corpo as ErroApi;
+    if ('detail' in corpo && typeof corpo.detail === 'string') return { mensagem: corpo.detail };
+  }
+  // status 0: sem conexão. 502/503/504 ou 500 sem corpo JSON: o proxy do `ng serve` não alcançou o Django.
+  if (e.status === 0 || e.status === 502 || e.status === 503 || e.status === 504 || (e.status === 500 && typeof corpo !== 'object')) {
+    return { mensagem: SEM_SERVIDOR };
+  }
+  if (e.status === 429) return { mensagem: 'Muitas tentativas em pouco tempo. Aguarde um pouco e tente de novo.' };
   return { mensagem: 'Não foi possível concluir. Tente de novo.' };
 }

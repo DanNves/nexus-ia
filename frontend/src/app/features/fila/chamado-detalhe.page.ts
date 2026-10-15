@@ -13,6 +13,14 @@ import { ESTADO_CHAMADO, IMPACTO_CURTO, PRIORIDADE, dataHora, duracao, relativo 
   selector: 'nx-chamado-detalhe',
   imports: [RouterLink, FormsModule, ...UI],
   templateUrl: './chamado-detalhe.page.html',
+  // Só desta tela: a sugestão rejeitada fica recolhida e riscada até a nova análise chegar.
+  styles: [`
+    .sugestao-rejeitada { border: 1px solid var(--borda); border-radius: var(--r-1); background: var(--fundo-2); }
+    .sugestao-rejeitada summary { display: flex; align-items: flex-start; gap: 8px; padding: 10px 12px; cursor: pointer; color: var(--tom-vermelho-tx); }
+    .sugestao-rejeitada summary nx-icon { flex: none; margin-top: 2px; }
+    .sugestao-rejeitada-corpo { display: flex; flex-direction: column; gap: 6px; padding: 0 12px 12px; color: var(--texto-2); }
+    .sugestao-rejeitada-corpo del { text-decoration-color: var(--texto-fraco); }
+  `],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ChamadoDetalhePage {
@@ -80,6 +88,15 @@ export class ChamadoDetalhePage {
 
   pessoa(id?: string) { return this.pessoas().find((p) => p.id === id); }
 
+  rejeitada(c: Chamado) { return c.sugestao?.estado === 'REJEITADO' ? c.sugestao : undefined; }
+  rejeicoes(c: Chamado) { return Math.max(1, c.sugestoesRejeitadas?.length ?? 0); }
+
+  /** Só na apresentação: a IA às vezes começa a causa com "Possível causa:", que já é o título do bloco. O texto salvo não muda. */
+  causa(texto: string) {
+    const t = texto.replace(/^\s*poss[ií]vel\s+causa\s*[:\-–—]\s*/i, '');
+    return t ? t.charAt(0).toUpperCase() + t.slice(1) : texto;
+  }
+
   atender() {
     const c = this.c();
     if (!c) return;
@@ -95,8 +112,13 @@ export class ChamadoDetalhePage {
     this.api.gerarSugestao(c.id).pipe(switchMap((j) => { this.job.set(j); return this.api.acompanharJob(j.id); })).subscribe({
       next: (j) => {
         this.job.set(j);
-        if (j.estado === 'CONCLUIDO') this.api.chamado(c.id).subscribe((n) => { this.c.set(n); this.job.set(null); this.toast.ok('Sugestão pronta. Revise antes de decidir.'); });
-        if (j.estado === 'FALHOU') { this.job.set(null); this.toast.erro('A análise falhou. Tente de novo.'); }
+        if (j.estado === 'CONCLUIDO') {
+          this.api.chamado(c.id).subscribe({
+            next: (n) => { this.c.set(n); this.job.set(null); this.motivo = ''; this.toast.ok('Sugestão pronta. Revise antes de decidir.'); },
+            error: (e) => { this.job.set(null); this.toast.erro(lerErro(e).mensagem); },
+          });
+        }
+        if (j.estado === 'FALHOU') { this.job.set(null); this.toast.erro(j.erro || 'A análise falhou. Tente de novo.'); }
       },
       error: (e) => { this.job.set(null); this.toast.erro(lerErro(e).mensagem); },
     });

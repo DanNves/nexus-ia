@@ -16,6 +16,9 @@ export interface MockDb {
   conhecimentos: Conhecimento[];
   notificacoes: Notificacao[];
   sequencias: Record<string, number>;
+  /** Jobs de IA real disparados pelo mock e ainda não aplicados: jobId → alvo. */
+  /** criadoEm: para expirar pendências cujo job não pôde mais ser consultado. */
+  iaPendentes: Record<string, { tarefa: 'requisitos' | 'sugestao_suporte'; alvoId: string; criadoEm?: string }>;
 }
 
 export const VERSAO_SEED = 3;
@@ -300,5 +303,6 @@ export function criarSeed(): MockDb {
     conhecimentos: [kb7, kb6],
     notificacoes,
     sequencias: { DEM: 18, ATV: 46, CH: 32, KB: 7, REQ: 35, EV: 8 },
+    iaPendentes: {},
   };
 }

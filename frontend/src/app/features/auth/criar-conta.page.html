@@ -1,0 +1,113 @@
+<nx-acesso-layout>
+  <header class="cabeca">
+    <h1>Criar sua conta</h1>
+    <p>Conte o que você precisa e acompanhe cada etapa, da primeira conversa até a entrega.</p>
+  </header>
+
+  <form class="form" (ngSubmit)="criar()" novalidate>
+    <p class="nota">
+      <nx-icon name="user" [size]="16" />
+      <span>Esta é uma conta de <strong>cliente</strong>. Perfis da equipe responsável são liberados pela administração do NEXUS.</span>
+    </p>
+    <p class="aviso-dados"><nx-icon name="shield" [size]="14" /> Este é um ambiente de demonstração: use dados fictícios. O que você escrever nas demandas pode ir para a IA, e o provedor do modelo pode usar esse texto.</p>
+
+    <div class="campo">
+      <label for="cc-nome">Nome completo</label>
+      <input id="cc-nome" class="input" name="nome" type="text" autocomplete="name" maxlength="120" autofocus
+        [(ngModel)]="form.nome" (ngModelChange)="limpar('nome')"
+        [class.invalido]="erros()['nome']" [attr.aria-invalid]="erros()['nome'] ? 'true' : null"
+        aria-describedby="cc-nome-erro" />
+      <nx-erro-campo id="cc-nome-erro" [mensagens]="erros()['nome']" />
+    </div>
+
+    <div class="campo">
+      <label for="cc-usuario">Nome de usuário</label>
+      <input id="cc-usuario" class="input" name="usuario" type="text" autocomplete="username"
+        autocapitalize="none" spellcheck="false" maxlength="30"
+        [(ngModel)]="form.usuario" (ngModelChange)="limpar('usuario')"
+        [class.invalido]="erros()['usuario']" [attr.aria-invalid]="erros()['usuario'] ? 'true' : null"
+        aria-describedby="cc-usuario-dica cc-usuario-erro" />
+      @if (!erros()['usuario']) {
+        <p id="cc-usuario-dica" class="dica">De 3 a 30 caracteres: letras, números, ponto (.), hífen (-) ou sublinhado (_).</p>
+      }
+      <nx-erro-campo id="cc-usuario-erro" [mensagens]="erros()['usuario']" />
+    </div>
+
+    <div class="campo">
+      <label for="cc-email">E-mail</label>
+      <input id="cc-email" class="input" name="email" type="email" inputmode="email" autocomplete="email" maxlength="254"
+        autocapitalize="none" spellcheck="false"
+        [(ngModel)]="form.email" (ngModelChange)="limpar('email')"
+        [class.invalido]="erros()['email']" [attr.aria-invalid]="erros()['email'] ? 'true' : null"
+        aria-describedby="cc-email-erro" />
+      <nx-erro-campo id="cc-email-erro" [mensagens]="erros()['email']" />
+    </div>
+
+    <div class="campo">
+      <div class="rotulo-linha">
+        <label for="cc-organizacao">Empresa ou organização</label>
+        <span class="opcional">opcional</span>
+      </div>
+      <input id="cc-organizacao" class="input" name="organizacao" type="text" autocomplete="organization" maxlength="120"
+        [(ngModel)]="form.organizacao" (ngModelChange)="limpar('organizacao')"
+        [class.invalido]="erros()['organizacao']" [attr.aria-invalid]="erros()['organizacao'] ? 'true' : null"
+        aria-describedby="cc-organizacao-erro" />
+      <nx-erro-campo id="cc-organizacao-erro" [mensagens]="erros()['organizacao']" />
+    </div>
+
+    <div class="campo">
+      <label for="cc-senha">Senha</label>
+      <div class="senha">
+        <input id="cc-senha" class="input" name="senha" [type]="verSenha() ? 'text' : 'password'" autocomplete="new-password" maxlength="128"
+          [(ngModel)]="form.senha" (ngModelChange)="mudouSenha($event)"
+          (keydown)="verCaps($event)" (keyup)="verCaps($event)" (blur)="capsLigado.set(false)"
+          [class.invalido]="erros()['senha']" [attr.aria-invalid]="erros()['senha'] ? 'true' : null"
+          aria-describedby="cc-senha-regras cc-senha-caps cc-senha-erro" />
+        <button type="button" class="olho" (click)="verSenha.set(!verSenha())"
+          [attr.aria-label]="verSenha() ? 'Ocultar senha' : 'Mostrar senha'" [attr.aria-pressed]="verSenha()" aria-controls="cc-senha">
+          <nx-icon [name]="verSenha() ? 'eye-off' : 'eye'" [size]="18" />
+        </button>
+      </div>
+      <ul id="cc-senha-regras" class="regras">
+        <li [class.ok]="regraTamanho()">
+          @if (regraTamanho()) { <nx-icon name="check" [size]="14" /> } @else { <i class="marcador" aria-hidden="true"></i> }
+          Pelo menos 8 caracteres
+        </li>
+        <li [class.ok]="regraNumeros()">
+          @if (regraNumeros()) { <nx-icon name="check" [size]="14" /> } @else { <i class="marcador" aria-hidden="true"></i> }
+          Não só números
+        </li>
+      </ul>
+      <div id="cc-senha-caps" aria-live="polite">
+        @if (capsLigado()) { <p class="caps"><nx-icon name="alert" [size]="14" /> Caps Lock está ativado.</p> }
+      </div>
+      <nx-erro-campo id="cc-senha-erro" [mensagens]="erros()['senha']" />
+    </div>
+
+    <div class="campo">
+      <label for="cc-confirmacao">Confirme a senha</label>
+      <input id="cc-confirmacao" class="input" name="confirmacao" [type]="verSenha() ? 'text' : 'password'" autocomplete="new-password" maxlength="128"
+        [(ngModel)]="form.confirmacao" (ngModelChange)="limpar('confirmacao')"
+        [class.invalido]="erros()['confirmacao']" [attr.aria-invalid]="erros()['confirmacao'] ? 'true' : null"
+        aria-describedby="cc-confirmacao-erro" />
+      <nx-erro-campo id="cc-confirmacao-erro" [mensagens]="erros()['confirmacao']" />
+    </div>
+
+    <div aria-live="assertive">
+      @if (erroGeral()) {
+        <p class="erro-geral"><nx-icon name="x-circle" [size]="16" /> {{ erroGeral() }}</p>
+      }
+    </div>
+
+    <button type="submit" class="btn btn-primario btn-acesso" [disabled]="enviando()">
+      <span>
+        @if (enviando()) { <i class="giro" aria-hidden="true"></i> Criando sua conta… } @else { Criar conta <nx-icon name="arrow-right" [size]="17" /> }
+      </span>
+    </button>
+  </form>
+
+  <p class="alternar">
+    Já tem conta?
+    <a class="link" routerLink="/entrar" [queryParams]="voltar ? { voltar: voltar } : {}">Entrar</a>
+  </p>
+</nx-acesso-layout>

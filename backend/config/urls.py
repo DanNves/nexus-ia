@@ -1,22 +1,18 @@
-"""
-URL configuration for config project.
-
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/6.1/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
+"""Rotas do backend NEXUS. Toda a API fica sob /api/v1/ (CLAUDE.md §8)."""
 from django.contrib import admin
-from django.urls import path
+from django.urls import include, path, re_path
+
+from apps.core.api import erros
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/v1/', include('apps.contas.api.urls')),
+    path('api/v1/', include('apps.ia.api.urls')),
+    # Sempre por último: qualquer /api/ sem rota responde 404 em JSON, mesmo com DEBUG=True.
+    re_path(r'^api/', erros.rota_api_inexistente),
 ]
+
+# Erros fora do DRF: JSON `{mensagem}` sob /api/, padrão do Django no restante.
+handler400 = erros.tratar_400
+handler404 = erros.tratar_404
+handler500 = erros.tratar_500
