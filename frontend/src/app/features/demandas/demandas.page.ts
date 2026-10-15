@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { forkJoin } from 'rxjs';
+import { forkJoin, of } from 'rxjs';
 import { NexusApi, lerErro } from '../../core/api/nexus-api.service';
 import { Atividade, Demanda, EstadoAtividade, EstadoDemanda, Pessoa } from '../../core/api/models';
 import { SessionService } from '../../core/session.service';
@@ -34,7 +34,8 @@ export class DemandasPage {
 
   /** ?aba=atividades vindo da URL */
   aba = input<string>();
-  readonly abaAtual = computed(() => (this.aba() === 'atividades' ? 'atividades' : 'demandas'));
+  // Atividades são o quadro interno da equipe: para o cliente a aba não existe (a URL cai em Demandas).
+  readonly abaAtual = computed(() => (this.aba() === 'atividades' && this.sessao.ehEquipe() ? 'atividades' : 'demandas'));
 
   readonly demandas = signal<Demanda[] | null>(null);
   readonly atividades = signal<Atividade[] | null>(null);
@@ -78,12 +79,16 @@ export class DemandasPage {
       this.sessao.perfil();
       untracked(() => this.carregar());
     });
+    effect(() => {
+      if (this.aba() === 'atividades' && !this.sessao.ehEquipe()) untracked(() => this.trocarAba('demandas'));
+    });
   }
 
   carregar() {
     this.demandas.set(null);
     this.atividades.set(null);
-    forkJoin({ d: this.api.demandas(), a: this.api.atividades(), p: this.api.pessoas() }).subscribe(({ d, a, p }) => {
+    const atividades$ = this.sessao.ehEquipe() ? this.api.atividades() : of<Atividade[]>([]);
+    forkJoin({ d: this.api.demandas(), a: atividades$, p: this.api.pessoas() }).subscribe(({ d, a, p }) => {
       this.demandas.set(d);
       this.atividades.set(a);
       this.pessoas.set(p);

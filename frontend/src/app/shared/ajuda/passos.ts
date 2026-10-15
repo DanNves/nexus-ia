@@ -49,8 +49,9 @@ function passosGlobais(equipe: boolean): PassoTour[] {
       id: 'solucoes',
       seletor: '.nav a[href="/solucoes"]',
       titulo: 'Soluções',
-      texto:
-        'Os sistemas já entregues e suas versões. Cada versão lembra de qual demanda veio e quais chamados recebeu: é a ponte entre o desenvolvimento e o suporte.',
+      texto: equipe
+        ? 'Os sistemas já entregues e suas versões. Cada versão lembra de qual demanda veio e quais chamados recebeu: é a ponte entre o desenvolvimento e o suporte.'
+        : 'Os sistemas que a equipe já entregou para você e as versões de cada um. Daqui você abre um chamado se algo não funcionar.',
       alternativa: MENU_MOBILE,
     },
     {
@@ -66,7 +67,9 @@ function passosGlobais(equipe: boolean): PassoTour[] {
       id: 'buscar',
       seletor: '.busca-gatilho',
       titulo: 'Buscar',
-      texto: 'Encontre qualquer demanda, chamado ou solução pelo nome ou pelo código. Atalho: Ctrl K.',
+      texto: equipe
+        ? 'Encontre qualquer demanda, atividade, chamado ou solução pelo nome ou pelo código. Atalho: Ctrl K.'
+        : 'Encontre suas demandas, chamados e soluções pelo nome ou pelo código. Atalho: Ctrl K.',
     },
     {
       id: 'notificacoes',
@@ -74,7 +77,7 @@ function passosGlobais(equipe: boolean): PassoTour[] {
       titulo: 'Notificações',
       texto: equipe
         ? 'Avisos do que mudou: solicitação nova, conteúdo aguardando validação, chamado aberto. O ponto vermelho indica que há algo não lido.'
-        : 'Avisos do que mudou: resposta da equipe, reunião marcada, documento disponível. O ponto vermelho indica que há algo não lido.',
+        : 'Avisos sobre o que é seu: resposta da equipe à sua solicitação, reunião marcada, requisito aprovado, chamado em atendimento ou resolvido. O ponto vermelho indica que há algo não lido.',
     },
     {
       id: 'nova-demanda',
@@ -95,22 +98,26 @@ function passosGlobais(equipe: boolean): PassoTour[] {
 }
 
 function passosListaDemandas(equipe: boolean): PassoTour[] {
-  return [
+  const passos: PassoTour[] = [
     {
       id: 'aba-demandas',
       seletor: '[data-tour="aba-demandas"]',
       titulo: 'Aba Demandas',
-      texto: 'A lista do que foi pedido, com a etapa de cada demanda. Clique em uma para ver tudo o que ela guarda.',
+      texto: equipe
+        ? 'A lista do que foi pedido, com a etapa de cada demanda. Clique em uma para ver tudo o que ela guarda.'
+        : 'A lista do que você pediu, com a etapa de cada demanda. Clique em uma para ver tudo o que ela guarda.',
     },
-    {
+  ];
+  // Atividades são o quadro interno da equipe; o cliente não vê a aba.
+  if (equipe) {
+    passos.push({
       id: 'aba-atividades',
       seletor: '[data-tour="aba-atividades"]',
       titulo: 'Aba Atividades',
-      texto: equipe
-        ? 'As tarefas da equipe para entregar as demandas, em quadro (por situação) ou em lista.'
-        : 'O trabalho que a equipe está fazendo para entregar as suas demandas, em quadro ou em lista.',
-    },
-  ];
+      texto: 'As tarefas da equipe para entregar as demandas, em quadro (por situação) ou em lista.',
+    });
+  }
+  return passos;
 }
 
 function passosDetalheDemanda(equipe: boolean): PassoTour[] {
@@ -119,13 +126,13 @@ function passosDetalheDemanda(equipe: boolean): PassoTour[] {
       id: 'etapas',
       seletor: '[data-tour="etapas"]',
       titulo: 'Etapas da demanda',
-      texto: 'A linha mostra o caminho da demanda, da necessidade ao documento de requisitos, e em que ponto ela está agora.',
+      texto: 'O caminho da demanda, em ordem: levantamento, protótipo, solicitação, requisitos e documento. Clique numa etapa para abri-la. O número azul marca a etapa atual, o ✓ as concluídas, e a linha de baixo diz a situação de cada uma.',
     },
     {
       id: 'aba-resumo',
       seletor: '[data-tour="aba-resumo"]',
       titulo: 'Resumo',
-      texto: 'Uma visão rápida: o que foi pedido, quem está envolvido, a solução recomendada e o histórico do que já aconteceu.',
+      texto: 'Comece por aqui: o aviso no topo diz o que fazer agora. Abaixo, o que foi pedido, quem está envolvido, a solução recomendada e o histórico.',
     },
     {
       id: 'aba-levantamento',

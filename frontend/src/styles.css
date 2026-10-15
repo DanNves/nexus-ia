@@ -15,10 +15,11 @@
   --azul-suave: #e3eefd;
   --azul-suave-2: #d6e7ff;
   --azul-borda: #a9cbfb;
-  --fundo: #e9eef4;
-  --fundo-2: #e1e7ee;
+  /* Fundo da paleta oficial (CLAUDE.md §12). */
+  --fundo: #f5f8fc;
+  --fundo-2: #ecf0f5;
   --superficie: #ffffff;
-  --hover-sup: #f3f7fc;
+  --hover-sup: #f0f5fb;
   --borda: #cfd8e3;
   --borda-forte: #aebccd;
   --titulo: #020a1d;
@@ -68,12 +69,13 @@
   --azul-suave: #142a4a;
   --azul-suave-2: #1a3560;
   --azul-borda: #2b5490;
-  --fundo: #0a111d;
-  --fundo-2: #0e1726;
-  --superficie: #131d2d;
-  --hover-sup: #18253a;
-  --borda: #2a3a52;
-  --borda-forte: #3e5170;
+  /* Cinza-grafite neutro: o azul fica só nos destaques. */
+  --fundo: #0f1217;
+  --fundo-2: #13171d;
+  --superficie: #181c23;
+  --hover-sup: #1f242d;
+  --borda: #2b313b;
+  --borda-forte: #3d4552;
   --titulo: #f2f6fb;
   --texto: #d3dde9;
   --texto-2: #95a5bb;
@@ -87,14 +89,14 @@
   --borda-ia: #3e3270;
 
   --painel-escuro: #060c18;
-  --painel-escuro-borda: #2a3a52;
-  --bloco-fila: #22324b;
+  --painel-escuro-borda: #2b313b;
+  --bloco-fila: #262c36;
 
   --tom-azul-bg: #142a4a;     --tom-azul-tx: #8cc0ff;
   --tom-verde-bg: #0f3427;    --tom-verde-tx: #62d6aa;
   --tom-laranja-bg: #3a2a10;  --tom-laranja-tx: #f1b65c;
   --tom-roxo-bg: #251e45;     --tom-roxo-tx: #b9a7f3;
-  --tom-cinza-bg: #1c2739;    --tom-cinza-tx: #a8b5c7;
+  --tom-cinza-bg: #232831;    --tom-cinza-tx: #a8b5c7;
   --tom-vermelho-bg: #3e1a1e; --tom-vermelho-tx: #ff9d9d;
 
   --sombra-sup: 0 1px 2px rgb(0 0 0 / 0.3);
@@ -455,7 +457,6 @@ textarea.input { resize: vertical; line-height: 1.5; }
 .aba.ativa { color: var(--azul-escuro); }
 .aba.ativa::after { content: ''; position: absolute; left: 8px; right: 8px; bottom: -1px; height: 2px; border-radius: 2px 2px 0 0; background: var(--azul); }
 .contador { font-size: 12px; color: var(--texto-2); background: var(--tom-cinza-bg); border-radius: 999px; padding: 0 7px; line-height: 18px; }
-.contador-alerta { background: var(--tom-roxo-bg); color: var(--tom-roxo-tx); }
 
 .barra-ferramentas { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .campo-busca { width: 280px; }
@@ -502,6 +503,8 @@ a.tabela-titulo:hover { color: var(--azul-escuro); }
 .detalhe-topo { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; }
 .detalhe-titulo { display: flex; flex-direction: column; gap: 4px; max-width: 70ch; }
 .detalhe-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+/* Meta acima do título (código, estado, prioridade) alinhada com ele. */
+.detalhe-titulo .detalhe-meta { justify-content: flex-start; margin-bottom: 2px; }
 
 .trilha { display: flex; }
 .trilha li { flex: 1; display: flex; flex-direction: column; gap: 8px; position: relative; color: var(--texto-2); font-size: 13px; font-weight: 500; }
@@ -517,6 +520,43 @@ a.tabela-titulo:hover { color: var(--azul-escuro); }
 .faixa .lista-texto strong { color: var(--titulo); }
 .faixa-neutra { background: var(--superficie); border-color: var(--borda); color: var(--texto-2); }
 .faixa-ok { background: var(--tom-verde-bg); border-color: var(--borda-ok); color: var(--tom-verde-tx); }
+.faixa-erro { background: var(--tom-vermelho-bg); border-color: var(--vermelho); color: var(--tom-vermelho-tx); }
+.faixa .btn { flex-shrink: 0; }
+
+/* Etapas da demanda: a linha do tempo e as abas numa barra só (CLAUDE.md §11).
+   Cada item mostra número/✓, nome e uma linha curta de situação. */
+.etapas { display: flex; border-bottom: 1px solid var(--borda); overflow-x: auto; scrollbar-width: none; }
+.etapa {
+  position: relative; display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+  padding: 10px 16px 12px 12px; text-align: left; white-space: nowrap; border-radius: var(--r-1) var(--r-1) 0 0;
+  transition: background-color 0.12s;
+}
+.etapa:hover { background: var(--hover-sup); }
+.etapa.ativa { background: var(--azul-suave); }
+.etapa.ativa::after { content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: var(--azul); }
+/* Separador discreto entre o Resumo e as etapas numeradas. */
+.etapa:first-child { margin-right: 6px; }
+.etapa:first-child::before { content: ''; position: absolute; right: -4px; top: 14px; bottom: 14px; width: 1px; background: var(--borda); }
+.etapa-marca {
+  display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
+  border: 1.5px solid var(--borda-forte); background: var(--superficie); color: var(--texto-2);
+  font-size: 11.5px; font-weight: 600; font-variant-numeric: tabular-nums;
+}
+.etapa-marca-icone { border: 0; background: transparent; }
+.etapa[data-situacao='atual'] .etapa-marca { border-color: var(--azul); color: var(--azul-escuro); box-shadow: 0 0 0 3px var(--azul-suave-2); }
+.etapa[data-situacao='feito'] .etapa-marca { background: var(--btn-primario-fundo); border-color: var(--btn-primario-fundo); color: #fff; }
+.etapa[data-situacao='erro'] .etapa-marca { background: var(--tom-vermelho-bg); border-color: var(--vermelho); color: var(--tom-vermelho-tx); }
+.etapa-texto { display: flex; flex-direction: column; line-height: 1.3; }
+.etapa-rotulo { font-weight: 500; color: var(--texto); }
+.etapa[data-situacao='espera'] .etapa-rotulo { color: var(--texto-2); }
+.etapa.ativa .etapa-rotulo, .etapa.ativa .etapa-marca-icone { color: var(--azul-escuro); }
+.etapa small { font-size: 12px; color: var(--texto-2); }
+.etapa[data-situacao='atual'] small { color: var(--azul-escuro); }
+.etapa[data-situacao='erro'] small { color: var(--tom-vermelho-tx); }
+
+/* Autosave: indicador discreto à esquerda dos botões. */
+.salvo-auto { display: inline-flex; align-items: center; gap: 5px; margin-right: auto; font-size: 12px; color: var(--texto-2); }
+.salvo-auto .icone { color: var(--verde); }
 a.faixa:hover { filter: brightness(0.98); }
 
 .fonte { background: var(--superficie); border: 1px solid var(--borda); border-radius: var(--r-2); padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
@@ -813,6 +853,11 @@ a.fonte-link:hover { background: var(--azul-suave); color: var(--azul-escuro); }
   .tabela td, .tabela th { padding-left: 12px; padding-right: 12px; }
   .requisito-acoes, .form-acoes { justify-content: stretch; }
   .requisito-acoes .btn, .form-acoes .btn { flex: 1; }
+  .salvo-auto { flex-basis: 100%; }
+  .etapa { padding-left: 10px; padding-right: 12px; }
+  .etapa small { display: none; }
+  .etapa.ativa small { display: block; }
+  .faixa { flex-wrap: wrap; }
 }
 
 /* ---------- Impressão (documento de requisitos) ---------- */

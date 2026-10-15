@@ -11,6 +11,7 @@ import { TemaService } from './core/tema.service';
 import { ToastService } from './shared/ui/toast.service';
 import { UI } from './shared/ui/ui.components';
 import { AjudaComponent } from './shared/ajuda/ajuda.component';
+import { RascunhoService } from './shared/rascunho/rascunho';
 import { relativo } from './shared/labels';
 
 @Component({
@@ -26,6 +27,7 @@ export class AppComponent {
   readonly tema = inject(TemaService);
   private api = inject(NexusApi);
   private router = inject(Router);
+  private rascunhos = inject(RascunhoService);
 
   readonly nav = [
     { rotulo: 'Visão geral', link: '/visao-geral', icone: 'home' },
@@ -87,7 +89,9 @@ export class AppComponent {
   }
 
   restaurar() {
+    if (!this.sessao.ehEquipe()) return;
     this.api.restaurarDemo().subscribe(() => {
+      this.rascunhos.descartarTodos();
       this.fecharMenus();
       this.toast.ok('Dados de demonstração restaurados.');
       this.carregarNotificacoes();

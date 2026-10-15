@@ -69,11 +69,13 @@
               <nx-icon [name]="tema.escuro() ? 'moon' : 'sun'" [size]="16" /> Modo escuro
               <span class="switch-trilho" aria-hidden="true"></span>
             </button>
-            <hr />
-            <p class="menu-nota"><nx-icon name="flask" [size]="14" /> Os dados de demonstração ficam só neste navegador.</p>
-            <button type="button" class="menu-opcao" (click)="restaurar()">
-              <nx-icon name="refresh" [size]="16" /> Restaurar dados de demonstração
-            </button>
+            @if (sessao.ehEquipe()) {
+              <hr />
+              <p class="menu-nota"><nx-icon name="flask" [size]="14" /> Os dados de demonstração ficam só neste navegador.</p>
+              <button type="button" class="menu-opcao" (click)="restaurar()">
+                <nx-icon name="refresh" [size]="16" /> Restaurar dados de demonstração
+              </button>
+            }
             <hr />
             <button type="button" class="menu-opcao" (click)="sair()">
               <nx-icon name="logout" [size]="16" /> Sair

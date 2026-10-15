@@ -7,11 +7,12 @@ import { Chamado, Conhecimento, Job, Pessoa, Solucao } from '../../core/api/mode
 import { SessionService } from '../../core/session.service';
 import { UI } from '../../shared/ui/ui.components';
 import { ToastService } from '../../shared/ui/toast.service';
+import { RASCUNHO, RascunhoService } from '../../shared/rascunho/rascunho';
 import { ESTADO_CHAMADO, IMPACTO_CURTO, PRIORIDADE, dataHora, duracao, relativo } from '../../shared/labels';
 
 @Component({
   selector: 'nx-chamado-detalhe',
-  imports: [RouterLink, FormsModule, ...UI],
+  imports: [RouterLink, FormsModule, ...UI, ...RASCUNHO],
   templateUrl: './chamado-detalhe.page.html',
   // Só desta tela: a sugestão rejeitada fica recolhida e riscada até a nova análise chegar.
   styles: [`
@@ -27,6 +28,7 @@ export class ChamadoDetalhePage {
   readonly sessao = inject(SessionService);
   private api = inject(NexusApi);
   private toast = inject(ToastService);
+  private rascunhos = inject(RascunhoService);
 
   id = input.required<string>();
   readonly c = signal<Chamado | null>(null);
@@ -160,6 +162,7 @@ export class ChamadoDetalhePage {
       .pipe(finalize(() => this.ocupado.set(false)))
       .subscribe({
         next: (n) => {
+          this.rascunhos.descartar(`chamado.${c.id}.resolucao`);
           this.c.set(n);
           if (n.conhecimentoId) this.api.conhecimento(n.conhecimentoId).subscribe((k) => this.kb.set(k));
           this.toast.ok(registrar ? 'Chamado resolvido e conhecimento registrado.' : 'Chamado resolvido.');

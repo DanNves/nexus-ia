@@ -1,9 +1,15 @@
 // Dados de demonstração (fictícios). Datas relativas ao dia em que o seed é criado,
 // para que calendário e fila sempre tenham conteúdo próximo de "hoje".
 import {
-  Atividade, Chamado, Conhecimento, Demanda, Evento, Notificacao, Pessoa, Solucao,
+  Atividade, Chamado, Conhecimento, Demanda, Evento, Notificacao, Perfil, Pessoa, Solucao,
 } from './models';
 import { gerarPrototipo, gerarRanking } from './mock-ia';
+
+/** Notificação guardada no mock: destinatários e quem já leu. A API devolve `Notificacao` (com `lida` do usuário). */
+export interface NotificacaoMock extends Omit<Notificacao, 'lida'> {
+  para: { perfis?: Perfil[]; usuarios?: string[] };
+  lidaPor: string[];
+}
 
 export interface MockDb {
   versao: number;
@@ -14,7 +20,7 @@ export interface MockDb {
   solucoes: Solucao[];
   chamados: Chamado[];
   conhecimentos: Conhecimento[];
-  notificacoes: Notificacao[];
+  notificacoes: NotificacaoMock[];
   sequencias: Record<string, number>;
   /** Jobs de IA real disparados pelo mock e ainda não aplicados: jobId → alvo. */
   /** criadoEm: para expirar pendências cujo job não pôde mais ser consultado. */
@@ -291,10 +297,11 @@ export function criarSeed(): MockDb {
     },
   ];
 
-  const notificacoes: Notificacao[] = [
-    { id: 'n1', texto: 'Reunião de validação do relatório de entregas em 2 dias', quando: minutosAtras(30), link: '/calendario', lida: false },
-    { id: 'n2', texto: 'Nova solicitação: Controle de estoque da farmácia', quando: minutosAtras(60 * 20), link: '/demandas/d15', lida: false },
-    { id: 'n3', texto: 'CH-028 está em atendimento com Pedro Almeida', quando: minutosAtras(20), link: '/fila/c28', lida: true },
+  const notificacoes: NotificacaoMock[] = [
+    { id: 'n1', texto: 'Reunião de validação do relatório de entregas em 2 dias', quando: minutosAtras(30), link: '/calendario', para: { perfis: ['EQUIPE'], usuarios: ['p5'] }, lidaPor: [] },
+    { id: 'n2', texto: 'Nova solicitação: Controle de estoque da farmácia', quando: minutosAtras(60 * 20), link: '/demandas/d15', para: { perfis: ['EQUIPE'] }, lidaPor: [] },
+    { id: 'n3', texto: 'Seu chamado CH-028 está em atendimento com Pedro Almeida', quando: minutosAtras(20), link: '/fila/c28', para: { usuarios: ['p5'] }, lidaPor: ['p5'] },
+    { id: 'n4', texto: 'A equipe definiu as próximas datas de "Agendamento online de consultas"', quando: minutosAtras(60 * 3), link: '/calendario', para: { usuarios: ['p1'] }, lidaPor: [] },
   ];
 
   return {

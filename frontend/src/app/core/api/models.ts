@@ -250,8 +250,12 @@ export interface Chamado {
 }
 
 export interface FilaResumo {
+  /** EQUIPE: todos os chamados. CLIENTE: só os dele (posição e espera calculadas na fila inteira). */
   emAtendimento: Chamado[];
   naFila: Chamado[];
+  /** Totais da fila inteira (só números, sem os registros de outros clientes). */
+  totalEmAtendimento: number;
+  totalNaFila: number;
   tempoMedioMin: number;
 }
 

@@ -135,16 +135,19 @@
           @if (c.estado === 'EM_ATENDIMENTO' && c.sugestao && c.sugestao.estado !== 'PROPOSTO') {
             <section class="painel">
               <h2>Resolver chamado</h2>
-              <div class="form">
+              <form class="form" (ngSubmit)="resolver()" novalidate [nxRascunho]="'chamado.' + c.id + '.resolucao'" #rres="nxRascunho">
                 <label class="campo"><span>Como foi resolvido</span>
-                  <textarea class="input" rows="3" [(ngModel)]="resolucao.texto" [class.invalido]="erroResolucao()"></textarea>
+                  <textarea class="input" rows="3" name="texto" [(ngModel)]="resolucao.texto" [class.invalido]="erroResolucao()"></textarea>
                   @if (erroResolucao()) { <p class="erro-campo" role="alert">{{ erroResolucao() }}</p> }
                 </label>
                 @if (c.sugestao.estado === 'APROVADO') {
-                  <label class="checar"><input type="checkbox" [(ngModel)]="resolucao.registrar" /> Registrar o procedimento validado na base de conhecimento</label>
+                  <label class="checar"><input type="checkbox" name="registrar" [(ngModel)]="resolucao.registrar" /> Registrar o procedimento validado na base de conhecimento</label>
                 }
-                <div class="form-acoes"><button type="button" class="btn btn-primario" [disabled]="ocupado()" (click)="resolver()">Marcar como resolvido</button></div>
-              </div>
+                <div class="form-acoes">
+                  <nx-salvo [em]="rres.salvoEm()" />
+                  <button type="submit" class="btn btn-primario" [disabled]="ocupado()">Marcar como resolvido</button>
+                </div>
+              </form>
             </section>
           }
           @if (c.estado === 'EM_ATENDIMENTO' && !c.sugestao && !job()) {

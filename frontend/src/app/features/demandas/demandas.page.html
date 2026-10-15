@@ -2,7 +2,7 @@
   <header class="pagina-topo">
     <div>
       <h1>Demandas</h1>
-      <p class="mudo">Tudo o que foi pedido e o trabalho para entregar.</p>
+      <p class="mudo">{{ sessao.ehEquipe() ? 'Tudo o que foi pedido e o trabalho para entregar.' : 'Tudo o que você pediu e em que etapa cada pedido está.' }}</p>
     </div>
     @if (abaAtual() === 'atividades' && sessao.ehEquipe()) {
       <button type="button" class="btn btn-secundario" (click)="abrirNova()"><nx-icon name="plus" [size]="16" /> Nova atividade</button>
@@ -15,9 +15,11 @@
     <button type="button" role="tab" class="aba" data-tour="aba-demandas" [class.ativa]="abaAtual() === 'demandas'" [attr.aria-selected]="abaAtual() === 'demandas'" (click)="trocarAba('demandas')">
       Demandas @if (demandas(); as d) { <span class="contador">{{ d.length }}</span> }
     </button>
-    <button type="button" role="tab" class="aba" data-tour="aba-atividades" [class.ativa]="abaAtual() === 'atividades'" [attr.aria-selected]="abaAtual() === 'atividades'" (click)="trocarAba('atividades')">
-      Atividades @if (atividades(); as a) { <span class="contador">{{ a.length }}</span> }
-    </button>
+    @if (sessao.ehEquipe()) {
+      <button type="button" role="tab" class="aba" data-tour="aba-atividades" [class.ativa]="abaAtual() === 'atividades'" [attr.aria-selected]="abaAtual() === 'atividades'" (click)="trocarAba('atividades')">
+        Atividades @if (atividades(); as a) { <span class="contador">{{ a.length }}</span> }
+      </button>
+    }
   </div>
 
   <div class="barra-ferramentas">

@@ -14,7 +14,7 @@
   @if (dados(); as d) {
     <dl class="numeros">
       <div><dt>Demandas ativas</dt><dd>{{ d.numeros.demandasAtivas }}</dd></div>
-      <div><dt>Chamados na fila</dt><dd>{{ d.numeros.naFila }}</dd></div>
+      <div><dt>{{ sessao.ehEquipe() ? 'Chamados na fila' : 'Seus chamados na fila' }}</dt><dd>{{ d.numeros.naFila }}</dd></div>
       @if (sessao.ehEquipe()) { <div><dt>Validações pendentes</dt><dd>{{ d.numeros.validacoesPendentes }}</dd></div> }
       <div><dt>Entregues</dt><dd>{{ d.numeros.entregues }}</dd></div>
     </dl>
@@ -69,7 +69,7 @@
             </ul>
           } @else {
             <nx-vazio icone="demand" titulo="Nenhuma demanda ainda" texto="Conte o que você precisa e o NEXUS guia o resto.">
-              <a routerLink="/demandas/nova" class="btn btn-primario">Criar demanda</a>
+              <a routerLink="/demandas/nova" class="btn btn-primario"><nx-icon name="plus" [size]="16" /> Nova demanda</a>
             </nx-vazio>
           }
         </section>

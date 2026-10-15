@@ -1,30 +1,40 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { Observable, finalize, forkJoin, switchMap } from 'rxjs';
+import { Observable, finalize, forkJoin, of, switchMap } from 'rxjs';
 import { NexusApi, lerErro } from '../../core/api/nexus-api.service';
 import { Atividade, Demanda, Job, Pergunta, Pessoa, ProximaPergunta, Requisito, TipoCenario } from '../../core/api/models';
 import { SessionService } from '../../core/session.service';
 import { UI } from '../../shared/ui/ui.components';
 import { ToastService } from '../../shared/ui/toast.service';
+import { RASCUNHO, RascunhoService } from '../../shared/rascunho/rascunho';
 import {
-  CENARIO, ESTADO_ATIVIDADE, ESTADO_DEMANDA, ETAPAS, PRIORIDADE, dataCurta, dataHora, etapaAtual, paraInputData, paraInputDataHora, relativo,
+  CENARIO, ESTADO_ATIVIDADE, ESTADO_DEMANDA, PRIORIDADE, dataCurta, dataHora, paraInputData, paraInputDataHora, relativo,
 } from '../../shared/labels';
 
 type Aba = 'resumo' | 'levantamento' | 'prototipo' | 'solicitacao' | 'requisitos' | 'documento';
 
-const ABAS: { id: Aba; rotulo: string }[] = [
-  { id: 'resumo', rotulo: 'Resumo' },
-  { id: 'levantamento', rotulo: 'Levantamento' },
-  { id: 'prototipo', rotulo: 'Protótipo' },
-  { id: 'solicitacao', rotulo: 'Solicitação' },
-  { id: 'requisitos', rotulo: 'Requisitos' },
-  { id: 'documento', rotulo: 'Documento' },
-];
+const ABAS: Aba[] = ['resumo', 'levantamento', 'prototipo', 'solicitacao', 'requisitos', 'documento'];
+
+/** Situação de cada etapa na barra: feito (✓), atual (número azul), espera (cinza), pausado (stand-by), erro (inviável). */
+type SituacaoEtapa = 'feito' | 'atual' | 'espera' | 'pausado' | 'erro';
+
+interface Etapa { id: Aba; rotulo: string; numero?: number; situacao: SituacaoEtapa; status: string }
+
+/** O que a pessoa deve fazer agora (faixa no topo do Resumo). */
+interface ProximoPasso {
+  titulo: string;
+  texto: string;
+  icone: string;
+  tom: 'acao' | 'neutra' | 'ok' | 'erro';
+  acao?: { rotulo: string; aba?: Aba; retomar?: boolean };
+}
+
+const LEVANTANDO = ['RASCUNHO', 'EM_LEVANTAMENTO'];
 
 @Component({
   selector: 'nx-demanda-detalhe',
-  imports: [RouterLink, FormsModule, ...UI],
+  imports: [RouterLink, FormsModule, ...UI, ...RASCUNHO],
   templateUrl: './demanda-detalhe.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -33,23 +43,21 @@ export class DemandaDetalhePage {
   private api = inject(NexusApi);
   private router = inject(Router);
   private toast = inject(ToastService);
+  private rascunhos = inject(RascunhoService);
 
   id = input.required<string>();
   aba = input<string>();
 
-  readonly abaAtual = computed<Aba>(() => (ABAS.some((a) => a.id === this.aba()) ? (this.aba() as Aba) : 'resumo'));
+  readonly abaAtual = computed<Aba>(() => (ABAS.includes(this.aba() as Aba) ? (this.aba() as Aba) : 'resumo'));
   readonly d = signal<Demanda | null>(null);
   readonly erroCarga = signal('');
   readonly pessoas = signal<Pessoa[]>([]);
   readonly atividades = signal<Atividade[]>([]);
 
-  readonly ABAS = ABAS;
-  readonly ETAPAS = ETAPAS;
   readonly ESTADO_DEMANDA = ESTADO_DEMANDA;
   readonly ESTADO_ATIVIDADE = ESTADO_ATIVIDADE;
   readonly PRIORIDADE = PRIORIDADE;
   readonly CENARIO = CENARIO;
-  readonly etapaAtual = etapaAtual;
   readonly dataCurta = dataCurta;
   readonly dataHora = dataHora;
   readonly relativo = relativo;
@@ -63,6 +71,8 @@ export class DemandaDetalhePage {
   readonly usarOutro = signal(false);
   readonly respondendo = signal(false);
   readonly erroPergunta = signal('');
+  readonly carregandoPergunta = signal(false);
+  readonly erroCargaPergunta = signal('');
 
   // Jobs
   readonly job = signal<Job | null>(null);
@@ -87,9 +97,12 @@ export class DemandaDetalhePage {
     return Math.min(100, Math.round((p.respondidas / Math.max(1, p.estimadas)) * 100));
   });
 
+  /** Quem abriu a demanda responde a entrevista e decide como seguir, seja cliente ou alguém da equipe. */
+  readonly souSolicitante = computed(() => !!this.d() && this.d()!.solicitanteId === this.sessao.pessoaId());
+
   readonly podeEditarLevantamento = computed(() => {
     const d = this.d();
-    return !!d && !this.sessao.ehEquipe() && ['RASCUNHO', 'EM_LEVANTAMENTO'].includes(d.estado);
+    return !!d && this.souSolicitante() && LEVANTANDO.includes(d.estado);
   });
 
   readonly requisitosPorTipo = computed(() => {
@@ -103,6 +116,113 @@ export class DemandaDetalhePage {
   readonly aprovados = computed(() => (this.d()?.requisitos ?? []).filter((r) => r.estado === 'APROVADO'));
   readonly propostos = computed(() => (this.d()?.requisitos ?? []).filter((r) => r.estado === 'PROPOSTO').length);
 
+  /** Barra única de etapas: substitui a antiga linha do tempo + abas (CLAUDE.md §11). */
+  readonly etapas = computed<Etapa[]>(() => {
+    const d = this.d();
+    if (!d) return [];
+    const e = d.estado;
+    const equipe = this.sessao.ehEquipe();
+    const aprovados = this.aprovados().length;
+    const propostos = this.propostos();
+
+    let lev: Pick<Etapa, 'situacao' | 'status'>;
+    if (e === 'STAND_BY') lev = { situacao: 'pausado', status: 'Em stand-by' };
+    else if (!LEVANTANDO.includes(e)) lev = { situacao: 'feito', status: 'Concluído' };
+    else if (!this.souSolicitante()) lev = { situacao: 'atual', status: 'Cliente respondendo' };
+    else if (d.cenario) lev = { situacao: 'atual', status: 'Escolha como seguir' };
+    else if (d.respostas.length) lev = { situacao: 'atual', status: `${d.respostas.length} respondidas` };
+    else lev = { situacao: 'atual', status: 'Comece por aqui' };
+
+    const proto: Pick<Etapa, 'situacao' | 'status'> = d.prototipo
+      ? { situacao: 'feito', status: d.prototipo.estado === 'PROPOSTO' ? 'Sugestão pronta' : 'Validado' }
+      : { situacao: 'espera', status: 'Após as perguntas' };
+
+    let sol: Pick<Etapa, 'situacao' | 'status'>;
+    if (!d.solicitacao) sol = { situacao: 'espera', status: 'Não enviada' };
+    else if (e === 'INVIAVEL') sol = { situacao: 'erro', status: 'Inviável' };
+    else if (e === 'EM_DESENVOLVIMENTO' || e === 'ENTREGUE') sol = { situacao: 'feito', status: ESTADO_DEMANDA[e].rotulo };
+    else if (e === 'SOLICITADO' || e === 'EM_ANALISE') sol = { situacao: 'atual', status: equipe && !d.solicitacao.viabilidade ? 'Avaliar' : 'Em análise' };
+    else sol = { situacao: 'atual', status: ESTADO_DEMANDA[e].rotulo };
+
+    let req: Pick<Etapa, 'situacao' | 'status'>;
+    if (equipe && propostos) req = { situacao: 'atual', status: `${propostos} para validar` };
+    else if (aprovados) req = { situacao: 'feito', status: `${aprovados} aprovados` };
+    else req = { situacao: 'espera', status: d.solicitacao?.viabilidade?.possivel ? 'Em elaboração' : 'Após a análise' };
+
+    const doc: Pick<Etapa, 'situacao' | 'status'> = aprovados
+      ? { situacao: 'feito', status: 'Disponível' }
+      : { situacao: 'espera', status: 'Após os requisitos' };
+
+    return [
+      { id: 'resumo', rotulo: 'Resumo', situacao: 'espera', status: 'Visão da demanda' },
+      { id: 'levantamento', rotulo: 'Levantamento', numero: 1, ...lev },
+      { id: 'prototipo', rotulo: 'Protótipo', numero: 2, ...proto },
+      { id: 'solicitacao', rotulo: 'Solicitação', numero: 3, ...sol },
+      { id: 'requisitos', rotulo: 'Requisitos', numero: 4, ...req },
+      { id: 'documento', rotulo: 'Documento', numero: 5, ...doc },
+    ];
+  });
+
+  readonly proximoPasso = computed<ProximoPasso | null>(() => {
+    const d = this.d();
+    if (!d) return null;
+    const e = d.estado;
+    const meu = this.souSolicitante();
+    const equipe = this.sessao.ehEquipe();
+    const s = d.solicitacao;
+
+    if (e === 'STAND_BY') {
+      return meu
+        ? { titulo: 'Esta demanda está em stand-by', texto: 'Retome quando quiser continuar o levantamento ou enviar para a equipe.', icone: 'pause', tom: 'neutra', acao: { rotulo: 'Retomar', retomar: true } }
+        : { titulo: 'Em stand-by', texto: 'O cliente guardou a demanda para decidir depois.', icone: 'pause', tom: 'neutra' };
+    }
+    if (LEVANTANDO.includes(e)) {
+      if (!meu) return { titulo: 'O cliente ainda está no levantamento', texto: `${d.respostas.length} perguntas respondidas até agora. A demanda chega para a equipe quando ele enviar a solicitação.`, icone: 'clock', tom: 'neutra' };
+      if (d.cenario) return { titulo: 'Falta escolher como seguir', texto: 'Veja o tipo de solução recomendado e o protótipo, e decida entre stand-by ou enviar para a equipe.', icone: 'send', tom: 'acao', acao: { rotulo: 'Decidir', aba: 'levantamento' } };
+      return d.respostas.length
+        ? { titulo: 'Continue o levantamento', texto: `${d.respostas.length} perguntas respondidas. Suas respostas ficam salvas: continue de onde parou.`, icone: 'spark', tom: 'acao', acao: { rotulo: 'Continuar', aba: 'levantamento' } }
+        : { titulo: 'Responda algumas perguntas rápidas', texto: 'São perguntas simples, com opções, para entender o que se encaixa na sua necessidade.', icone: 'spark', tom: 'acao', acao: { rotulo: 'Começar', aba: 'levantamento' } };
+    }
+    if (e === 'INVIAVEL') {
+      return { titulo: 'A equipe marcou como inviável', texto: s?.viabilidade?.justificativa ?? '', icone: 'x-circle', tom: 'erro', acao: { rotulo: 'Ver detalhes', aba: 'solicitacao' } };
+    }
+    if (equipe && this.propostos()) {
+      return { titulo: `${this.propostos()} requisitos aguardando sua validação`, texto: 'Aprove, edite ou rejeite cada sugestão. Nada é aprovado sozinho.', icone: 'check-circle', tom: 'acao', acao: { rotulo: 'Validar', aba: 'requisitos' } };
+    }
+    if (e === 'SOLICITADO' || e === 'EM_ANALISE') {
+      if (equipe && !s?.viabilidade) return { titulo: 'Avalie se é possível fazer', texto: 'Marque a viabilidade com uma justificativa. Depois, agende a reunião com o cliente.', icone: 'send', tom: 'acao', acao: { rotulo: 'Avaliar', aba: 'solicitacao' } };
+      if (equipe) return { titulo: 'Agende a reunião com o cliente', texto: 'A reunião serve para validar as regras de negócio antes do planejamento.', icone: 'calendar', tom: 'acao', acao: { rotulo: 'Agendar', aba: 'solicitacao' } };
+      return { titulo: 'A equipe está analisando sua solicitação', texto: 'Você recebe uma notificação quando ela responder.', icone: 'clock', tom: 'neutra', acao: { rotulo: 'Acompanhar', aba: 'solicitacao' } };
+    }
+    if (e === 'REUNIAO_AGENDADA') {
+      return equipe
+        ? { titulo: 'Defina a metodologia e as datas', texto: s?.reuniao ? `Reunião em ${dataHora(s.reuniao.data)}.` : '', icone: 'calendar', tom: 'acao', acao: { rotulo: 'Planejar', aba: 'solicitacao' } }
+        : { titulo: 'Reunião marcada', texto: s?.reuniao ? `${dataHora(s.reuniao.data)}. ${s.reuniao.pauta}` : '', icone: 'calendar', tom: 'neutra', acao: { rotulo: 'Ver detalhes', aba: 'solicitacao' } };
+    }
+    if (e === 'PLANEJADO') {
+      if (equipe) {
+        return this.aprovados().length
+          ? { titulo: 'Tudo pronto para começar', texto: 'Planejamento definido e requisitos aprovados.', icone: 'play', tom: 'acao', acao: { rotulo: 'Iniciar', aba: 'solicitacao' } }
+          : { titulo: 'Escreva e aprove os requisitos', texto: 'O desenvolvimento só começa com requisitos aprovados.', icone: 'check-circle', tom: 'acao', acao: { rotulo: 'Ir para requisitos', aba: 'requisitos' } };
+      }
+      const pl = s?.planejamento;
+      return { titulo: 'Trabalho planejado', texto: pl ? `${pl.metodologia}, de ${dataCurta(pl.inicio)} a ${dataCurta(pl.previsao)}.` : '', icone: 'calendar', tom: 'neutra' };
+    }
+    if (e === 'EM_DESENVOLVIMENTO') {
+      return { titulo: 'Em desenvolvimento', texto: 'O documento de requisitos reúne tudo o que foi aprovado.', icone: 'play', tom: 'ok', acao: this.aprovados().length ? { rotulo: 'Ver documento', aba: 'documento' } : undefined };
+    }
+    if (e === 'ENTREGUE') {
+      return { titulo: 'Entregue', texto: 'A solução foi publicada. Se algo não funcionar, abra um chamado pela solução.', icone: 'check-circle', tom: 'ok', acao: { rotulo: 'Ver documento', aba: 'documento' } };
+    }
+    return null;
+  });
+
+  /** Recarrega a pergunta só quando muda a demanda ou a permissão, não a cada atualização da demanda. */
+  private readonly gatilhoPergunta = computed(() => {
+    const d = this.d();
+    return this.abaAtual() === 'levantamento' && d && this.podeEditarLevantamento() ? d.id : '';
+  });
+
   constructor() {
     effect(() => {
       const id = this.id();
@@ -110,14 +230,16 @@ export class DemandaDetalhePage {
       untracked(() => this.carregar(id));
     });
     effect(() => {
-      if (this.abaAtual() === 'levantamento' && this.d()) untracked(() => this.carregarPergunta());
+      if (this.gatilhoPergunta()) untracked(() => this.carregarPergunta());
     });
   }
 
   carregar(id: string) {
     this.d.set(null);
     this.erroCarga.set('');
-    forkJoin({ d: this.api.demanda(id), p: this.api.pessoas(), a: this.api.atividades(id) }).subscribe({
+    // Atividades são internas da equipe; o cliente não as consulta.
+    const atividades$ = this.sessao.ehEquipe() ? this.api.atividades(id) : of<Atividade[]>([]);
+    forkJoin({ d: this.api.demanda(id), p: this.api.pessoas(), a: atividades$ }).subscribe({
       next: ({ d, p, a }) => { this.d.set(d); this.pessoas.set(p); this.atividades.set(a); this.prepararFormularios(d); },
       error: (e) => this.erroCarga.set(lerErro(e).mensagem),
     });
@@ -135,14 +257,27 @@ export class DemandaDetalhePage {
 
   irAba(a: Aba) { void this.router.navigate(['/demandas', this.id(), a === 'resumo' ? [] : a].flat()); }
 
+  seguirProximo(p: ProximoPasso) {
+    if (p.acao?.retomar) this.retomar();
+    else if (p.acao?.aba) this.irAba(p.acao.aba);
+  }
+
   pessoa(id?: string) { return this.pessoas().find((p) => p.id === id); }
+
+  /** Chave de rascunho por demanda (autosave). */
+  rascunho(parte: string) { return `demanda.${this.id()}.${parte}`; }
 
   // ---------- Entrevista ----------
 
   carregarPergunta() {
     const d = this.d();
     if (!d || !this.podeEditarLevantamento()) return;
-    this.api.proximaPergunta(d.id).subscribe((r) => this.aplicarPergunta(r));
+    this.carregandoPergunta.set(true);
+    this.erroCargaPergunta.set('');
+    this.api.proximaPergunta(d.id).pipe(finalize(() => this.carregandoPergunta.set(false))).subscribe({
+      next: (r) => this.aplicarPergunta(r),
+      error: (e) => this.erroCargaPergunta.set(lerErro(e).mensagem),
+    });
   }
 
   private aplicarPergunta(r: ProximaPergunta) {
@@ -153,6 +288,21 @@ export class DemandaDetalhePage {
     this.outro = '';
     this.usarOutro.set(false);
     this.erroPergunta.set('');
+    // Autosave: a escolha feita antes de sair (sem clicar em Continuar) volta marcada.
+    const salvo = this.rascunhos.ler<{ perguntaId: string; valores: string[]; outro: string; usarOutro: boolean }>(this.rascunho('entrevista'));
+    if (salvo && r.pergunta && salvo.valor.perguntaId === r.pergunta.id) {
+      const validos = salvo.valor.valores.filter((v) => r.pergunta!.opcoes.some((o) => o.valor === v));
+      this.escolhidas.set(validos);
+      this.outro = salvo.valor.outro;
+      this.usarOutro.set(salvo.valor.usarOutro);
+    }
+  }
+
+  /** Guarda a escolha em andamento da pergunta atual (autosave). */
+  guardarEscolha() {
+    const p = this.pergunta();
+    if (!p) return;
+    this.rascunhos.salvar(this.rascunho('entrevista'), { perguntaId: p.id, valores: this.escolhidas(), outro: this.outro, usarOutro: this.usarOutro() });
   }
 
   alternar(valor: string) {
@@ -160,12 +310,14 @@ export class DemandaDetalhePage {
     if (!p) return;
     if (p.multipla) this.escolhidas.update((l) => (l.includes(valor) ? l.filter((v) => v !== valor) : [...l, valor]));
     else { this.escolhidas.set([valor]); this.usarOutro.set(false); }
+    this.guardarEscolha();
   }
 
   marcarOutro() {
     const p = this.pergunta();
     if (p && !p.multipla) this.escolhidas.set([]);
     this.usarOutro.set(!this.usarOutro() || !p?.multipla);
+    this.guardarEscolha();
   }
 
   responder() {
@@ -179,6 +331,7 @@ export class DemandaDetalhePage {
       .pipe(finalize(() => this.respondendo.set(false)))
       .subscribe({
         next: (r) => {
+          this.rascunhos.descartar(this.rascunho('entrevista'));
           this.api.demanda(d.id).subscribe((nd) => this.d.set(nd));
           this.aplicarPergunta(r);
         },
@@ -241,11 +394,15 @@ export class DemandaDetalhePage {
 
   // ---------- Equipe ----------
 
-  private salvar(req: Observable<Demanda>, msg: string) {
+  private salvar(req: Observable<Demanda>, msg: string, rascunho?: string) {
     this.salvando.set(true);
     this.erros.set({});
     req.pipe(finalize(() => this.salvando.set(false))).subscribe({
-      next: (nd) => { this.d.set(nd); this.toast.ok(msg); },
+      next: (nd) => {
+        if (rascunho) this.rascunhos.descartar(this.rascunho(rascunho));
+        this.d.set(nd);
+        this.toast.ok(msg);
+      },
       error: (e) => { const er = lerErro(e); this.erros.set(er.campos ?? {}); this.toast.erro(er.mensagem); },
     });
   }
@@ -258,7 +415,7 @@ export class DemandaDetalhePage {
     if (this.viab.justificativa.trim().length < 10) erros['justificativa'] = ['Explique a decisão em pelo menos 10 caracteres.'];
     if (Object.keys(erros).length) { this.erros.set(erros); return; }
     this.salvar(this.api.viabilidade(d.id, { possivel: this.viab.possivel!, justificativa: this.viab.justificativa.trim() }),
-      this.viab.possivel ? 'Demanda marcada como possível. Agora agende a reunião.' : 'Demanda marcada como inviável.');
+      this.viab.possivel ? 'Demanda marcada como possível. Agora agende a reunião.' : 'Demanda marcada como inviável.', 'viabilidade');
   }
 
   agendar() {
@@ -270,7 +427,7 @@ export class DemandaDetalhePage {
     if (this.reuniao.pauta.trim().length < 5) erros['pauta'] = ['Descreva a pauta.'];
     if (Object.keys(erros).length) { this.erros.set(erros); return; }
     this.salvar(this.api.agendarReuniao(d.id, { data: this.reuniao.data, pauta: this.reuniao.pauta.trim(), local: this.reuniao.local.trim() }),
-      'Reunião agendada. Ela já aparece no calendário.');
+      'Reunião agendada. Ela já aparece no calendário.', 'reuniao');
   }
 
   planejar() {
@@ -283,7 +440,7 @@ export class DemandaDetalhePage {
     else if (this.plano.inicio && this.plano.previsao <= this.plano.inicio) erros['previsao'] = ['A entrega deve ser depois do início.'];
     if (Object.keys(erros).length) { this.erros.set(erros); return; }
     this.salvar(this.api.planejar(d.id, { metodologia: this.plano.metodologia, inicio: `${this.plano.inicio}T09:00`, previsao: `${this.plano.previsao}T18:00` }),
-      'Planejamento definido. Início e entrega já estão no calendário.');
+      'Planejamento definido. Início e entrega já estão no calendário.', 'planejamento');
   }
 
   iniciar() {

@@ -8,30 +8,36 @@
   } @else if (d(); as d) {
     <header class="detalhe-topo nao-imprimir">
       <div class="detalhe-titulo">
-        <span class="codigo mudo">{{ d.codigo }}</span>
+        <div class="detalhe-meta">
+          <span class="codigo mudo">{{ d.codigo }}</span>
+          <nx-badge [tom]="ESTADO_DEMANDA[d.estado].tom">{{ ESTADO_DEMANDA[d.estado].rotulo }}</nx-badge>
+          <nx-badge [tom]="PRIORIDADE[d.prioridade].tom">Prioridade {{ PRIORIDADE[d.prioridade].rotulo.toLowerCase() }}</nx-badge>
+        </div>
         <h1>{{ d.nome }}</h1>
         <p class="mudo">{{ d.descricao }}</p>
       </div>
-      <div class="detalhe-meta">
-        <nx-badge [tom]="ESTADO_DEMANDA[d.estado].tom">{{ ESTADO_DEMANDA[d.estado].rotulo }}</nx-badge>
-        <nx-badge [tom]="PRIORIDADE[d.prioridade].tom">Prioridade {{ PRIORIDADE[d.prioridade].rotulo.toLowerCase() }}</nx-badge>
-      </div>
     </header>
 
-    <ol class="trilha nao-imprimir" aria-label="Etapas da demanda" data-tour="etapas">
-      @for (e of ETAPAS; track e; let i = $index) {
-        <li [class.feita]="i < etapaAtual(d.estado)" [class.atual]="i === etapaAtual(d.estado)">
-          <span class="trilha-marca">@if (i < etapaAtual(d.estado)) { <nx-icon name="check" [size]="12" [stroke]="2.5" /> }</span>
-          <span class="trilha-rotulo">{{ e }}</span>
-        </li>
-      }
-    </ol>
-
-    <nav class="abas nao-imprimir" aria-label="Seções da demanda">
-      @for (a of ABAS; track a.id) {
-        <button type="button" class="aba" [attr.data-tour]="'aba-' + a.id" [class.ativa]="abaAtual() === a.id" [attr.aria-current]="abaAtual() === a.id ? 'page' : null" (click)="irAba(a.id)">
-          {{ a.rotulo }}
-          @if (a.id === 'requisitos' && sessao.ehEquipe() && propostos()) { <span class="contador contador-alerta">{{ propostos() }}</span> }
+    <!-- Uma barra só: cada etapa é também a aba que abre o conteúdo dela (CLAUDE.md §11). -->
+    <nav class="etapas nao-imprimir" aria-label="Etapas da demanda" data-tour="etapas">
+      @for (e of etapas(); track e.id) {
+        <button type="button" class="etapa" [attr.data-tour]="'aba-' + e.id" [attr.data-situacao]="e.situacao"
+          [class.ativa]="abaAtual() === e.id" [attr.aria-current]="abaAtual() === e.id ? 'page' : null" (click)="irAba(e.id)">
+          <span class="etapa-marca" [class.etapa-marca-icone]="!e.numero" aria-hidden="true">
+            @if (!e.numero) { <nx-icon name="list" [size]="15" /> }
+            @else {
+              @switch (e.situacao) {
+                @case ('feito') { <nx-icon name="check" [size]="12" [stroke]="2.75" /> }
+                @case ('pausado') { <nx-icon name="pause" [size]="11" [stroke]="2.5" /> }
+                @case ('erro') { <nx-icon name="close" [size]="11" [stroke]="2.75" /> }
+                @default { {{ e.numero }} }
+              }
+            }
+          </span>
+          <span class="etapa-texto">
+            <span class="etapa-rotulo">{{ e.rotulo }}</span>
+            <small>{{ e.status }}</small>
+          </span>
         </button>
       }
     </nav>
@@ -39,23 +45,17 @@
     @switch (abaAtual()) {
       <!-- ================= RESUMO ================= -->
       @case ('resumo') {
+        @if (proximoPasso(); as p) {
+          <div class="faixa" [class.faixa-neutra]="p.tom === 'neutra'" [class.faixa-ok]="p.tom === 'ok'" [class.faixa-erro]="p.tom === 'erro'" role="status">
+            <nx-icon [name]="p.icone" />
+            <div class="lista-texto"><strong>{{ p.titulo }}</strong>@if (p.texto) { <span class="mudo">{{ p.texto }}</span> }</div>
+            @if (p.acao; as a) {
+              <button type="button" class="btn" [class.btn-primario]="p.tom === 'acao'" [class.btn-secundario]="p.tom !== 'acao'" (click)="seguirProximo(p)">{{ a.rotulo }}</button>
+            }
+          </div>
+        }
         <div class="grade-2">
           <div class="coluna">
-            @if (d.estado === 'STAND_BY' && !sessao.ehEquipe()) {
-              <div class="faixa faixa-neutra">
-                <nx-icon name="pause" />
-                <div class="lista-texto"><strong>Esta demanda está em stand-by</strong><span class="mudo">Retome quando quiser continuar o levantamento ou enviar para a equipe.</span></div>
-                <button type="button" class="btn btn-primario" (click)="retomar()">Retomar</button>
-              </div>
-            }
-            @if (podeEditarLevantamento()) {
-              <div class="faixa">
-                <nx-icon name="spark" />
-                <div class="lista-texto"><strong>Continue o levantamento</strong><span class="mudo">{{ d.respostas.length }} perguntas respondidas até agora.</span></div>
-                <button type="button" class="btn btn-primario" (click)="irAba('levantamento')">Continuar</button>
-              </div>
-            }
-
             <section class="secao">
               <h2>O que foi pedido</h2>
               @for (f of d.fontes; track f.id) {
@@ -68,6 +68,7 @@
               }
             </section>
 
+            @if (sessao.ehEquipe()) {
             <section class="secao">
               <h2>Atividades</h2>
               @if (atividades().length) {
@@ -84,6 +85,7 @@
                 <p class="mudo">As atividades aparecem aqui quando o desenvolvimento começar.</p>
               }
             </section>
+            }
           </div>
 
           <aside class="coluna">
@@ -130,7 +132,7 @@
             } @else if (podeEditarLevantamento() && pergunta(); as p) {
               <section class="painel entrevista" aria-live="polite">
                 <div class="entrevista-topo">
-                  <span class="mudo">Pergunta {{ progresso().respondidas + 1 }}</span>
+                  <span class="mudo">Pergunta {{ progresso().respondidas + 1 }} de cerca de {{ progresso().estimadas }}</span>
                   <div class="barra barra-fina"><span [style.width.%]="progressoPct()"></span></div>
                   <span class="selo-ia selo-simulador entrevista-origem"><nx-icon name="flask" [size]="13" /> Perguntas do simulador de demonstração</span>
                 </div>
@@ -149,11 +151,12 @@
                     <span>Outro</span>
                   </button>
                   @if (usarOutro()) {
-                    <input class="input" [(ngModel)]="outro" placeholder="Escreva com suas palavras" maxlength="200" aria-label="Outra resposta" />
+                    <input class="input" [(ngModel)]="outro" (ngModelChange)="guardarEscolha()" placeholder="Escreva com suas palavras" maxlength="200" aria-label="Outra resposta" />
                   }
                 </div>
                 @if (erroPergunta()) { <p class="erro-campo" role="alert">{{ erroPergunta() }}</p> }
                 <div class="form-acoes">
+                  <nx-salvo dica="Cada resposta fica salva. Pode sair e continuar depois." />
                   <button type="button" class="btn btn-primario" [disabled]="respondendo()" (click)="responder()">{{ respondendo() ? 'Salvando…' : 'Continuar' }}</button>
                 </div>
               </section>
@@ -164,6 +167,17 @@
                 <p class="mudo">Com base nas {{ d.respostas.length }} respostas, o simulador de demonstração sugere o tipo de solução e monta um protótipo das telas. É uma sugestão: a equipe valida depois.</p>
                 <button type="button" class="btn btn-primario" (click)="gerarCenario()">Ver recomendação <nx-icon name="arrow-right" [size]="16" /></button>
               </section>
+            } @else if (podeEditarLevantamento() && erroCargaPergunta()) {
+              <nx-vazio icone="alert" titulo="Não foi possível carregar a pergunta" [texto]="erroCargaPergunta()">
+                <button type="button" class="btn btn-primario" (click)="carregarPergunta()"><nx-icon name="refresh" [size]="16" /> Tentar de novo</button>
+              </nx-vazio>
+            } @else if (podeEditarLevantamento() && !d.cenario) {
+              <div class="carregando" aria-busy="true" aria-label="Carregando a pergunta"><span></span><span></span><span></span></div>
+            } @else if (!d.cenario && (d.estado === 'RASCUNHO' || d.estado === 'EM_LEVANTAMENTO')) {
+              <nx-vazio icone="clock" titulo="O cliente ainda está respondendo"
+                [texto]="d.respostas.length + ' perguntas respondidas até agora. As respostas aparecem ao lado conforme ele avança.'" />
+            } @else if (!d.cenario) {
+              <nx-vazio icone="inbox" titulo="Sem recomendação registrada" texto="Esta demanda não tem tipo de solução recomendado." />
             }
 
             @if (d.cenario && !job()) {
@@ -215,7 +229,7 @@
 
           <aside class="coluna">
             <section class="secao">
-              <h2>Suas respostas</h2>
+              <h2>{{ souSolicitante() ? 'Suas respostas' : 'Respostas do cliente' }}</h2>
               @if (d.respostas.length) {
                 <ol class="respostas-dadas">
                   @for (r of d.respostas; track r.perguntaId) {
@@ -227,7 +241,7 @@
                   }
                 </ol>
               } @else {
-                <p class="mudo">As respostas aparecem aqui.</p>
+                <p class="mudo">{{ souSolicitante() ? 'Cada resposta aparece aqui, e você pode alterá-la antes de concluir.' : 'Nenhuma resposta ainda.' }}</p>
               }
             </section>
           </aside>
@@ -277,7 +291,7 @@
                     <p><nx-badge [tom]="v.possivel ? 'verde' : 'vermelho'">{{ v.possivel ? 'Possível' : 'Inviável' }}</nx-badge> {{ v.justificativa }}</p>
                     <p class="mudo">{{ v.decididoPor }}, {{ dataHora(v.decididoEm) }}</p>
                   } @else if (sessao.ehEquipe()) {
-                    <form class="form form-inline" (ngSubmit)="decidirViabilidade()" novalidate>
+                    <form class="form form-inline" (ngSubmit)="decidirViabilidade()" novalidate [nxRascunho]="rascunho('viabilidade')" #rv="nxRascunho">
                       <div class="segmentado" role="radiogroup" aria-label="É possível?">
                         <label [class.marcada]="viab.possivel === true"><input type="radio" name="possivel" [value]="true" [(ngModel)]="viab.possivel" /> É possível</label>
                         <label [class.marcada]="viab.possivel === false"><input type="radio" name="possivel" [value]="false" [(ngModel)]="viab.possivel" /> Não é possível</label>
@@ -288,7 +302,10 @@
                         <textarea class="input" rows="2" name="justificativa" [(ngModel)]="viab.justificativa" [class.invalido]="erros()['justificativa']"></textarea>
                         <nx-erro-campo [mensagens]="erros()['justificativa']" />
                       </label>
-                      <button type="submit" class="btn btn-primario" [disabled]="salvando()">Registrar decisão</button>
+                      <div class="form-acoes">
+                        <nx-salvo [em]="rv.salvoEm()" />
+                        <button type="submit" class="btn btn-primario" [disabled]="salvando()">Registrar decisão</button>
+                      </div>
                     </form>
                   } @else {
                     <p class="mudo">Aguardando a equipe responsável.</p>
@@ -306,7 +323,7 @@
                       <p><nx-icon name="calendar" [size]="14" /> {{ dataHora(r.data) }}. {{ r.pauta }}</p>
                       <a routerLink="/calendario" class="link">Ver no calendário</a>
                     } @else if (s.viabilidade && sessao.ehEquipe()) {
-                      <form class="form form-inline" (ngSubmit)="agendar()" novalidate>
+                      <form class="form form-inline" (ngSubmit)="agendar()" novalidate [nxRascunho]="rascunho('reuniao')" #rr="nxRascunho">
                         <div class="campos-2">
                           <label class="campo"><span>Data e horário</span>
                             <input class="input" type="datetime-local" name="data" [(ngModel)]="reuniao.data" [class.invalido]="erros()['data']" />
@@ -318,7 +335,10 @@
                           <input class="input" name="pauta" [(ngModel)]="reuniao.pauta" [class.invalido]="erros()['pauta']" />
                           <nx-erro-campo [mensagens]="erros()['pauta']" />
                         </label>
-                        <button type="submit" class="btn btn-primario" [disabled]="salvando()">Agendar reunião</button>
+                        <div class="form-acoes">
+                          <nx-salvo [em]="rr.salvoEm()" />
+                          <button type="submit" class="btn btn-primario" [disabled]="salvando()">Agendar reunião</button>
+                        </div>
                       </form>
                     } @else {
                       <p class="mudo">A equipe marca a reunião depois de avaliar.</p>
@@ -334,7 +354,7 @@
                     @if (s.planejamento; as pl) {
                       <p>{{ pl.metodologia }}, de {{ dataCurta(pl.inicio) }} a {{ dataCurta(pl.previsao) }}</p>
                     } @else if (s.reuniao && sessao.ehEquipe()) {
-                      <form class="form form-inline" (ngSubmit)="planejar()" novalidate>
+                      <form class="form form-inline" (ngSubmit)="planejar()" novalidate [nxRascunho]="rascunho('planejamento')" #rp="nxRascunho">
                         <label class="campo"><span>Metodologia</span>
                           <select class="select" name="metodologia" [(ngModel)]="plano.metodologia" [class.invalido]="erros()['metodologia']">
                             <option value="">Escolha</option>
@@ -348,7 +368,10 @@
                           <label class="campo"><span>Início</span><input class="input" type="date" name="inicio" [(ngModel)]="plano.inicio" [class.invalido]="erros()['inicio']" /><nx-erro-campo [mensagens]="erros()['inicio']" /></label>
                           <label class="campo"><span>Entrega prevista</span><input class="input" type="date" name="previsao" [(ngModel)]="plano.previsao" [class.invalido]="erros()['previsao']" /><nx-erro-campo [mensagens]="erros()['previsao']" /></label>
                         </div>
-                        <button type="submit" class="btn btn-primario" [disabled]="salvando()">Definir planejamento</button>
+                        <div class="form-acoes">
+                          <nx-salvo [em]="rp.salvoEm()" />
+                          <button type="submit" class="btn btn-primario" [disabled]="salvando()">Definir planejamento</button>
+                        </div>
                       </form>
                     } @else {
                       <p class="mudo">Definidas depois da reunião.</p>
