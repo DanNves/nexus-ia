@@ -1,0 +1,76 @@
+<nx-acesso-layout>
+  <header class="cabeca">
+    <h1>Entrar no NEXUS</h1>
+    <p>Retome suas demandas de onde parou e veja o que já foi validado pela equipe.</p>
+  </header>
+
+  <form class="form" (ngSubmit)="entrar()" novalidate>
+    <div class="campo">
+      <label for="entrar-usuario">Usuário ou e-mail</label>
+      <input
+        id="entrar-usuario" class="input" name="usuario" type="text"
+        autocomplete="username" autocapitalize="none" spellcheck="false" autofocus
+        [(ngModel)]="form.usuario" (ngModelChange)="limpar('usuario')"
+        [class.invalido]="erros()['usuario']" [attr.aria-invalid]="erros()['usuario'] ? 'true' : null"
+        aria-describedby="entrar-usuario-erro" />
+      <nx-erro-campo id="entrar-usuario-erro" [mensagens]="erros()['usuario']" />
+    </div>
+
+    <div class="campo">
+      <label for="entrar-senha">Senha</label>
+      <div class="senha">
+        <input
+          id="entrar-senha" class="input" name="senha" [type]="verSenha() ? 'text' : 'password'"
+          autocomplete="current-password"
+          [(ngModel)]="form.senha" (ngModelChange)="limpar('senha')"
+          (keydown)="verCaps($event)" (keyup)="verCaps($event)" (blur)="capsLigado.set(false)"
+          [class.invalido]="erros()['senha']" [attr.aria-invalid]="erros()['senha'] ? 'true' : null"
+          aria-describedby="entrar-senha-caps entrar-senha-erro" />
+        <button type="button" class="olho" (click)="verSenha.set(!verSenha())"
+          [attr.aria-label]="verSenha() ? 'Ocultar senha' : 'Mostrar senha'" [attr.aria-pressed]="verSenha()" aria-controls="entrar-senha">
+          <nx-icon [name]="verSenha() ? 'eye-off' : 'eye'" [size]="18" />
+        </button>
+      </div>
+      <div id="entrar-senha-caps" aria-live="polite">
+        @if (capsLigado()) { <p class="caps"><nx-icon name="alert" [size]="14" /> Caps Lock está ativado.</p> }
+      </div>
+      <nx-erro-campo id="entrar-senha-erro" [mensagens]="erros()['senha']" />
+      <p class="esqueceu">Esqueceu a senha? Peça uma nova à equipe responsável pelo seu projeto.</p>
+    </div>
+
+    <div aria-live="assertive">
+      @if (erroGeral()) {
+        <p class="erro-geral"><nx-icon name="x-circle" [size]="16" /> {{ erroGeral() }}</p>
+      }
+    </div>
+
+    <button id="entrar-enviar" type="submit" class="btn btn-primario btn-acesso" [disabled]="enviando()">
+      <span>
+        @if (enviando()) { <i class="giro" aria-hidden="true"></i> Entrando… } @else { Entrar <nx-icon name="arrow-right" [size]="17" /> }
+      </span>
+    </button>
+  </form>
+
+  <p class="alternar">
+    Primeira vez por aqui?
+    <a class="link" routerLink="/criar-conta" [queryParams]="voltar ? { voltar: voltar } : {}">Criar conta</a>
+  </p>
+
+  @if (modoDev) {
+    <section class="demo" aria-labelledby="demo-titulo">
+      <div class="demo-topo">
+        <h2 id="demo-titulo">Contas de demonstração</h2>
+        <span>senha <strong>123</strong> · só em desenvolvimento</span>
+      </div>
+      <div class="demo-contas">
+        @for (c of CONTAS_DEMO; track c.usuario) {
+          <button type="button" class="demo-conta" [class.usada]="contaUsada() === c.usuario" (click)="usarConta(c)"
+            [attr.aria-label]="'Preencher com a conta ' + c.usuario + ', ' + c.papel">
+            <span class="demo-icone" [attr.data-tom]="c.tom"><nx-icon [name]="c.icone" [size]="15" /></span>
+            <span><strong>{{ c.usuario }}</strong><small>{{ c.papel }}</small></span>
+          </button>
+        }
+      </div>
+    </section>
+  }
+</nx-acesso-layout>

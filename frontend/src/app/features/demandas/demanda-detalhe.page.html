@@ -18,7 +18,7 @@
       </div>
     </header>
 
-    <ol class="trilha nao-imprimir" aria-label="Etapas da demanda">
+    <ol class="trilha nao-imprimir" aria-label="Etapas da demanda" data-tour="etapas">
       @for (e of ETAPAS; track e; let i = $index) {
         <li [class.feita]="i < etapaAtual(d.estado)" [class.atual]="i === etapaAtual(d.estado)">
           <span class="trilha-marca">@if (i < etapaAtual(d.estado)) { <nx-icon name="check" [size]="12" [stroke]="2.5" /> }</span>
@@ -29,7 +29,7 @@
 
     <nav class="abas nao-imprimir" aria-label="Seções da demanda">
       @for (a of ABAS; track a.id) {
-        <button type="button" class="aba" [class.ativa]="abaAtual() === a.id" [attr.aria-current]="abaAtual() === a.id ? 'page' : null" (click)="irAba(a.id)">
+        <button type="button" class="aba" [attr.data-tour]="'aba-' + a.id" [class.ativa]="abaAtual() === a.id" [attr.aria-current]="abaAtual() === a.id ? 'page' : null" (click)="irAba(a.id)">
           {{ a.rotulo }}
           @if (a.id === 'requisitos' && sessao.ehEquipe() && propostos()) { <span class="contador contador-alerta">{{ propostos() }}</span> }
         </button>
@@ -101,7 +101,7 @@
                   <nx-icon [name]="CENARIO[d.cenario.recomendado].icone" [size]="20" />
                   <div class="lista-texto"><strong>{{ CENARIO[d.cenario.recomendado].nome }}</strong><span class="mudo">{{ CENARIO[d.cenario.recomendado].resumo }}</span></div>
                 </div>
-                @if (d.cenario.estado === 'PROPOSTO') { <p class="selo-ia"><nx-icon name="spark" [size]="14" /> Sugestão da IA, ainda não validada pela equipe</p> }
+                @if (d.cenario.estado === 'PROPOSTO') { <p class="selo-ia selo-simulador"><nx-icon name="flask" [size]="14" /> Gerada pelo simulador de demonstração · ainda não validada pela equipe</p> }
               </section>
             }
             <section class="secao">
@@ -122,16 +122,17 @@
           <div class="coluna">
             @if (job(); as j) {
               <section class="painel processando" aria-live="polite">
-                <nx-icon name="spark" [size]="22" />
+                <nx-icon name="flask" [size]="22" />
                 <h2>{{ j.etapa }}…</h2>
                 <div class="barra"><span [style.width.%]="j.percentual"></span></div>
-                <p class="mudo">A IA está analisando as respostas. Isso leva alguns segundos.</p>
+                <p class="mudo">O simulador de demonstração está comparando suas respostas com os tipos de solução. Leva alguns segundos.</p>
               </section>
             } @else if (podeEditarLevantamento() && pergunta(); as p) {
               <section class="painel entrevista" aria-live="polite">
                 <div class="entrevista-topo">
                   <span class="mudo">Pergunta {{ progresso().respondidas + 1 }}</span>
                   <div class="barra barra-fina"><span [style.width.%]="progressoPct()"></span></div>
+                  <span class="selo-ia selo-simulador entrevista-origem"><nx-icon name="flask" [size]="13" /> Perguntas do simulador de demonstração</span>
                 </div>
                 <h2 class="pergunta">{{ p.enunciado }}</h2>
                 @if (p.ajuda) { <p class="mudo">{{ p.ajuda }}</p> }
@@ -160,8 +161,8 @@
               <section class="painel processando">
                 <nx-icon name="check-circle" [size]="22" />
                 <h2>Pronto, já temos o suficiente</h2>
-                <p class="mudo">Com base nas {{ d.respostas.length }} respostas, a IA sugere o tipo de solução e monta um protótipo das telas.</p>
-                <button type="button" class="btn btn-primario" (click)="gerarCenario()"><nx-icon name="spark" [size]="16" /> Ver recomendação</button>
+                <p class="mudo">Com base nas {{ d.respostas.length }} respostas, o simulador de demonstração sugere o tipo de solução e monta um protótipo das telas. É uma sugestão: a equipe valida depois.</p>
+                <button type="button" class="btn btn-primario" (click)="gerarCenario()">Ver recomendação <nx-icon name="arrow-right" [size]="16" /></button>
               </section>
             }
 
@@ -169,7 +170,7 @@
               <section class="secao">
                 <div class="secao-topo">
                   <h2>Tipo de solução recomendado</h2>
-                  @if (d.cenario.estado === 'PROPOSTO') { <span class="selo-ia"><nx-icon name="spark" [size]="14" /> Sugestão da IA, ainda não validada</span> }
+                  @if (d.cenario.estado === 'PROPOSTO') { <span class="selo-ia selo-simulador"><nx-icon name="flask" [size]="14" /> Gerada pelo simulador de demonstração · ainda não validada</span> }
                   @else { <nx-badge tom="verde">Validado pela equipe</nx-badge> }
                 </div>
                 <ol class="ranking">
@@ -243,7 +244,7 @@
                   <button type="button" role="tab" [class.ativo]="telaAtual() === i" [attr.aria-selected]="telaAtual() === i" (click)="telaAtual.set(i)">{{ t.nome }}</button>
                 }
               </div>
-              @if (pr.estado === 'PROPOSTO') { <span class="selo-ia"><nx-icon name="spark" [size]="14" /> Protótipo gerado pela IA, ainda não validado</span> }
+              @if (pr.estado === 'PROPOSTO') { <span class="selo-ia selo-simulador"><nx-icon name="flask" [size]="14" /> Gerado pelo simulador de demonstração · ainda não validado</span> }
             </div>
             <div class="prototipo-palco">
               <nx-prototipo [html]="pr.telas[telaAtual()].html" [titulo]="'Protótipo: ' + pr.telas[telaAtual()].nome" />
@@ -416,7 +417,10 @@
                       <div class="requisito-topo">
                         <span class="codigo mudo">{{ r.codigo }}</span>
                         @switch (r.estado) {
-                          @case ('PROPOSTO') { <span class="selo-ia"><nx-icon name="spark" [size]="13" /> Sugestão da IA</span> }
+                          @case ('PROPOSTO') {
+                            @if (r.modelo) { <span class="selo-ia"><nx-icon name="spark" [size]="13" /> Sugestão de {{ r.modelo }} · ainda não validada</span> }
+                            @else { <span class="selo-ia selo-simulador"><nx-icon name="flask" [size]="13" /> Sugestão do simulador de demonstração · ainda não validada</span> }
+                          }
                           @case ('APROVADO') { <nx-badge tom="verde">Aprovado</nx-badge> }
                           @case ('REJEITADO') { <nx-badge tom="vermelho">Rejeitado</nx-badge> }
                         }

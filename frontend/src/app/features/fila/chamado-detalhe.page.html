@@ -53,18 +53,42 @@
               <span class="mudo">A IA sugere. Quem decide é você.</span>
             </header>
 
+            @if (rejeitada(c); as r) {
+              <!-- A sugestão rejeitada continua visível (recolhida, riscada, com o motivo) até a nova chegar. -->
+              <details class="sugestao-rejeitada">
+                <summary>
+                  <nx-icon name="x-circle" [size]="16" />
+                  <span>Sugestão rejeitada por {{ r.decididoPor }}, {{ dataHora(r.decididoEm) }}: <strong>{{ r.motivo }}</strong></span>
+                </summary>
+                <div class="sugestao-rejeitada-corpo">
+                  <p class="mudo">Possível causa ({{ r.categoria }})@if (r.modelo) { · gerada por {{ r.modelo }} }</p>
+                  <p><del>{{ causa(r.causa) }}</del></p>
+                  <ol class="procedimento">@for (p of r.procedimento; track $index) { <li><del>{{ p }}</del></li> }</ol>
+                </div>
+              </details>
+            }
+
             @if (job(); as j) {
               <div class="processando" aria-live="polite">
                 <p><strong>{{ j.etapa }}…</strong></p>
                 <div class="barra"><span [style.width.%]="j.percentual"></span></div>
               </div>
-            } @else if (!c.sugestao) {
-              <p class="mudo">A IA recupera a demanda, os requisitos, a versão e chamados anteriores desta solução, e sugere uma possível causa e um procedimento.</p>
+            } @else if (!c.sugestao || c.sugestao.estado === 'REJEITADO') {
+              @if (c.sugestao) {
+                <p class="mudo">O chamado voltou para análise. Uma nova análise leva em conta {{ rejeicoes(c) === 1 ? 'o motivo da rejeição' : 'os motivos das ' + rejeicoes(c) + ' rejeições' }} para não repetir a mesma hipótese.</p>
+              } @else {
+                <p class="mudo">O NEXUS reúne a demanda de origem, os requisitos, a versão e os chamados anteriores desta solução. Com esse contexto, a IA sugere uma possível causa e um procedimento.</p>
+              }
               @if (c.estado === 'EM_ATENDIMENTO') {
-                <button type="button" class="btn btn-primario" (click)="analisar()"><nx-icon name="spark" [size]="16" /> Analisar com IA</button>
+                <p class="aviso-dados"><nx-icon name="shield" [size]="14" /> Use só dados fictícios: o chamado e o contexto vão para a IA de demonstração, e o provedor do modelo pode usar esse texto.</p>
+                <button type="button" class="btn btn-primario" (click)="analisar()"><nx-icon name="spark" [size]="16" /> {{ c.sugestao ? 'Pedir nova análise' : 'Analisar com IA' }}</button>
               }
             } @else {
               @if (c.sugestao; as s) {
+                @if (s.estado === 'PROPOSTO') {
+                  @if (s.modelo) { <p class="selo-ia"><nx-icon name="spark" [size]="14" /> Gerada por {{ s.modelo }} · sugestão ainda não validada</p> }
+                  @else { <p class="selo-ia selo-simulador"><nx-icon name="flask" [size]="14" /> Gerada pelo simulador de demonstração · sugestão ainda não validada</p> }
+                }
                 <div class="apoio-bloco">
                   <h3>Contexto recuperado</h3>
                   <ul class="fontes">
@@ -78,33 +102,31 @@
                   @if (s.semHistorico) { <p class="aviso"><nx-icon name="alert" [size]="16" /> Não há solução anterior registrada para este problema. A sugestão parte só do contexto da solução.</p> }
                 </div>
                 <div class="apoio-bloco">
-                  <h3>Possível causa <span class="mudo">({{ s.categoria }}, confiança {{ (s.confianca * 100).toFixed(0) }}%)</span></h3>
-                  <p>{{ s.causa }}</p>
+                  <h3>Possível causa <span class="mudo">({{ s.categoria }} · confiança estimada {{ s.modelo ? 'pela IA' : 'pelo simulador' }}: {{ (s.confianca * 100).toFixed(0) }}%)</span></h3>
+                  <p>{{ causa(s.causa) }}</p>
                 </div>
                 <div class="apoio-bloco">
                   <h3>Procedimento sugerido</h3>
                   <ol class="procedimento">@for (p of s.procedimento; track $index) { <li>{{ p }}</li> }</ol>
                 </div>
 
-                @switch (s.estado) {
-                  @case ('PROPOSTO') {
-                    @if (rejeitando()) {
-                      <div class="form">
-                        <label class="campo"><span>Por que rejeitar?</span><input class="input" [(ngModel)]="motivo" placeholder="Ex.: a causa é outra, verifiquei o horário do celular" /></label>
-                        <div class="form-acoes">
-                          <button type="button" class="btn btn-secundario" (click)="rejeitando.set(false)">Cancelar</button>
-                          <button type="button" class="btn btn-perigo" [disabled]="ocupado()" (click)="rejeitar()">Rejeitar sugestão</button>
-                        </div>
+                @if (s.estado === 'PROPOSTO') {
+                  @if (rejeitando()) {
+                    <div class="form">
+                      <label class="campo"><span>Por que rejeitar?</span><input class="input" [(ngModel)]="motivo" placeholder="Ex.: a causa é outra, verifiquei o horário do celular" /></label>
+                      <div class="form-acoes">
+                        <button type="button" class="btn btn-secundario" (click)="rejeitando.set(false)">Cancelar</button>
+                        <button type="button" class="btn btn-perigo" [disabled]="ocupado()" (click)="rejeitar()">Rejeitar sugestão</button>
                       </div>
-                    } @else {
-                      <div class="form-acoes apoio-acoes">
-                        <button type="button" class="btn btn-secundario" (click)="rejeitando.set(true)"><nx-icon name="x-circle" [size]="16" /> Rejeitar e revisar</button>
-                        <button type="button" class="btn btn-primario" [disabled]="ocupado()" (click)="aprovar()"><nx-icon name="check-circle" [size]="16" /> Aprovar sugestão</button>
-                      </div>
-                    }
+                    </div>
+                  } @else {
+                    <div class="form-acoes apoio-acoes">
+                      <button type="button" class="btn btn-secundario" (click)="rejeitando.set(true)"><nx-icon name="x-circle" [size]="16" /> Rejeitar e revisar</button>
+                      <button type="button" class="btn btn-primario" [disabled]="ocupado()" (click)="aprovar()"><nx-icon name="check-circle" [size]="16" /> Aprovar sugestão</button>
+                    </div>
                   }
-                  @case ('APROVADO') { <p class="decisao decisao-ok"><nx-icon name="check-circle" [size]="16" /> Aprovada por {{ s.decididoPor }}, {{ dataHora(s.decididoEm) }}</p> }
-                  @case ('REJEITADO') { <p class="decisao decisao-nao"><nx-icon name="x-circle" [size]="16" /> Rejeitada por {{ s.decididoPor }}: {{ s.motivo }}</p> }
+                } @else {
+                  <p class="decisao decisao-ok"><nx-icon name="check-circle" [size]="16" /> Aprovada por {{ s.decididoPor }}, {{ dataHora(s.decididoEm) }}</p>
                 }
               }
             }

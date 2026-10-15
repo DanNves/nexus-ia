@@ -94,6 +94,8 @@ export interface Requisito {
   motivoRejeicao?: string;
   decididoPor?: string;
   decididoEm?: string;
+  /** Modelo de IA que sugeriu (IA real). Ausente = dado do simulador/seed de demonstração. */
+  modelo?: string;
 }
 
 export interface Solicitacao {
@@ -211,6 +213,17 @@ export interface Sugestao {
   decididoPor?: string;
   decididoEm?: string;
   motivo?: string;
+  /** Modelo que gerou a sugestão (IA real). Ausente em sugestões antigas/simuladas. */
+  modelo?: string;
+}
+
+/** Sugestão da IA rejeitada neste chamado. Vai na próxima geração para a IA não repetir a hipótese (CLAUDE.md §6). */
+export interface SugestaoRejeitada {
+  causa: string;
+  motivo: string;
+  decididoPor: string;
+  decididoEm: string;
+  modelo?: string;
 }
 
 export interface Chamado {
@@ -230,6 +243,8 @@ export interface Chamado {
   posicao?: number;
   esperaEstimadaMin?: number;
   sugestao?: Sugestao;
+  /** Histórico das sugestões rejeitadas (mais antiga primeiro). */
+  sugestoesRejeitadas?: SugestaoRejeitada[];
   conhecimentoId?: string;
   historico: ItemHistorico[];
 }
@@ -258,10 +273,17 @@ export type EstadoJob = 'PENDENTE' | 'EM_EXECUCAO' | 'CONCLUIDO' | 'FALHOU';
 
 export interface Job {
   id: string;
+  /** Tarefa do job real (`requisitos`, `sugestao_suporte`). Jobs simulados não têm. */
+  tarefa?: string;
   estado: EstadoJob;
   percentual: number;
   etapa: string;
+  /** Mensagem já tratada pelo backend quando FALHOU. */
   erro?: string;
+  /** Só quando CONCLUIDO (job real). Formato depende da tarefa (ver claude/front/contratos.md). */
+  resultado?: unknown;
+  /** Modelo de IA que executou (job real, CONCLUIDO). */
+  modelo?: string;
 }
 
 // ---------- Visão geral / transversal ----------

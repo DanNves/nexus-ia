@@ -7,8 +7,8 @@ Resumo fiel de `docs/Nexus_Arquitetura.pdf` (Tauan, UCSal, ADS, out/2026). Em ca
 > - Banco **SQLite** temporariamente (o PDF prevê PostgreSQL + pgvector). Evitar recursos exclusivos de PostgreSQL até a migração.
 > - Arquivos em `MEDIA_ROOT` local (o PDF prevê MinIO/S3).
 > - Busca por similaridade calculada em Python sobre embeddings armazenados, enquanto não houver pgvector.
-> - IA: **modelo real** será usado (provedor a definir) via porta `LLMProvider`; `fake_adapter` para testes e demonstração.
-> - Tarefas longas: forma de execução **pendente** (fila simples vs. Celery + Redis). O contrato `202 + job_id` + polling é mantido em qualquer caso.
+> - IA: **modelo real** via porta `LLMProvider`. Provedor atual: **Gemini (free tier)**, decidido em 2026-10-15; adaptadores `gemini`, `openai_compat` e `fake` em `backend/apps/ia/adapters/`, troca pelo `.env`. Modelos e custo em `claude/ia.md`.
+> - Tarefas longas: **executor em thread** com semáforo (decidido em 2026-10-15). O contrato `202 + job_id` + polling é mantido; Celery + Redis fica para quando sair do localhost.
 > - Anexos no MVP: somente texto (ata/transcrição; .txt decidido, .docx/.pdf a confirmar). Áudio/vídeo é evolução.
 > - **Ordem das etapas** segue o fluxo do autor: levantamento → cenário → protótipo → solicitação → viabilidade/reunião/metodologia → requisitos/documento (no PDF, requisitos vêm logo após o levantamento).
 > - Máquina de estados aplicada também ao documento de requisitos e à sugestão de suporte (proposta).

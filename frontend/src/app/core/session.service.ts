@@ -1,38 +1,32 @@
-import { HttpInterceptorFn } from '@angular/common/http';
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, computed, inject, linkedSignal } from '@angular/core';
 import { Perfil } from './api/models';
+import { AuthService } from './auth/auth.service';
 
-const CHAVE = 'nexus.perfil';
-
-const USUARIOS: Record<Perfil, { nome: string; papel: string }> = {
-  CLIENTE: { nome: 'Marina Costa', papel: 'Clínica Bem Viver' },
-  EQUIPE: { nome: 'Rafael Lima', papel: 'Equipe responsável' },
-};
-
-// Sessão simulada. No backend real, o perfil vem do token JWT do usuário logado.
+// Perfil e identificação de quem está logado, derivados do AuthService (usuário vindo do Django).
+// As páginas usam `effect(() => this.sessao.perfil(); ...)` para recarregar quando o usuário muda.
 @Injectable({ providedIn: 'root' })
 export class SessionService {
-  readonly perfil = signal<Perfil>(this.lerPerfil());
+  private auth = inject(AuthService);
+
+  // Ao sair, o usuário vira null mas o perfil mantém o último valor: assim os `effect` das páginas que ainda estão
+  // na tela não recarregam dados sem sessão (o que gerava 401 no mock e erro no console). Novo login → novo perfil.
+  private readonly perfilAtual = linkedSignal<Perfil | undefined, Perfil>({
+    source: () => this.auth.usuario()?.perfil,
+    computation: (perfil, anterior) => perfil ?? anterior?.value ?? 'CLIENTE',
+  });
+  readonly perfil = this.perfilAtual.asReadonly();
+
+  private readonly identificacao = computed(() => {
+    const u = this.auth.usuario();
+    if (!u) return { nome: '', papel: '' };
+    return { nome: u.nome, papel: u.perfil === 'EQUIPE' ? 'Equipe responsável' : u.organizacao || 'Cliente' };
+  });
 
   get usuario() {
-    return USUARIOS[this.perfil()];
+    return this.identificacao();
   }
 
   ehEquipe() {
     return this.perfil() === 'EQUIPE';
   }
-
-  trocarPerfil(perfil: Perfil) {
-    this.perfil.set(perfil);
-    try { localStorage.setItem(CHAVE, perfil); } catch { /* ignora */ }
-  }
-
-  private lerPerfil(): Perfil {
-    try { return localStorage.getItem(CHAVE) === 'EQUIPE' ? 'EQUIPE' : 'CLIENTE'; } catch { return 'CLIENTE'; }
-  }
 }
-
-export const perfilInterceptor: HttpInterceptorFn = (req, next) => {
-  const sessao = inject(SessionService);
-  return next(req.clone({ setHeaders: { 'X-Nexus-Perfil': sessao.perfil() } }));
-};

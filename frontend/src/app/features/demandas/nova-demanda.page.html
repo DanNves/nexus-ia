@@ -63,14 +63,17 @@
         } @else {
           <label class="soltar">
             <nx-icon name="upload" />
-            <span><strong>Escolher arquivo</strong> <span class="mudo">em .txt, até 200 KB</span></span>
+            <span><strong>Escolher arquivo</strong><span class="mudo"> em .txt, até 200 KB</span></span>
             <input type="file" accept=".txt,text/plain" (change)="escolherArquivo($event)" />
           </label>
         }
         <nx-erro-campo [mensagens]="erros()['arquivo']" />
       </div>
 
-      <p class="aviso"><nx-icon name="file" [size]="16" /> O texto e a ata ficam guardados na demanda e servem de contexto em todas as próximas etapas.</p>
+      <div class="notas">
+        <p class="aviso-dados"><nx-icon name="file" [size]="14" /> O texto e a ata ficam guardados na demanda e servem de contexto em todas as próximas etapas.</p>
+        <p class="aviso-dados"><nx-icon name="shield" [size]="14" /> Use só dados fictícios: partes deste texto vão para a IA de demonstração, e o provedor do modelo pode usá-las.</p>
+      </div>
 
       <div class="form-acoes">
         <button type="button" class="btn btn-secundario" (click)="etapa.set(1)">Voltar</button>

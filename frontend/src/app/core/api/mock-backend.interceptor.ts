@@ -1,16 +1,21 @@
-// Backend simulado. Intercepta /api/v1/* e responde como a API Django responderia.
-// Para usar o backend real: remover este interceptor em app.config.ts (environment.useMock = false).
-import { HttpErrorResponse, HttpEvent, HttpInterceptorFn, HttpRequest, HttpResponse } from '@angular/common/http';
-import { Observable, delay, dematerialize, materialize, of, throwError } from 'rxjs';
+// Backend HÍBRIDO. Intercepta /api/v1/* e responde o domínio (demandas, chamados...) como o Django responderia.
+// Passam direto para o Django real (proxy do ng serve): /auth/*, /me, /ia/* e /jobs/:id de jobs reais.
+// Requisitos e sugestão de suporte usam a IA real: o mock monta a entrada, cria o job no Django
+// (POST /ia/jobs) e aplica o resultado no "banco" local quando o polling recebe CONCLUIDO.
+// Cenário, protótipo e entrevista continuam determinísticos aqui (mock-ia.ts).
+// Para usar só o backend real: environment.useMock = false (o interceptor sai da cadeia em app.config.ts).
+import { HttpErrorResponse, HttpEvent, HttpHandlerFn, HttpInterceptorFn, HttpRequest, HttpResponse } from '@angular/common/http';
+import { inject } from '@angular/core';
+import { Observable, catchError, defaultIfEmpty, delay, dematerialize, filter, forkJoin, isObservable, map, materialize, of, throwError } from 'rxjs';
 import {
   Atividade, Chamado, Demanda, EstadoAtividade, Evento, FilaResumo, Job, Pendencia, Perfil, Prioridade,
-  ResultadoBusca, RespostaEntrevista, TipoEvento, VisaoGeral,
+  Requisito, ResultadoBusca, RespostaEntrevista, TipoEvento, VisaoGeral,
 } from './models';
 import { MockDb, VERSAO_SEED, criarSeed } from './mock-seed';
-import { gerarPrototipo, gerarRanking, gerarRequisitos, gerarSugestao, nomeCenario, perguntaPorId, proximaPergunta } from './mock-ia';
+import { gerarPrototipo, gerarRanking, gerarSugestao, nomeCenario, perguntaPorId, proximaPergunta } from './mock-ia';
+import { AuthService, Usuario } from '../auth/auth.service';
 
 const CHAVE = 'nexus.mockdb';
-export const USUARIO_POR_PERFIL: Record<Perfil, string> = { CLIENTE: 'p1', EQUIPE: 'p2' };
 
 // ---------- Persistência local do mock ----------
 
@@ -21,7 +26,7 @@ function carregar(): MockDb {
     const bruto = localStorage.getItem(CHAVE);
     if (bruto) {
       const salvo = JSON.parse(bruto) as MockDb;
-      if (salvo.versao === VERSAO_SEED) return salvo;
+      if (salvo.versao === VERSAO_SEED) return { ...salvo, iaPendentes: salvo.iaPendentes ?? {} };
     }
   } catch { /* sem localStorage: usa seed em memória */ }
   return criarSeed();
@@ -85,9 +90,181 @@ function consultarJob(id: string): Job {
   return j.job;
 }
 
+// ---------- IA real (Django) ----------
+
+type TarefaIa = MockDb['iaPendentes'][string]['tarefa'];
+const LIMITE_NECESSIDADE = 20_000;
+/** Pendência cujo job não responde mais (Django fora, job apagado) expira depois disso. */
+const VALIDADE_PENDENCIA_MS = 15 * 60_000;
+
+const cortar = (t: string, max: number) => (t.length > max ? t.slice(0, max) : t);
+
+/** Rejeições do chamado; inclui a sugestão atual rejeitada de bancos anteriores ao histórico. */
+function rejeitadasDoChamado(c: Chamado): { causa: string; motivo: string }[] {
+  const lista = [...(c.sugestoesRejeitadas ?? [])];
+  const atual = c.sugestao;
+  if (atual?.estado === 'REJEITADO' && !lista.some((r) => r.causa === atual.causa)) {
+    lista.push({ causa: atual.causa, motivo: atual.motivo || 'Rejeitada sem motivo registrado.', decididoPor: atual.decididoPor ?? '', decididoEm: atual.decididoEm ?? '' });
+  }
+  return lista.filter((r) => ehTexto(r.causa) && ehTexto(r.motivo));
+}
+
+function temPendencia(alvoId: string) {
+  return Object.values(db.iaPendentes).some((p) => p.alvoId === alvoId);
+}
+
+function expirarSeAntiga(jobId: string) {
+  const p = db.iaPendentes[jobId];
+  if (!p) return;
+  const criado = p.criadoEm ? Date.parse(p.criadoEm) : 0;
+  if (Date.now() - criado > VALIDADE_PENDENCIA_MS) {
+    delete db.iaPendentes[jobId];
+    salvar();
+  }
+}
+
+/** Consulta UMA vez no Django os jobs pendentes do alvo: aplica os concluídos, descarta falhos/inexistentes, expira os antigos. */
+function reconsultarPendencias(ctx: Ctx, alvoId: string): Observable<void> {
+  const ids = Object.entries(db.iaPendentes).filter(([, p]) => p.alvoId === alvoId).map(([id]) => id);
+  return forkJoin(ids.map((id) =>
+    ctx.next(new HttpRequest('GET', `${PREFIXO}/jobs/${id}`, { headers: ctx.req.headers, withCredentials: ctx.req.withCredentials })).pipe(
+      filter((ev): ev is HttpResponse<Job> => ev instanceof HttpResponse),
+      map((res) => { if (res.body) aplicarResultadoIa(res.body, ctx); }),
+      catchError((e: unknown) => {
+        // 404/403: o job não existe (ou não é deste usuário) no Django; não há o que esperar.
+        if (e instanceof HttpErrorResponse && (e.status === 404 || e.status === 403)) { delete db.iaPendentes[id]; salvar(); }
+        return of(undefined);
+      }),
+      defaultIfEmpty(undefined),
+      map(() => expirarSeAntiga(id)),
+    ))).pipe(map(() => undefined), defaultIfEmpty(undefined));
+}
+
+/** Corta a lista de textos para que a soma não passe do limite (contrato: 20 mil caracteres no total). */
+function truncarTextos(textos: string[], limite: number): string[] {
+  const saida: string[] = [];
+  let resta = limite;
+  for (const t of textos.map((x) => x.trim()).filter(Boolean)) {
+    if (resta <= 0) break;
+    saida.push(t.length > resta ? t.slice(0, resta) : t);
+    resta -= t.length;
+  }
+  return saida;
+}
+
+/** POST /api/v1/ia/jobs no Django com os headers da requisição original; devolve o Job real (202). */
+function criarJobIa(ctx: Ctx, tarefa: TarefaIa, alvoTipo: 'demanda' | 'chamado', alvoId: string, entrada: unknown): Observable<Resposta> {
+  const req = new HttpRequest('POST', `${PREFIXO}/ia/jobs`, { tarefa, alvoTipo, alvoId, entrada }, {
+    headers: ctx.req.headers,
+    withCredentials: ctx.req.withCredentials,
+  });
+  return ctx.next(req).pipe(
+    filter((ev): ev is HttpResponse<Job> => ev instanceof HttpResponse),
+    map((res) => {
+      const job = res.body;
+      if (!job?.id) throw new ApiErro(502, 'O servidor de IA respondeu de forma inesperada.');
+      db.iaPendentes[job.id] = { tarefa, alvoId, criadoEm: agora() };
+      salvar();
+      return { status: res.status, body: job };
+    }),
+  );
+}
+
+interface ResultadoRequisitos { requisitos?: { tipo?: unknown; titulo?: unknown; descricao?: unknown }[] }
+interface ResultadoSugestao {
+  categoria?: unknown; causa?: unknown; procedimento?: unknown; confianca?: unknown;
+  conhecimentoUsado?: unknown; semHistorico?: unknown;
+}
+
+const TIPOS_REQUISITO: readonly string[] = ['RF', 'RNF', 'REGRA'];
+const ehTexto = (v: unknown): v is string => typeof v === 'string' && v.trim().length > 0;
+
+/** Chamado no polling de um job real. Aplica (uma vez) o resultado no banco local antes de devolver a resposta. */
+function aplicarResultadoIa(job: Job, ctx: Ctx) {
+  const pendente = db.iaPendentes[job.id];
+  if (!pendente || (job.estado !== 'CONCLUIDO' && job.estado !== 'FALHOU')) return;
+  delete db.iaPendentes[job.id];
+  if (job.estado === 'CONCLUIDO') {
+    const modelo = job.modelo || 'modelo não informado';
+    if (pendente.tarefa === 'requisitos') aplicarRequisitos(pendente.alvoId, job.resultado as ResultadoRequisitos | undefined, modelo, ctx);
+    else aplicarSugestao(pendente.alvoId, job.resultado as ResultadoSugestao | undefined, modelo);
+  }
+  salvar();
+}
+
+function aplicarRequisitos(demandaId: string, r: ResultadoRequisitos | undefined, modelo: string, ctx: Ctx) {
+  const d = db.demandas.find((x) => x.id === demandaId);
+  if (!d) return;
+  const itens = Array.isArray(r?.requisitos) ? r.requisitos : [];
+  const novos: Requisito[] = itens
+    .filter((x) => typeof x.tipo === 'string' && TIPOS_REQUISITO.includes(x.tipo) && ehTexto(x.titulo))
+    .map((x) => ({
+      id: uid('r'),
+      codigo: proximo('REQ'),
+      tipo: x.tipo as Requisito['tipo'],
+      titulo: String(x.titulo).trim(),
+      descricao: ehTexto(x.descricao) ? x.descricao.trim() : '',
+      estado: 'PROPOSTO' as const,
+      modelo,
+    }));
+  // Aprovados e rejeitados (com motivo) ficam; só as sugestões ainda não decididas são substituídas.
+  d.requisitos = [...d.requisitos.filter((x) => x.estado !== 'PROPOSTO'), ...novos];
+  registrar(d, ctx, `A IA (${modelo}) sugeriu ${novos.length} requisitos para validação.`);
+}
+
+function aplicarSugestao(chamadoId: string, r: ResultadoSugestao | undefined, modelo: string) {
+  const c = db.chamados.find((x) => x.id === chamadoId);
+  if (!c) return;
+  const base = gerarSugestao(c, db.solucoes.find((s) => s.id === c.solucaoId), db.demandas, db.conhecimentos, db.chamados);
+  const procedimento = Array.isArray(r?.procedimento) ? r.procedimento.filter(ehTexto).map((p) => p.trim()) : [];
+  const codigoKb = r?.conhecimentoUsado;
+  const kb = ehTexto(codigoKb) ? db.conhecimentos.find((k) => k.codigo === codigoKb) : undefined;
+  if (kb && !base.fontes.some((f) => f.codigo === kb.codigo)) base.fontes.unshift({ tipo: 'Conhecimento', codigo: kb.codigo, titulo: kb.titulo });
+  c.sugestao = {
+    ...base,
+    categoria: ehTexto(r?.categoria) ? r.categoria.trim() : base.categoria,
+    causa: ehTexto(r?.causa) ? r.causa.trim() : base.causa,
+    procedimento: procedimento.length ? procedimento : base.procedimento,
+    confianca: typeof r?.confianca === 'number' ? Math.min(1, Math.max(0, r.confianca)) : base.confianca,
+    semHistorico: typeof r?.semHistorico === 'boolean' ? r.semHistorico : base.semHistorico,
+    estado: 'PROPOSTO',
+    modelo,
+  };
+  c.historico.push({ data: agora(), autor: `IA (${modelo})`, texto: `Sugestão da IA (${modelo}): possível causa e procedimento, aguardando validação.` });
+}
+
 // ---------- Regras de acesso ----------
 
-interface Ctx { perfil: Perfil; userId: string; nome: string }
+interface Ctx {
+  perfil: Perfil;
+  userId: string;
+  nome: string;
+  /** Requisição original (já com o Bearer) e o próximo handler: para repassar ao Django. */
+  req: HttpRequest<unknown>;
+  next: HttpHandlerFn;
+}
+
+// Os usuários semeados no Django ocupam as pessoas da demonstração; os demais usam o próprio id.
+const PESSOA_SEMEADA: Record<string, string> = { usuario: 'p1', equipeadmin: 'p2' };
+
+function pessoaIdDe(u: Usuario) {
+  return PESSOA_SEMEADA[u.usuario.toLowerCase()] ?? u.id;
+}
+
+/** Mantém a pessoa do usuário logado em db.pessoas com nome/organização/perfil reais. */
+function sincronizarPessoa(u: Usuario): string {
+  const id = pessoaIdDe(u);
+  const atual = db.pessoas.find((p) => p.id === id);
+  const organizacao = u.organizacao || (u.perfil === 'EQUIPE' ? 'Equipe NEXUS' : '');
+  if (!atual) {
+    db.pessoas.push({ id, nome: u.nome, cargo: u.perfil === 'EQUIPE' ? 'Equipe responsável' : 'Cliente', organizacao, perfil: u.perfil });
+    salvar();
+  } else if (atual.nome !== u.nome || atual.organizacao !== organizacao || atual.perfil !== u.perfil) {
+    Object.assign(atual, { nome: u.nome, organizacao, perfil: u.perfil });
+    salvar();
+  }
+  return id;
+}
 
 function demandasVisiveis(ctx: Ctx) {
   return ctx.perfil === 'EQUIPE' ? db.demandas : db.demandas.filter((d) => d.solicitanteId === ctx.userId);
@@ -146,11 +323,13 @@ function anonimizar(c: Chamado, ctx: Ctx): Chamado {
 
 // ---------- Rotas ----------
 
-type Handler = (ctx: Ctx, p: string[], body: Record<string, unknown>, q: URLSearchParams) => { status?: number; body: unknown };
+interface Resposta { status?: number; body: unknown }
+// Handlers síncronos respondem do "banco" local; os que falam com o Django devolvem Observable.
+type Handler = (ctx: Ctx, p: string[], body: Record<string, unknown>, q: URLSearchParams) => Resposta | Observable<Resposta>;
 const rotas: [string, RegExp, Handler][] = [];
 const rota = (m: string, padrao: string, h: Handler) => rotas.push([m, new RegExp(`^${padrao.replace(/:[a-z]+/g, '([^/]+)')}$`), h]);
 
-rota('GET', '/me', (ctx) => ({ body: db.pessoas.find((p) => p.id === ctx.userId) }));
+// GET /me vai para o Django. GET /jobs/:id só chega aqui para jobs simulados (ver interceptor).
 rota('GET', '/jobs/:id', (_ctx, [id]) => ({ body: consultarJob(id) }));
 rota('GET', '/pessoas', () => ({ body: db.pessoas }));
 
@@ -179,7 +358,7 @@ rota('GET', '/visao-geral', (ctx) => {
       if (n) pendencias.push({ id: `${d.id}-r`, tipo: 'requisito', texto: `${n} requisitos aguardando validação`, detalhe: d.nome, acao: 'Validar', link: `/demandas/${d.id}/requisitos` });
     });
     const sug = db.chamados.filter((c) => c.sugestao?.estado === 'PROPOSTO');
-    sug.forEach((c) => pendencias.push({ id: c.id, tipo: 'chamado', texto: `Sugestão da IA aguardando validação`, detalhe: `${c.codigo} ${c.titulo}`, acao: 'Validar', link: `/fila/${c.id}` }));
+    sug.forEach((c) => pendencias.push({ id: c.id, tipo: 'chamado', texto: `Sugestão de suporte aguardando validação`, detalhe: `${c.codigo} ${c.titulo}`, acao: 'Validar', link: `/fila/${c.id}` }));
   }
   const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
   const visiveisIds = new Set(demandas.map((d) => d.id));
@@ -213,7 +392,11 @@ rota('GET', '/demandas', (ctx, _p, _b, q) => {
   };
 });
 
-rota('GET', '/demandas/:id', (ctx, [id]) => ({ body: demanda(ctx, id) }));
+rota('GET', '/demandas/:id', (ctx, [id]) => {
+  demanda(ctx, id);
+  // Pendência de IA de outra visita (polling interrompido): reconsulta o job uma vez antes de responder.
+  return temPendencia(id) ? reconsultarPendencias(ctx, id).pipe(map(() => ({ body: demanda(ctx, id) }))) : { body: demanda(ctx, id) };
+});
 
 rota('POST', '/demandas', (ctx, _p, b) => {
   const nome = texto(b['nome']);
@@ -306,7 +489,7 @@ rota('POST', '/demandas/:id/cenario/gerar', (ctx, [id]) => {
     d.cenario = { estado: 'PROPOSTO', recomendado: ranking[0].tipo, ranking, geradoEm: agora() };
     d.prototipo = { estado: 'PROPOSTO', telas: gerarPrototipo(d.nome, ranking[0].tipo), geradoEm: agora() };
     d.estado = 'EM_LEVANTAMENTO';
-    registrar(d, ctx, `A IA sugeriu o cenário "${nomeCenario(ranking[0].tipo)}" e gerou um protótipo.`);
+    registrar(d, ctx, `O simulador de demonstração recomendou o cenário "${nomeCenario(ranking[0].tipo)}" e montou um protótipo.`);
   });
   return { status: 202, body: job };
 });
@@ -413,15 +596,28 @@ rota('POST', '/demandas/:id/planejamento', (ctx, [id], b) => {
   return { body: d };
 });
 
+// IA real: o resultado é aplicado em aplicarResultadoIa() quando o polling recebe CONCLUIDO.
 rota('POST', '/demandas/:id/requisitos/gerar', (ctx, [id]) => {
   exigirEquipe(ctx);
   const d = demanda(ctx, id);
   if (!d.respostas.length) throw new ApiErro(400, 'A demanda ainda não tem levantamento.');
-  const job = criarJob(['Lendo o levantamento', 'Escrevendo requisitos', 'Revisando regras'], 2800, () => {
-    d.requisitos = [...d.requisitos.filter((r) => r.estado === 'APROVADO'), ...gerarRequisitos(d, () => proximo('REQ'))];
-    registrar(d, ctx, 'A IA sugeriu requisitos para validação.');
-  });
-  return { status: 202, body: job };
+  const entrada = {
+    demanda: {
+      codigo: d.codigo,
+      nome: cortar(d.nome, 200),
+      descricao: cortar(d.descricao, 4000),
+      cenario: d.cenario ? nomeCenario(d.cenario.recomendado) : undefined,
+      necessidade: truncarTextos(d.fontes.map((f) => f.conteudo), LIMITE_NECESSIDADE).slice(0, 20),
+      respostas: d.respostas.slice(0, 100).map((r) => ({
+        pergunta: cortar(r.enunciado, 500), respostas: r.rotulos.slice(0, 20).map((x) => cortar(x, 300)), outro: r.outro ? cortar(r.outro, 500) : undefined,
+      })),
+    },
+    requisitosAprovados: d.requisitos.filter((r) => r.estado === 'APROVADO').slice(0, 200).map((r) => ({ tipo: r.tipo, titulo: cortar(r.titulo, 300) })),
+    // Os mais recentes primeiro ficam de fora do corte: manda os últimos 30.
+    requisitosRejeitados: d.requisitos.filter((r) => r.estado === 'REJEITADO').slice(-30)
+      .map((r) => ({ tipo: r.tipo, titulo: cortar(r.titulo, 300), motivo: cortar(r.motivoRejeicao || 'Rejeitado sem motivo registrado.', 1000) })),
+  };
+  return criarJobIa(ctx, 'requisitos', 'demanda', d.id, entrada);
 });
 
 rota('POST', '/demandas/:id/requisitos/:rid/decisao', (ctx, [id, rid], b) => {
@@ -548,7 +744,12 @@ rota('GET', '/fila', (ctx) => {
 });
 
 rota('GET', '/chamados', (ctx) => ({ body: chamadosVisiveis(ctx).map(comPosicao).sort((a, b) => b.abertoEm.localeCompare(a.abertoEm)) }));
-rota('GET', '/chamados/:id', (ctx, [id]) => ({ body: comPosicao(chamado(ctx, id)) }));
+rota('GET', '/chamados/:id', (ctx, [id]) => {
+  chamado(ctx, id);
+  return temPendencia(id)
+    ? reconsultarPendencias(ctx, id).pipe(map(() => ({ body: comPosicao(chamado(ctx, id)) })))
+    : { body: comPosicao(chamado(ctx, id)) };
+});
 
 rota('POST', '/chamados', (ctx, _p, b) => {
   const titulo = texto(b['titulo']);
@@ -600,15 +801,28 @@ rota('POST', '/chamados/:id/atender', (ctx, [id]) => {
   return { body: comPosicao(c) };
 });
 
+// IA real: a recuperação de contexto (fontes) segue determinística; a IA escreve causa, procedimento e confiança.
 rota('POST', '/chamados/:id/sugestao/gerar', (ctx, [id]) => {
   exigirEquipe(ctx);
   const c = chamado(ctx, id);
   if (c.estado !== 'EM_ATENDIMENTO') throw new ApiErro(400, 'Inicie o atendimento antes de pedir a análise.');
-  const job = criarJob(['Recuperando o contexto', 'Procurando soluções anteriores', 'Escrevendo a sugestão'], 3000, () => {
-    c.sugestao = gerarSugestao(c, db.solucoes.find((s) => s.id === c.solucaoId), db.demandas, db.conhecimentos, db.chamados);
-    c.historico.push({ data: agora(), autor: 'IA (sugestão)', texto: 'Sugeriu uma possível causa e um procedimento.' });
-  });
-  return { status: 202, body: job };
+  if (c.sugestao?.estado === 'PROPOSTO') throw new ApiErro(400, 'Aprove ou rejeite a sugestão atual antes de pedir outra.');
+  if (c.sugestao?.estado === 'APROVADO') throw new ApiErro(400, 'A sugestão deste chamado já foi aprovada.');
+  const solucao = db.solucoes.find((s) => s.id === c.solucaoId);
+  const versao = solucao?.versoes.find((v) => v.id === c.versaoId);
+  const origem = db.demandas.find((d) => d.id === solucao?.demandaOrigemId);
+  const entrada = {
+    chamado: { codigo: c.codigo, titulo: cortar(c.titulo, 300), descricao: cortar(c.descricao, 5000), prioridade: c.prioridade },
+    solucao: solucao ? { nome: cortar(solucao.nome, 200), versao: versao?.numero ?? '' } : undefined,
+    requisitos: (origem?.requisitos ?? []).filter((r) => r.estado === 'APROVADO').slice(0, 50)
+      .map((r) => ({ codigo: r.codigo, titulo: cortar(r.titulo, 300), descricao: cortar(r.descricao, 2000) })),
+    conhecimentos: db.conhecimentos.filter((k) => k.solucaoId === c.solucaoId).slice(0, 20)
+      .map((k) => ({ codigo: k.codigo, titulo: cortar(k.titulo, 300), procedimento: k.procedimento.slice(0, 30).map((p) => cortar(p, 1000)) })),
+    chamadosResolvidos: db.chamados.filter((x) => x.id !== c.id && x.solucaoId === c.solucaoId && x.estado === 'RESOLVIDO').slice(0, 50)
+      .map((x) => ({ codigo: x.codigo, titulo: cortar(x.titulo, 300) })),
+    sugestoesRejeitadas: rejeitadasDoChamado(c).slice(-5).map((r) => ({ causa: cortar(r.causa, 1000), motivo: cortar(r.motivo, 1000) })),
+  };
+  return criarJobIa(ctx, 'sugestao_suporte', 'chamado', c.id, entrada);
 });
 
 rota('POST', '/chamados/:id/sugestao/decisao', (ctx, [id], b) => {
@@ -622,6 +836,10 @@ rota('POST', '/chamados/:id/sugestao/decisao', (ctx, [id], b) => {
   exigir(decisao !== 'REJEITAR' || motivo.length >= 5, 'motivo', 'Informe o motivo da rejeição.', erros);
   validar(erros);
   c.sugestao = { ...c.sugestao, estado: decisao === 'APROVAR' ? 'APROVADO' : 'REJEITADO', decididoPor: ctx.nome, decididoEm: agora(), motivo: motivo || undefined };
+  if (decisao === 'REJEITAR') {
+    // Rejeição devolve o chamado para análise (CLAUDE.md §15.5); o motivo segue para a próxima geração (§6).
+    (c.sugestoesRejeitadas ??= []).push({ causa: c.sugestao.causa, motivo, decididoPor: ctx.nome, decididoEm: agora(), modelo: c.sugestao.modelo });
+  }
   c.historico.push({ data: agora(), autor: ctx.nome, texto: decisao === 'APROVAR' ? 'Aprovou a sugestão da IA.' : `Rejeitou a sugestão da IA: ${motivo}` });
   salvar();
   return { body: comPosicao(c) };
@@ -649,8 +867,6 @@ rota('POST', '/chamados/:id/resolver', (ctx, [id], b) => {
   salvar();
   return { body: comPosicao(c) };
 });
-
-rota('GET', '/conhecimentos', () => ({ body: db.conhecimentos.slice() }));
 
 rota('GET', '/conhecimentos/:id', (_ctx, [id]) => {
   const k = db.conhecimentos.find((x) => x.id === id);
@@ -683,33 +899,58 @@ rota('GET', '/busca', (ctx, _p, _b, q) => {
 // ---------- Interceptor ----------
 
 const PREFIXO = '/api/v1';
+const DIRETO_PARA_DJANGO = [/^\/auth\//, /^\/me$/, /^\/ia\//];
+const ROTA_JOB = /^\/jobs\/([^/]+)$/;
 
 export const mockBackendInterceptor: HttpInterceptorFn = (req, next) => {
   if (!req.url.startsWith(PREFIXO)) return next(req);
-  return responder(req);
+  const [caminho, qs] = req.url.slice(PREFIXO.length).split('?');
+  if (DIRETO_PARA_DJANGO.some((rx) => rx.test(caminho))) return next(req);
+
+  const usuario = inject(AuthService).usuario();
+  if (!usuario) return erroHttp(new ApiErro(401, 'Sua sessão expirou. Entre novamente.'), req.url);
+  const userId = sincronizarPessoa(usuario);
+  const ctx: Ctx = { perfil: usuario.perfil, userId, nome: usuario.nome, req, next };
+
+  // Job real (não criado por este mock): consulta no Django e aplica o resultado pendente antes de responder.
+  const job = ROTA_JOB.exec(caminho);
+  if (req.method === 'GET' && job && !jobs.has(job[1])) {
+    return next(req).pipe(map((ev) => {
+      if (ev instanceof HttpResponse && ev.body) aplicarResultadoIa(ev.body as Job, ctx);
+      return ev;
+    }));
+  }
+  return responder(req, ctx, caminho, qs);
 };
 
-function responder(req: HttpRequest<unknown>): Observable<HttpEvent<unknown>> {
+function responder(req: HttpRequest<unknown>, ctx: Ctx, caminho: string, qs: string | undefined): Observable<HttpEvent<unknown>> {
   const latencia = 180 + Math.random() * 260;
-  const [caminho, qs] = req.url.slice(PREFIXO.length).split('?');
   const query = new URLSearchParams(qs ?? '');
   req.params.keys().forEach((k) => query.set(k, req.params.get(k) ?? ''));
-  const perfil: Perfil = req.headers.get('X-Nexus-Perfil') === 'EQUIPE' ? 'EQUIPE' : 'CLIENTE';
-  const userId = USUARIO_POR_PERFIL[perfil];
-  const ctx: Ctx = { perfil, userId, nome: db.pessoas.find((p) => p.id === userId)?.nome ?? '' };
+  let saida: Observable<Resposta>;
   try {
     const achada = rotas.find(([m, rx]) => m === req.method && rx.test(caminho));
     if (!achada) throw new ApiErro(404, `Rota ${req.method} ${caminho} não existe.`);
     const params = (caminho.match(achada[1]) ?? []).slice(1);
     const res = achada[2](ctx, params, (req.body ?? {}) as Record<string, unknown>, query);
-    // Clona para que a tela nunca altere o "banco" por referência.
-    const body = res.body === undefined ? null : JSON.parse(JSON.stringify(res.body));
-    return of(new HttpResponse({ status: res.status ?? 200, body, url: req.url })).pipe(delay(latencia));
+    saida = isObservable(res) ? res : of(res).pipe(delay(latencia));
   } catch (e) {
-    const erro = e instanceof ApiErro ? e : new ApiErro(500, 'Erro inesperado no servidor simulado.');
-    if (!(e instanceof ApiErro)) console.error(e);
-    return throwError(() => new HttpErrorResponse({
-      status: erro.status, url: req.url, error: { mensagem: erro.mensagem, campos: erro.campos },
-    })).pipe(materialize(), delay(latencia), dematerialize());
+    saida = throwError(() => e).pipe(materialize(), delay(latencia), dematerialize());
   }
+  return saida.pipe(
+    // Clona para que a tela nunca altere o "banco" por referência.
+    map((res) => new HttpResponse({ status: res.status ?? 200, body: res.body === undefined ? null : JSON.parse(JSON.stringify(res.body)), url: req.url })),
+    catchError((e: unknown) => {
+      // Erros do Django (ex.: 400/403/429 de /ia/jobs) sobem como vieram, com a URL da rota original.
+      if (e instanceof HttpErrorResponse) {
+        return throwError(() => new HttpErrorResponse({ status: e.status, statusText: e.statusText, error: e.error, headers: e.headers, url: req.url }));
+      }
+      if (!(e instanceof ApiErro)) console.error(e);
+      return erroHttp(e instanceof ApiErro ? e : new ApiErro(500, 'Erro inesperado no servidor simulado.'), req.url);
+    }),
+  );
+}
+
+function erroHttp(erro: ApiErro, url: string): Observable<never> {
+  return throwError(() => new HttpErrorResponse({ status: erro.status, url, error: { mensagem: erro.mensagem, campos: erro.campos } }));
 }

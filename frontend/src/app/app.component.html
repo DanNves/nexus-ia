@@ -1,3 +1,4 @@
+@if (mostrarTopo()) {
 <a class="pular" href="#conteudo">Pular para o conteúdo</a>
 
 <header class="topo">
@@ -22,6 +23,8 @@
         <span class="busca-texto">Buscar</span>
         <kbd>Ctrl K</kbd>
       </button>
+
+      <nx-ajuda />
 
       <div class="menu-ancora">
         <button type="button" class="btn-icone" (click)="alternarNotificacoes()" [attr.aria-expanded]="painelNotificacoes()" aria-label="Notificações">
@@ -56,25 +59,24 @@
           <div class="menu menu-usuario" role="menu">
             <div class="menu-perfil">
               <strong>{{ sessao.usuario.nome }}</strong>
-              <span class="mudo">{{ sessao.usuario.papel }}</span>
+              @if (auth.usuario(); as u) {
+                <span class="mudo">{{ u.email }}</span>
+                <span class="mudo">{{ u.perfil === 'EQUIPE' ? 'Equipe responsável' : 'Cliente' }}@if (u.perfil === 'CLIENTE' && u.organizacao) { · {{ u.organizacao }} }</span>
+              }
             </div>
-            <p class="menu-titulo">Ver o NEXUS como</p>
-            <button type="button" class="menu-opcao" [class.marcada]="sessao.perfil() === 'CLIENTE'" (click)="verComo('CLIENTE')">
-              <nx-icon name="user" [size]="16" /> Cliente
-              @if (sessao.perfil() === 'CLIENTE') { <nx-icon name="check" [size]="16" class="fim" /> }
-            </button>
-            <button type="button" class="menu-opcao" [class.marcada]="sessao.perfil() === 'EQUIPE'" (click)="verComo('EQUIPE')">
-              <nx-icon name="users" [size]="16" /> Equipe responsável
-              @if (sessao.perfil() === 'EQUIPE') { <nx-icon name="check" [size]="16" class="fim" /> }
-            </button>
             <hr />
             <button type="button" class="switch" role="switch" [attr.aria-checked]="tema.escuro()" (click)="tema.alternar()">
               <nx-icon [name]="tema.escuro() ? 'moon' : 'sun'" [size]="16" /> Modo escuro
               <span class="switch-trilho" aria-hidden="true"></span>
             </button>
             <hr />
+            <p class="menu-nota"><nx-icon name="flask" [size]="14" /> Os dados de demonstração ficam só neste navegador.</p>
             <button type="button" class="menu-opcao" (click)="restaurar()">
               <nx-icon name="refresh" [size]="16" /> Restaurar dados de demonstração
+            </button>
+            <hr />
+            <button type="button" class="menu-opcao" (click)="sair()">
+              <nx-icon name="logout" [size]="16" /> Sair
             </button>
           </div>
         }
@@ -101,19 +103,20 @@
   }
 </header>
 
-@if (sessao.ehEquipe()) {
-  <div class="faixa-perfil">
-    <div class="faixa-inner">
-      <nx-icon name="users" [size]="15" />
-      <span>Você está vendo como <strong>equipe responsável</strong>.</span>
-      <button type="button" class="link" (click)="verComo('CLIENTE')">Voltar para cliente</button>
-    </div>
-  </div>
 }
 
-<main id="conteudo" class="conteudo">
+<main id="conteudo" [class.conteudo]="mostrarTopo()">
   <router-outlet />
 </main>
+
+@if (mostrarTopo()) {
+  <footer class="rodape-demo">
+    <p class="rodape-demo-inner">
+      <nx-icon name="flask" [size]="14" />
+      <span><strong>Ambiente de demonstração.</strong> Demandas, chamados, calendário e soluções ficam guardados só neste navegador. A entrevista, o tipo de solução e o protótipo saem de um simulador; requisitos e sugestões de suporte vêm da IA.</span>
+    </p>
+  </footer>
+}
 
 <nx-dialog titulo="Buscar" [aberto]="buscaAberta()" (fechou)="buscaAberta.set(false)">
   <div class="busca">

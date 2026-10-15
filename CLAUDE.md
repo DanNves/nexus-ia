@@ -5,7 +5,7 @@
 > Versão 2 (2026-10-07): escopo ampliado para o ciclo completo — do levantamento guiado da necessidade até o suporte pós-entrega.
 > Arquitetura de referência: `docs/Nexus_Arquitetura.pdf` (resumo em `docs/ARQUITETURA.md`). Este arquivo registra as adaptações vigentes.
 
-> **ESTADO ATUAL DA MAIN: ARQUITETURA RECONSTRUÍDA.** A main agora segue a estrutura frontend Angular + backend Django/DRF + SQLite definida nesta especificação. O frontend ainda usa o interceptor simulado durante a implementação da API real. A branch development é somente referência e não deve ser modificada nesta migração.
+> **ESTADO ATUAL (2026-10-15): BACKEND PARCIAL + MOCK HÍBRIDO.** Autenticação (JWT) e IA (Gemini, via porta `LLMProvider`) são **reais** no Django; demandas, chamados, cenário, protótipo e entrevista continuam respondidos por `core/api/mock-backend.interceptor.ts`, que repassa ao Django as rotas reais. Ver §31 e `claude/front/contratos.md`.
 
 ---
 
@@ -263,9 +263,9 @@ Referência completa: `docs/ARQUITETURA.md` (resumo do PDF). Adaptações vigent
 | Execução | contêineres (web, worker, db, redis, minio, nginx) | **localhost**, sem Docker |
 | Banco | PostgreSQL + pgvector | **SQLite** (temporário); evitar recursos exclusivos de PostgreSQL |
 | Arquivos | MinIO / S3 | `MEDIA_ROOT` local |
-| Tarefas longas | Celery + Redis | **pendente** (§30 #2) — o contrato 202 + job é mantido de qualquer forma |
+| Tarefas longas | Celery + Redis | **executor em thread** com semáforo (`apps/ia/services/executor.py`), mantendo o contrato 202 + job (§30 #2 decidido) |
 | Busca vetorial | pgvector | similaridade calculada em Python sobre embeddings armazenados (volume pequeno); pgvector quando migrar |
-| IA | porta LLMProvider + adaptadores | igual; **modelo real** será usado, provedor pendente; `fake_adapter` para testes e demonstração |
+| IA | porta LLMProvider + adaptadores | igual; adaptadores `gemini` (ativo, free tier), `openai_compat` (OpenAI, Groq, DeepSeek, Mistral, OpenRouter, Ollama…) e `fake` (testes/demonstração). Troca pelo `.env` (`IA_PROVEDOR`). Modelo e reservas em `claude/ia.md` |
 | Ordem das etapas | levantamento → requisitos → cenário → protótipo → plano | levantamento → cenário → protótipo → solicitação → viabilidade/reunião/metodologia → requisitos/documento (fluxo do autor). Se o cliente vê requisitos antes da solicitação: pendente (§30) |
 
 ### Estilo
@@ -284,9 +284,9 @@ Regra de fronteira: um módulo **nunca importa models de outro**; usa serviços 
 ```
 nexus-ia/
 ├── frontend/   Angular (standalone, Signals, Router, TypeScript strict)
-│   └── src/app/{core, shared, features/<modulo>}   ← alvo; hoje: pages/, services/, shared/
+│   └── src/app/{core, shared, features/<modulo>}   ← implementado (2026-10-07)
 ├── backend/    Django
-│   ├── config/settings/{base,dev}.py               ← alvo; hoje: config/settings.py
+│   ├── config/settings/{base,dev}.py               ← implementado (2026-10-15), mais test.py
 │   ├── apps/<modulo>/{api, services, domain, models.py, repositories.py, tasks.py, tests}
 │   └── requirements/, .env.example, manage.py
 ├── docs/       documentação oficial
@@ -301,17 +301,19 @@ nexus-ia/
 | Obter resultado | `GET /api/v1/<recurso>/{id}/<artefato>` | artefatos PROPOSTO com origem e confiança |
 | Decidir | `POST /api/v1/<artefato>/{id}/decisao` | artefato atualizado + evento de auditoria |
 
-Front faz polling com intervalo crescente a partir de 2 s. Falhas são registradas com mensagem tratada, nunca exceção bruta.
+Front faz polling com intervalo crescente (implementado: começa em ~1 s, ×1,4, até 3 s, com novas tentativas em falha transitória). Falhas são registradas com mensagem tratada, nunca exceção bruta.
 
 ### Como rodar (localhost)
-- Front: `cd frontend && npm start` → http://localhost:4200
+- Back (primeira vez): `cd backend && python -m venv venv && venv\Scripts\activate && pip install -r requirements/base.txt`; copiar `.env.example` para `.env` (preencher `DJANGO_SECRET_KEY` e, para IA real, `GEMINI_API_KEY`); `python manage.py migrate` e `python manage.py seed_demo` (cria `EquipeAdmin`/`123` e `Usuario`/`123`, só em DEBUG).
 - Back: `cd backend && venv\Scripts\activate && python manage.py runserver` → http://localhost:8000
+- Front: `cd frontend && npm start` → http://localhost:4200 (**porta 4200 obrigatória**: o proxy `/api` → 8000 deixa front e API na mesma origem; as rotas `/auth/*` recusam outras origens).
+- IA sem gastar: `IA_PROVEDOR=fake` no `.env`. Testar o provedor real: `python manage.py ia_testar`; qualidade: `python manage.py ia_avaliar`.
 
 ---
 
 ## 9. ROTAS DO FRONTEND
 
-**Implementadas (2026-10-07):**
+**Implementadas (2026-10-07; acesso e ajuda em 2026-10-15):**
 
 ```
 /visao-geral
@@ -321,10 +323,11 @@ Front faz polling com intervalo crescente a partir de 2 s. Falhas são registrad
 /calendario                    mês + agenda do dia + novo compromisso
 /solucoes, /solucoes/:id       versões, demanda de origem, chamados
 /fila, /fila/:id               posição na fila (cliente), fila ordenada e atendimento com IA (equipe)
+/entrar, /criar-conta          acesso (públicas; demais rotas exigem sessão). Cadastro público cria sempre CLIENTE
 **                             página não encontrada
 ```
 
-Visão por perfil: menu do usuário → "Ver o NEXUS como Cliente / Equipe responsável" (simulação; no backend real vem do JWT).
+Perfil: vem do usuário logado (JWT). Usuários de demonstração: `EquipeAdmin` (Equipe responsável) e `Usuario` (Cliente), senha `123`, só em desenvolvimento. O botão **Ajuda** no topo abre o tour guiado aba por aba (`shared/ajuda/`).
 
 Proposta original do novo escopo (referência para itens ainda não implementados, como validações, indicadores e ADM):
 
@@ -368,7 +371,7 @@ A navbar principal deve ser **horizontal, limpa e contínua**.
 
 ### USAR
 Marca NEXUS à esquerda; itens principais ao centro; à direita: **Novo processo | Busca | Notificações | Usuário**.
-Itens principais (implementado): **Visão geral | Demandas | Calendário | Soluções | Fila**. Busca (Ctrl K), notificações, **Nova demanda** e menu do usuário à direita. Indicadores, ADM e Configurações: ainda não implementados.
+Itens principais (implementado): **Visão geral | Demandas | Calendário | Soluções | Fila**. Busca (Ctrl K), **Ajuda** (tour guiado), notificações, **Nova demanda** e menu do usuário (modo escuro, sair) à direita. Indicadores, ADM e Configurações: ainda não implementados.
 Os itens visíveis dependem do perfil (cliente não vê Solicitações/Validações/ADM). Toda rota deve ter acesso pela navegação do perfil que a usa.
 
 Item atual: texto azul, fundo azul muito suave, linha inferior azul, ícone azul.
@@ -572,8 +575,7 @@ Testes por nível (documento de arquitetura): domínio (sem banco), serviços (b
 
 - O projeto foi migrado de React/TanStack (Lovable) para Angular 22. Lovable não é mais usado.
 - Supabase foi descartado; o projeto roda em localhost.
-- SQLite é o banco do MVP atual.
-- Vercel foi removida da arquitetura atual; publicação não faz parte do MVP localhost.
+- Vercel não é usada no momento (projeto local); `frontend/vercel.json` é legado.
 - O MVP anterior (suporte-centrado, com localStorage) está documentado em `docs/` como histórico acadêmico. A ampliação de escopo é evolução posterior e não reescreve o histórico.
 
 ---
@@ -594,8 +596,11 @@ Agentes em `.claude/agents/` (locais, fora do Git):
 - **Todo o projeto:** `po`, `qa`, `seguranca`.
 - **Frontend (Angular):** `front-techlead`, `front-senior`, `front-pleno`, `front-junior`.
 - **Backend (Django):** `back-techlead`, `back-senior`, `back-pleno`.
+- **Inteligência artificial:** `ia-arquiteto` (modelo por parte do sistema, custo, cota, provedores), `ia-engenheiro` (prompts versionados, esquemas, adaptadores, anonimização, avaliação; apoia o back-senior no uso de `apps/ia`).
 
-Memória do time em `claude/` (local, fora do Git): `README.md` (protocolo), `produto.md`, `arquitetura-referencia.md`, `decisoes.md`, `po.md`, `qa.md`, `seguranca.md`, `front/`, `back/`.
+Memória do time em `claude/` (local, fora do Git): `README.md` (protocolo), `produto.md`, `arquitetura-referencia.md`, `decisoes.md`, `po.md`, `qa.md`, `seguranca.md`, `ia.md`, `front/`, `back/`.
+
+O orquestrador (sessão principal) distribui as tarefas; front e back trabalham em paralelo, cada agente com arquivos próprios, e o contrato entre eles fica em `claude/front/contratos.md`.
 
 ---
 
@@ -603,8 +608,8 @@ Memória do time em `claude/` (local, fora do Git): `README.md` (protocolo), `pr
 
 | # | Decisão | Opções / recomendação |
 |---|---|---|
-| 1 | Provedor do modelo real de IA | a definir (porta LLMProvider permite qualquer um) |
-| 2 | Execução de tarefas longas em localhost | fila simples em thread/banco mantendo o contrato 202 + job (recomendado) · Celery + Redis · síncrono |
+| 1 | Provedor do modelo real de IA | **Gemini (free tier) por enquanto** — autor, 2026-10-15; troca por configuração. Para dados reais: plano pago ou modelo local (LGPD, `claude/seguranca.md`) |
+| 2 | Execução de tarefas longas em localhost | **decidido (2026-10-15): thread com semáforo**, contrato 202 + job |
 | 3 | Nome exibido: "Processo" ou "Projeto" | — |
 | 4 | Formato do documento de requisitos | HTML imprimível · PDF · DOCX |
 | 5 | Revisão acadêmica do problema/pergunta/objetivos | autor |
@@ -630,14 +635,16 @@ Memória do time em `claude/` (local, fora do Git): `README.md` (protocolo), `pr
 
 **Fase 0 — Documentação.** Concluída e aprovada pelo PO (com ressalvas registradas no §30).
 
-**Fase 1 — Reconstrução da main (2026-10-08).** A main foi reconstruída a partir da arquitetura da development, sem modificar development: frontend Angular 22, backend Django/DRF, SQLite, nova navegação e fluxo ampliado. A identidade visual NEXUS foi preservada por tokens de cor e marca. O frontend permanece com backend simulado enquanto a API real é implementada.
+**Fase 1-front — Frontend com backend simulado (concluída, 2026-10-07).** Angular reconstruído em `core/shared/features`; CSS consolidado do zero; dados mockados coerentes; ações reais via HttpClient + interceptor; fluxo completo testado (cliente e equipe). Detalhes em `docs/STATUS_PROJETO.md`.
 
-**Próxima fase — Backend real:**
+**Fase 1-back — Backend iniciado (2026-10-15).** Settings por ambiente com `.env`; `core` (modelo-base, auditoria append-only, erros sempre em JSON); `contas` (JWT com refresh em cookie HttpOnly, cadastro público, seed de demonstração); `ia` (porta `LLMProvider`, adaptadores, Job, PromptTemplate versionado, LogIA, anonimização, avaliação de qualidade). Front integrado: entrar, criar conta, tour de ajuda e IA real em requisitos e sugestão de suporte. Detalhes em `docs/STATUS_PROJETO.md`.
+
+Próximos passos (o item 1 está concluído, exceto a máquina de estados genérica em `core`):
 1. **Base do backend:** `.env` + `SECRET_KEY`, DRF, settings por ambiente, `core` (modelo-base, auditoria, máquina de estados), `contas` (JWT, perfis), `ia` (porta + fake_adapter + Job + LogIA).
 2. **Fluxo do cliente:** demandas → levantamento (fontes + entrevista) → cenário → protótipo → encerramento (stand-by/solicitação).
 3. **Equipe:** solicitações (viabilidade, reunião, metodologia) → validações → requisitos → documento.
 4. **Pós-entrega:** produtos/versões → chamados → conhecimento (portar a lógica do MVP Angular atual para a API).
-5. **Front:** reorganizar em `core/shared/features`, integrar com a API, aplicar o padrão visual.
+5. **Front:** ~~reorganizar em `core/shared/features`~~ (feito); integrar cada módulo com a API à medida que existir no Django, removendo a rota do mock.
 6. **Indicadores, ADM, dados de demonstração e testes de aceitação.**
 
 ---
@@ -675,41 +682,3 @@ Memória do time em `claude/` (local, fora do Git): `README.md` (protocolo), `pr
 - [ ] IA sempre marcada como sugestão
 - [ ] responsivo; sem tela em branco; sem navegação falsa
 - [ ] build e testes passando
-
-
----
-
-## 33. REGRA ESPECIAL DE MIGRAÇÃO MAIN/DEVELOPMENT
-
-A branch development é fonte de referência da arquitetura que foi consolidada na main.
-
-Regras:
-1. não fazer commits na development para executar esta migração;
-2. não usar development como branch de trabalho da implementação;
-3. toda nova implementação deve ocorrer na main ou em branches derivadas da main;
-4. alterações futuras devem atualizar a documentação da main quando mudarem arquitetura, fluxo, banco ou contratos;
-5. SQLite é a persistência oficial do MVP local;
-6. Supabase não faz parte da arquitetura atual;
-7. a identidade visual NEXUS deve permanecer estável enquanto a estrutura funcional evolui.
-
-## 34. ORDEM DE IMPLEMENTAÇÃO NA MAIN
-
-A implementação deve seguir esta ordem, sem pular diretamente para integrações de IA:
-
-1. Base Django: ambiente, .env, DRF, CORS local, settings e /api/v1/.
-2. Core: UUID, auditoria append-only, vínculos e máquina de estados.
-3. Contas: usuário, perfis e permissões por objeto.
-4. Demandas e levantamento: processo, fontes, entrevista e respostas.
-5. Cenário: sinais, catálogo, pontuação e recomendação.
-6. Protótipo: templates, telas sanitizadas e versionamento.
-7. Validação: aprovar/editar/rejeitar com motivo.
-8. Requisitos/documento: baseline e documento derivado somente de artefatos aprovados.
-9. Planejamento: solicitação, viabilidade, reunião e metodologia.
-10. Produtos/versões: publicação e ponte para suporte.
-11. Chamados: contexto, triagem, atendimento e conversão em nova demanda.
-12. Conhecimento: consolidação e reuso.
-13. IA: LLMProvider, jobs, prompts, logs, fake adapter e provedor real quando definido.
-14. Integração Angular: useMock false, serviços HTTP reais, polling de jobs e tratamento de erros.
-15. Testes: domínio, serviços, API e aceitação CT01–CT10.
-
-Até a etapa 14, o mock continua permitido para não quebrar a demonstração do frontend.

@@ -12,10 +12,10 @@
   </header>
 
   <div class="abas" role="tablist">
-    <button type="button" role="tab" class="aba" [class.ativa]="abaAtual() === 'demandas'" [attr.aria-selected]="abaAtual() === 'demandas'" (click)="trocarAba('demandas')">
+    <button type="button" role="tab" class="aba" data-tour="aba-demandas" [class.ativa]="abaAtual() === 'demandas'" [attr.aria-selected]="abaAtual() === 'demandas'" (click)="trocarAba('demandas')">
       Demandas @if (demandas(); as d) { <span class="contador">{{ d.length }}</span> }
     </button>
-    <button type="button" role="tab" class="aba" [class.ativa]="abaAtual() === 'atividades'" [attr.aria-selected]="abaAtual() === 'atividades'" (click)="trocarAba('atividades')">
+    <button type="button" role="tab" class="aba" data-tour="aba-atividades" [class.ativa]="abaAtual() === 'atividades'" [attr.aria-selected]="abaAtual() === 'atividades'" (click)="trocarAba('atividades')">
       Atividades @if (atividades(); as a) { <span class="contador">{{ a.length }}</span> }
     </button>
   </div>
