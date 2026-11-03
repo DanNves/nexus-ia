@@ -11,6 +11,7 @@ Leia [`CLAUDE.md`](CLAUDE.md) antes de qualquer alteração. Ele é a especifica
 ## Arquitetura
 
 - `frontend/`: Angular 22, standalone components, Signals, Router, TypeScript strict.
+- `frontend/template/shadcn-dashboard/`: **template visual oficial** (React, só referência). Toda tela ou componente novo segue esse template, traduzido para Angular + CSS próprio. Guia: [`frontend/template/README.md`](frontend/template/README.md).
 - `backend/`: Django + DRF, monólito modular (apps por contexto de negócio; camadas api/services/domain/infra).
 - Banco SQLite em localhost (temporário).
 - IA via porta `LLMProvider` (modelo real a definir; `fake_adapter` para testes e demonstração).

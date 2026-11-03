@@ -284,7 +284,8 @@ Regra de fronteira: um módulo **nunca importa models de outro**; usa serviços 
 ```
 nexus-ia/
 ├── frontend/   Angular (standalone, Signals, Router, TypeScript strict)
-│   └── src/app/{core, shared, features/<modulo>}   ← implementado (2026-10-07)
+│   ├── src/app/{core, shared, features/<modulo>}   ← implementado (2026-10-07)
+│   └── template/shadcn-dashboard/                   ← template visual oficial (React, só referência; §12)
 ├── backend/    Django
 │   ├── config/settings/{base,dev}.py               ← implementado (2026-10-15), mais test.py
 │   ├── apps/<modulo>/{api, services, domain, models.py, repositories.py, tasks.py, tests}
@@ -360,27 +361,27 @@ Regra permanente: cada rota abre uma tela real; nunca criar link visual sem rota
 
 ## 10. NAVEGAÇÃO — CONTRATO VISUAL
 
-A navbar principal deve ser **horizontal, limpa e contínua**.
+**Vigente (2026-11-03): casca do template oficial** (§12) — `frontend/template/shadcn-dashboard/src/layouts/full/`. Substitui a navbar horizontal de 2026-10-07.
 
-### NÃO usar
-- uma caixa cinza para cada grupo;
-- cada item parecendo um botão;
-- vários cartões encaixados;
-- excesso de bordas;
-- aparência de template administrativo genérico;
-- menus que parecem abas independentes sem hierarquia.
+### Estrutura
+- **Menu lateral (sidebar)** à esquerda: marca NEXUS no topo; itens agrupados em **seções com título**, conforme o perfil ativo; no rodapé, o usuário (avatar, nome e papel), como o `NavUser` do template. Recolhe para só ícones no desktop.
+- **Cabeçalho** no topo da área de conteúdo: botão de recolher o menu, título/trilha da página, **Buscar (Ctrl K)**, seletor de visão **Solicitante | Equipe** (só equipe), **Ajuda** (tour), notificações, **Nova demanda** (só na visão do solicitante) e menu do usuário (modo escuro, sair).
+- **Conteúdo** dentro da área contornada do template (`SidebarInset`).
 
-### USAR
-Marca NEXUS à esquerda; itens principais ao centro; à direita: **Novo processo | Busca | Notificações | Usuário**.
-Itens principais (implementado): **Visão geral | Demandas | Calendário | Soluções | Fila** (+ **Usuários** para administrador na visão da equipe). À direita: seletor de visão **Cliente | Equipe** (só equipe), **Ajuda** (tour guiado), notificações, **Nova demanda** (só na visão do cliente) e menu do usuário (perfil, busca Ctrl K, modo escuro, sair). O campo de busca saiu da barra (2026-10-15): fica no atalho Ctrl K e no menu do usuário. Indicadores, ADM e Configurações: ainda não implementados.
-Os itens visíveis dependem do perfil (cliente não vê Solicitações/Validações/ADM). Toda rota deve ter acesso pela navegação do perfil que a usa.
+### Itens por perfil (ver `docs/PERFIS.md`)
+| Seção | Solicitante | Equipe responsável |
+|---|---|---|
+| — | Visão geral | Visão geral |
+| Meus pedidos / Projetos | Minhas demandas, Nova demanda | Demandas, Atividades, Calendário |
+| Acompanhamento / Pós-entrega | Agenda, Minhas soluções, Meus chamados | Soluções, Fila de atendimento |
+| Administração | — | Usuários (só administrador) |
 
-Item atual: texto azul, fundo azul muito suave, linha inferior azul, ícone azul.
-Itens não ativos: fundo transparente, texto azul/cinza, sem borda, sem caixa individual.
-Separadores verticais muito discretos são aceitáveis.
+Os itens visíveis dependem do perfil ativo; toda rota tem acesso pela navegação do perfil que a usa. Indicadores, ADM e Configurações: ainda não implementados.
+
+Item atual: como o item ativo do template (fundo de destaque suave, texto e ícone na cor primária). Itens não ativos: transparentes, sem borda, sem caixa individual.
 
 ### Mobile
-Esconder a navegação horizontal; botão de menu; painel organizado por seções; opções grandes para toque; rota ativa destacada.
+O menu lateral vira gaveta (sheet do template) aberta pelo botão do cabeçalho; mesmas seções; opções grandes para toque; rota ativa destacada.
 
 ---
 
@@ -396,12 +397,19 @@ Mostra o estado de cada etapa (não iniciada, em andamento, aguardando validaç�
 
 ## 12. PADRÃO VISUAL
 
+### Template oficial (decisão do autor, 2026-11-03)
+**Toda tela, componente ou página gerada para o NEXUS segue o template `frontend/template/shadcn-dashboard/`** (Shadcn Dashboard Free, estilo shadcn `base-lyra`). Guia de uso e equivalências em `frontend/template/README.md`.
+- O template é React/Tailwind e serve **só de referência**: o Angular reproduz a estrutura e o visual em CSS próprio, sem React, sem Tailwind e sem dependência nova.
+- Antes de criar uma tela, procurar a equivalente no template e partir dela; se faltar um componente, criar **um** oficial em `shared/` a partir do template.
+- Tokens: superfícies, bordas, texto, raio, fonte (Geist) e modo escuro do template; cor primária = azul NEXUS (abaixo).
+- Os agentes de front e o protótipo gerado (§5.5) seguem o mesmo template.
+
 ### Identidade
 Profissional, corporativo, moderno, limpo, orientado a software, confiável, acadêmico/profissional.
 Evitar: aparência futurista, "IA genérica", neon, excesso de gradientes, sombras, cards e arredondamentos.
 A entrevista guiada deve parecer uma **conversa simples e humana**, não um formulário burocrático nem um chatbot genérico.
 
-### Paleta base
+### Paleta base (cores de marca aplicadas sobre os tokens do template)
 - Navy: #020A1D
 - Azul principal: #0878FF
 - Fundo: #F5F8FC
@@ -540,7 +548,8 @@ Antes de criar qualquer funcionalidade:
 4. verificar impacto na rastreabilidade e na máquina de estados;
 5. verificar permissões por perfil;
 6. verificar responsividade;
-7. verificar se a ação realmente funciona.
+7. verificar se a ação realmente funciona;
+8. em telas e componentes, partir da tela/componente equivalente do template oficial (§12, `frontend/template/README.md`).
 
 Não criar somente aparência.
 
