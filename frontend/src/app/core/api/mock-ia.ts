@@ -6,6 +6,9 @@ import {
   CenarioPontuado, Chamado, Conhecimento, Demanda, FonteContexto, Pergunta, RespostaEntrevista,
   Requisito, Solucao, Sugestao, TelaPrototipo, TipoCenario,
 } from './models';
+import {
+  ItemMenu, badge, botao, cabecalhoPagina, campo, cartao, casca, celular, documento, esc, janela, kpis, tabela,
+} from './prototipo-template';
 
 type Pesos = Partial<Record<TipoCenario, number>>;
 
@@ -240,62 +243,91 @@ export function gerarRanking(respostas: RespostaEntrevista[]): CenarioPontuado[]
 }
 
 // ---------- Protótipo ----------
+// Telas no padrão do template oficial do protótipo (shadcn-dashboard, ver prototipo-template.ts). Só o que é gerado
+// usa esse visual; a interface do NEXUS segue o próprio padrão.
 
-function esc(s: string) {
-  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string);
-}
-
-const BASE_CSS = `*{box-sizing:border-box;margin:0}body{font:14px/1.45 system-ui,-apple-system,Segoe UI,sans-serif;color:#1F3550;background:#F5F8FC}
-.bar{display:flex;align-items:center;gap:16px;padding:12px 20px;background:#fff;border-bottom:1px solid #E1E8F0}.logo{font-weight:700;color:#020A1D}
-.bar a{color:#718198;text-decoration:none}.bar a.on{color:#0878FF;font-weight:600}.sp{flex:1}.av{width:28px;height:28px;border-radius:50%;background:#DCE9FB}
-main{padding:20px;display:grid;gap:14px}h1{font-size:20px;color:#020A1D}h2{font-size:15px;color:#020A1D;margin-bottom:8px}.mut{color:#718198}
-.box{background:#fff;border:1px solid #E1E8F0;border-radius:10px;padding:16px}.row{display:flex;gap:12px;align-items:center}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-.kpi b{display:block;font-size:22px;color:#020A1D}.btn{display:inline-block;background:#0878FF;color:#fff;border-radius:8px;padding:8px 14px;font-weight:600}
-.btn.sec{background:#fff;color:#1F3550;border:1px solid #E1E8F0}table{width:100%;border-collapse:collapse}td,th{text-align:left;padding:9px 6px;border-bottom:1px solid #EEF2F7}th{color:#718198;font-weight:500}
-.tag{display:inline-block;padding:2px 8px;border-radius:99px;background:#EAF3FF;color:#0866D6;font-size:12px}.tag.ok{background:#E6F6F0;color:#127F5C}.tag.warn{background:#FBF1E2;color:#9C6210}
-label{display:block;font-size:13px;color:#718198;margin:10px 0 4px}.in{border:1px solid #E1E8F0;border-radius:8px;padding:9px 10px;background:#fff;color:#9AA7B8}`;
-
-function pagina(corpo: string, extra = '') {
-  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><style>${BASE_CSS}${extra}</style></head><body>${corpo}</body></html>`;
-}
+const T = {
+  ok: (t: string) => badge(t, 'sucesso'),
+  aviso: (t: string) => badge(t, 'aviso'),
+  falha: (t: string) => badge(t, 'destrutivo'),
+  neutro: (t: string) => badge(t, 'secondary'),
+};
 
 export function gerarPrototipo(nomeDemanda: string, tipo: TipoCenario): TelaPrototipo[] {
   const n = esc(nomeDemanda);
-  const barra = (ativo: string, itens: string[]) =>
-    `<div class="bar"><span class="logo">${n}</span>${itens.map((i) => `<a class="${i === ativo ? 'on' : ''}">${i}</a>`).join('')}<span class="sp"></span><span class="av"></span></div>`;
 
   if (tipo === 'JOB') {
+    const menu: ItemMenu[] = [
+      { rotulo: 'Rotina', icone: 'relogio' }, { rotulo: 'Resumo enviado', icone: 'arquivo' }, { rotulo: 'Execuções', icone: 'atividade' },
+    ];
+    const tela = (ativo: string, conteudo: string) => documento(casca({ marca: n, secao: 'Rotina agendada', menu, ativo, conteudo }));
     return [
-      { id: 't1', nome: 'Configuração da rotina', html: pagina(`<main><h1>${n}</h1><div class="box"><h2>Quando executar</h2><div class="row"><span class="in">Todos os dias</span><span class="in">às 06:00</span></div><label>Enviar para</label><div class="in">operacoes@empresa.com</div><label>Origem dos dados</label><div class="in">Exportação diária do sistema atual (CSV)</div></div><div class="row"><span class="btn">Salvar rotina</span><span class="btn sec">Executar agora</span></div></main>`) },
-      { id: 't2', nome: 'Exemplo do e-mail enviado', html: pagina(`<main><div class="box"><p class="mut">De: rotina automática</p><h1>Resumo de ontem</h1><div class="grid" style="margin-top:12px"><div class="kpi box"><span class="mut">Concluídas</span><b>128</b></div><div class="kpi box"><span class="mut">Com atraso</span><b>9</b></div><div class="kpi box"><span class="mut">Pendentes</span><b>4</b></div></div><table style="margin-top:12px"><tr><th>Item</th><th>Situação</th></tr><tr><td>Pedido 4471</td><td><span class="tag warn">Atraso de 2h</span></td></tr><tr><td>Pedido 4480</td><td><span class="tag ok">Concluído</span></td></tr></table></div></main>`) },
-      { id: 't3', nome: 'Histórico de execuções', html: pagina(`<main><h1>Execuções</h1><div class="box"><table><tr><th>Data</th><th>Duração</th><th>Resultado</th></tr><tr><td>Hoje, 06:00</td><td>42 s</td><td><span class="tag ok">Sucesso</span></td></tr><tr><td>Ontem, 06:00</td><td>39 s</td><td><span class="tag ok">Sucesso</span></td></tr><tr><td>Anteontem, 06:00</td><td>—</td><td><span class="tag warn">Falhou, reenviado</span></td></tr></table></div></main>`) },
+      { id: 't1', nome: 'Configuração da rotina', html: tela('Rotina',
+        cabecalhoPagina(n, 'Roda sozinha, sem ninguém precisar abrir o sistema.', botao('Executar agora', 'outline'))
+        + cartao({ titulo: 'Quando executar', descricao: 'Horário e destino do resumo.', corpo: `<div class="campos"><div class="grade2">${campo('Frequência', 'Todos os dias')}${campo('Horário', '06:00')}</div>${campo('Enviar para', 'operacoes@empresa.com')}${campo('Origem dos dados', 'Exportação diária do sistema atual (CSV)')}</div>`, rodape: botao('Cancelar', 'outline') + botao('Salvar rotina') })) },
+      { id: 't2', nome: 'Exemplo do resumo enviado', html: tela('Resumo enviado',
+        cabecalhoPagina('Resumo de ontem', 'Enviado por e-mail pela rotina automática.')
+        + kpis([{ rotulo: 'Concluídas', valor: '128', detalhe: '+6% que anteontem' }, { rotulo: 'Com atraso', valor: '9' }, { rotulo: 'Pendentes', valor: '4' }])
+        + cartao({ titulo: 'Itens que pedem atenção', corpo: tabela(['Item', 'Situação', 'Responsável'], [['Pedido 4471', T.aviso('Atraso de 2h'), 'Equipe B'], ['Pedido 4480', T.ok('Concluído'), 'Equipe A'], ['Pedido 4492', T.neutro('Pendente'), '—']]) })) },
+      { id: 't3', nome: 'Histórico de execuções', html: tela('Execuções',
+        cabecalhoPagina('Execuções', 'Cada vez que a rotina rodou.')
+        + cartao({ corpo: tabela(['Data', 'Duração', 'Resultado'], [['Hoje, 06:00', '42 s', T.ok('Sucesso')], ['Ontem, 06:00', '39 s', T.ok('Sucesso')], ['Anteontem, 06:00', '—', T.falha('Falhou, reenviado')]]) })) },
     ];
   }
 
   if (tipo === 'MOBILE') {
-    const phone = 'body{display:grid;place-items:center;min-height:100%;padding:16px}.ph{width:260px;border:8px solid #020A1D;border-radius:28px;overflow:hidden;background:#F5F8FC}.ph main{padding:14px}';
-    const tela = (conteudo: string) => pagina(`<div class="ph"><div class="bar"><span class="logo">${n}</span></div><main>${conteudo}</main></div>`, phone);
+    const abas: ItemMenu[] = [{ rotulo: 'Início', icone: 'home' }, { rotulo: 'Registrar', icone: 'mais' }, { rotulo: 'Histórico', icone: 'lista' }];
+    const tela = (ativa: string, conteudo: string) => documento(celular({ marca: n, abas, ativa, conteudo }));
     return [
-      { id: 't1', nome: 'Início', html: tela(`<h1>Olá!</h1><p class="mut">O que você quer fazer?</p><div class="box"><b>Registrar agora</b><p class="mut">Toque para começar</p></div><div class="box"><b>Meus registros</b><p class="mut">3 hoje</p></div>`) },
-      { id: 't2', nome: 'Registro', html: tela(`<h2>Novo registro</h2><label>Local</label><div class="in">Usando sua localização</div><label>Observação</label><div class="in">Opcional</div><p style="margin-top:14px"><span class="btn">Confirmar</span></p>`) },
-      { id: 't3', nome: 'Confirmação', html: tela(`<div class="box" style="text-align:center"><h1>Registrado</h1><p class="mut">Hoje às 14:32</p></div><p><span class="btn sec">Voltar ao início</span></p>`) },
+      { id: 't1', nome: 'Início', html: tela('Início',
+        cabecalhoPagina('Olá!', 'O que você quer fazer?')
+        + cartao({ titulo: 'Registrar agora', descricao: 'Toque para começar um novo registro.', corpo: botao('Começar', 'default', { icone: 'mais' }) })
+        + cartao({ titulo: 'Meus registros', descricao: '3 hoje · 1 aguardando envio', corpo: T.aviso('Sem internet: envia depois') })) },
+      { id: 't2', nome: 'Registro', html: tela('Registrar',
+        cabecalhoPagina('Novo registro')
+        + `<div class="campos">${campo('Local', 'Usando sua localização')}${campo('Observação', 'Opcional', true)}</div>`
+        + botao('Confirmar', 'default', { icone: 'check' })) },
+      { id: 't3', nome: 'Confirmação', html: tela('Histórico',
+        cartao({ titulo: 'Registrado', descricao: 'Hoje às 14:32', corpo: T.ok('Enviado') })
+        + botao('Voltar ao início', 'outline')) },
     ];
   }
 
   if (tipo === 'API') {
+    const menu: ItemMenu[] = [{ rotulo: 'Endpoints', icone: 'lista' }, { rotulo: 'Chaves', icone: 'chave' }, { rotulo: 'Logs', icone: 'atividade' }];
+    const tela = (ativo: string, conteudo: string) => documento(casca({ marca: n, secao: 'Integração', menu, ativo, conteudo }));
     return [
-      { id: 't1', nome: 'Documentação', html: pagina(`${barra('Endpoints', ['Endpoints', 'Chaves', 'Logs'])}<main><h1>Endpoints</h1><div class="box"><table><tr><th>Método</th><th>Rota</th><th>Descrição</th></tr><tr><td><span class="tag">GET</span></td><td>/registros</td><td>Lista registros</td></tr><tr><td><span class="tag ok">POST</span></td><td>/registros</td><td>Cria um registro</td></tr></table></div></main>`) },
-      { id: 't2', nome: 'Logs de integração', html: pagina(`${barra('Logs', ['Endpoints', 'Chaves', 'Logs'])}<main><h1>Últimas chamadas</h1><div class="box"><table><tr><th>Hora</th><th>Rota</th><th>Status</th></tr><tr><td>10:41</td><td>/registros</td><td><span class="tag ok">200</span></td></tr><tr><td>10:39</td><td>/registros</td><td><span class="tag warn">422</span></td></tr></table></div></main>`) },
+      { id: 't1', nome: 'Documentação', html: tela('Endpoints',
+        cabecalhoPagina('Endpoints', 'Rotas que os outros sistemas podem chamar.', botao('Gerar chave', 'outline', { icone: 'chave' }))
+        + cartao({ corpo: tabela(['Método', 'Rota', 'Descrição'], [[badge('GET', 'outline'), '/registros', 'Lista registros'], [badge('POST', 'default'), '/registros', 'Cria um registro'], [badge('GET', 'outline'), '/registros/{id}', 'Detalhe de um registro']]) })) },
+      { id: 't2', nome: 'Logs de integração', html: tela('Logs',
+        cabecalhoPagina('Últimas chamadas')
+        + kpis([{ rotulo: 'Chamadas hoje', valor: '1.284' }, { rotulo: 'Com erro', valor: '12', detalhe: '0,9%' }])
+        + cartao({ corpo: tabela(['Hora', 'Rota', 'Status'], [['10:41', '/registros', T.ok('200')], ['10:39', '/registros', T.aviso('422')], ['10:12', '/registros/88', T.ok('200')]]) })) },
     ];
   }
 
-  const itens = tipo === 'DESKTOP' ? ['Início', 'Cadastro', 'Relatórios'] : ['Início', 'Registros', 'Novo'];
-  const janela = tipo === 'DESKTOP' ? '.win{margin:12px;border:1px solid #C9D4E2;border-radius:8px;overflow:hidden;background:#F5F8FC}.tt{background:#E9EEF5;padding:6px 10px;font-size:12px;color:#718198}' : '';
-  const wrap = (s: string) => (tipo === 'DESKTOP' ? `<div class="win"><div class="tt">● ● ●  ${n}</div>${s}</div>` : s);
+  // WEB e DESKTOP: mesma casca; no desktop, dentro de uma janela de computador.
+  const desktop = tipo === 'DESKTOP';
+  const menu: ItemMenu[] = desktop
+    ? [{ rotulo: 'Início', icone: 'home' }, { rotulo: 'Cadastro', icone: 'lista' }, { rotulo: 'Novo item', icone: 'mais' }, { rotulo: 'Relatórios', icone: 'grafico' }]
+    : [{ rotulo: 'Início', icone: 'home' }, { rotulo: 'Registros', icone: 'lista' }, { rotulo: 'Novo registro', icone: 'mais' }, { rotulo: 'Configurações', icone: 'config' }];
+  const tela = (ativo: string, conteudo: string) => {
+    const c = casca({ marca: n, secao: desktop ? 'Aplicação' : 'Plataforma', menu, ativo, conteudo });
+    return documento(desktop ? janela(n, c) : c);
+  };
   return [
-    { id: 't1', nome: 'Início', html: pagina(wrap(`${barra(itens[0], itens)}<main><h1>Bom dia</h1><div class="grid"><div class="box kpi"><span class="mut">Hoje</span><b>24</b></div><div class="box kpi"><span class="mut">Pendentes</span><b>5</b></div><div class="box kpi"><span class="mut">Concluídos</span><b>19</b></div></div><div class="box"><h2>Próximos</h2><table><tr><td>09:00</td><td>Registro 1</td><td><span class="tag">Confirmado</span></td></tr><tr><td>09:30</td><td>Registro 2</td><td><span class="tag warn">Aguardando</span></td></tr></table></div></main>`), janela) },
-    { id: 't2', nome: 'Lista', html: pagina(wrap(`${barra(itens[1], itens)}<main><div class="row"><h1>${itens[1]}</h1><span class="sp"></span><span class="btn">Novo</span></div><div class="box"><div class="in" style="margin-bottom:10px">Buscar…</div><table><tr><th>Nome</th><th>Data</th><th>Situação</th></tr><tr><td>Registro 1</td><td>12/10</td><td><span class="tag ok">Concluído</span></td></tr><tr><td>Registro 2</td><td>12/10</td><td><span class="tag">Em andamento</span></td></tr><tr><td>Registro 3</td><td>13/10</td><td><span class="tag warn">Pendente</span></td></tr></table></div></main>`), janela) },
-    { id: 't3', nome: 'Formulário', html: pagina(wrap(`${barra(itens[2], itens)}<main><h1>Novo registro</h1><div class="box"><label>Nome</label><div class="in">Digite o nome</div><label>Data</label><div class="in">dd/mm/aaaa</div><label>Observações</label><div class="in" style="height:64px">Opcional</div><p style="margin-top:14px" class="row"><span class="btn">Salvar</span><span class="btn sec">Cancelar</span></p></div></main>`), janela) },
+    { id: 't1', nome: 'Início', html: tela('Início',
+      cabecalhoPagina('Bom dia', 'Resumo do que acontece hoje.', botao(menu[2].rotulo, 'default', { icone: 'mais' }))
+      + kpis([{ rotulo: 'Hoje', valor: '24', detalhe: '+3 que ontem' }, { rotulo: 'Pendentes', valor: '5' }, { rotulo: 'Concluídos', valor: '19' }])
+      + cartao({ titulo: 'Próximos', descricao: 'O que vem a seguir.', corpo: tabela(['Hora', 'Registro', 'Situação'], [['09:00', 'Registro 1', T.ok('Confirmado')], ['09:30', 'Registro 2', T.aviso('Aguardando')], ['10:15', 'Registro 3', T.neutro('Agendado')]]) })) },
+    { id: 't2', nome: 'Lista', html: tela(menu[1].rotulo,
+      cabecalhoPagina(menu[1].rotulo, 'Todos os registros cadastrados.', botao('Novo', 'default', { icone: 'mais' }))
+      + cartao({ corpo: `<div class="linha filtro"><span class="in">Buscar…</span>${botao('Filtrar', 'outline', { pequeno: true })}</div>`
+        + tabela(['Nome', 'Data', 'Situação'], [['Registro 1', '12/10', T.ok('Concluído')], ['Registro 2', '12/10', T.neutro('Em andamento')], ['Registro 3', '13/10', T.aviso('Pendente')]]) })) },
+    { id: 't3', nome: 'Formulário', html: tela(menu[2].rotulo,
+      cabecalhoPagina(menu[2].rotulo, 'Preencha os dados e salve.')
+      + cartao({ titulo: 'Dados principais', corpo: `<div class="campos"><div class="grade2">${campo('Nome', 'Digite o nome')}${campo('Data', 'dd/mm/aaaa')}</div>${campo('Observações', 'Opcional', true)}</div>`, rodape: botao('Cancelar', 'outline') + botao('Salvar') })) },
   ];
 }
 
