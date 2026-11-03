@@ -14,10 +14,18 @@ Parâmetros de geração por tarefa (todos opcionais; `None` = valor global das 
 - `max_tokens_saida`: limite de tokens da resposta (Gemini `maxOutputTokens`; OpenAI `max_tokens`). No Gemini os
   tokens de raciocínio podem contar nesse limite; deixe folga. Estourar o limite corta o JSON → "fora do formato"
   (temporário) → próximo modelo da cadeia.
+
+Controle de uso:
+- `reutilizar_resultado`: o mesmo usuário pedindo a mesma tarefa, para o mesmo alvo, com entrada idêntica, recebe o
+  job CONCLUIDO das últimas 24 h sem nova chamada ao modelo e sem contar cota (`services/jobs.py`). Ligue só em
+  tarefas em que repetir o pedido é acidental (recarregar a página, voltar). Desligado onde "gerar de novo" com a
+  mesma entrada é intencional (o usuário quer outra proposta).
 """
 from __future__ import annotations
 
 from dataclasses import dataclass
+
+from apps.ia.domain.entrevista import ajustar_entrevista
 
 # Fases da execução, na ordem: (preparar contexto, anonimizar, gerar, conferir). Percentual de cada uma.
 PERCENTUAL_FASES = (10, 25, 40, 90)
@@ -35,6 +43,7 @@ class Tarefa:
     timeout_segundos: float | None = None
     nivel_raciocinio: str | None = None
     max_tokens_saida: int | None = None
+    reutilizar_resultado: bool = False
 
     def __post_init__(self):
         if self.timeout_segundos is not None and self.timeout_segundos <= 0:
@@ -48,6 +57,8 @@ class Tarefa:
         """Regras de domínio aplicadas depois da validação do esquema."""
         if self.chave == 'sugestao_suporte':
             return _ajustar_sugestao(entrada, dados)
+        if self.chave == 'entrevista':
+            return ajustar_entrevista(entrada, dados)
         return dados
 
 
@@ -84,6 +95,24 @@ TAREFAS: dict[str, Tarefa] = {
             # Medido em 2026-10-15: 82–125 tokens de saída. 1000 cobre o teto do esquema v2 (causa 600 + 8 passos
             # de 300 caracteres ≈ 850 tokens).
             max_tokens_saida=1000,
+        ),
+        Tarefa(
+            chave='entrevista',
+            alvo_tipo='demanda',
+            # Quem responde a entrevista é o solicitante (CLIENTE): ele pode pedir a próxima rodada de perguntas.
+            # As perguntas não passam pela máquina de estados: a resposta do cliente é a ação humana (CLAUDE.md §3).
+            exige_equipe=False,
+            etapas=('Lendo a necessidade e as respostas', 'Protegendo dados pessoais', 'Preparando as próximas perguntas',
+                    'Conferindo as perguntas'),
+            chave_prompt='entrevista',
+            # O cliente espera na tela: corta a tentativa lenta cedo e passa para a reserva (prazo de nova tentativa
+            # 2T − 5 = 25 s; job expira em 3T + 15 = 60 s). O lite respondeu tarefas parecidas em 1–5 s.
+            timeout_segundos=15,
+            # Estimativa pelo esquema v1: 5 perguntas × (enunciado ~40 + ajuda ~50 + 5 opções × ~40 tokens) ≈ 1500,
+            # + resumo/lacunas ≈ 200. 2500 dá folga de ~1,5× sobre esse teto; medido na avaliação real (claude/ia.md).
+            # Raciocínio global (low): `minimal` é proibido enquanto o 3.8-flash estiver na cadeia.
+            max_tokens_saida=2500,
+            reutilizar_resultado=True,
         ),
     )
 }

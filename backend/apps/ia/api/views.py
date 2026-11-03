@@ -41,6 +41,7 @@ class StatusIAView(APIView):
             'modelo': provedor.modelos[0],
             'modelosReserva': list(provedor.modelos[1:]),
             'real': provedor.real,
+            'cota': jobs.cota_do_usuario(request.user),
         })
 
 

@@ -36,6 +36,8 @@ def tratar_excecao(exc, context):
         if exc.campos:
             # Serviços podem repassar erros do DRF já em texto (ex.: entrada da IA): normaliza também.
             corpo['campos'] = normalizar_campos(exc.campos)
+        if exc.codigo:
+            corpo['codigo'] = exc.codigo
         return Response(corpo, status=exc.status)
 
     resposta = exception_handler(exc, context)

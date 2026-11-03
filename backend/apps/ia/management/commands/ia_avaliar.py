@@ -1,6 +1,6 @@
 """Roda os casos de avaliação de qualidade com o provedor ativo (IA_PROVEDOR) e mostra o placar.
 
-Uso: python manage.py ia_avaliar [--tarefa requisitos|sugestao_suporte] [--caso AV-REQ-01] [--intervalo 4] [--saida]
+Uso: python manage.py ia_avaliar [--tarefa requisitos|sugestao_suporte|entrevista] [--caso AV-REQ-01] [--intervalo 4] [--saida]
 Com o Gemini real, cada caso é uma geração (mais reservas se houver 503). Use com moderação (free tier) e registre
 o placar em `claude/ia.md`. Nunca mostra a chave.
 """

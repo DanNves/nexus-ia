@@ -52,10 +52,11 @@ class FalhaGeracao(Exception):
 
 @dataclass(frozen=True)
 class Geracao:
-    dados: dict
+    dados: dict              # final: restaurado e pós-processado (o que vai para o job)
     resultado: ResultadoGeracao
     tentativas: int
     substituicoes: int
+    dados_brutos: dict | None = None  # restaurado, ANTES do pós-processamento (avaliação mede o modelo, não o filtro)
 
 
 def gerar(tarefa: Tarefa, entrada: dict, *, job: Job | None = None, provedor: LLMProvider | None = None,
@@ -104,8 +105,10 @@ def gerar(tarefa: Tarefa, entrada: dict, *, job: Job | None = None, provedor: LL
 
         _registrar(job, provedor, modelo, prompt, parametros, anonimo.substituicoes, resultado, t0)
         avancar(3)
-        dados = tarefa.pos_processar(entrada, restaurar(resultado.dados, anonimo.mapa))
-        return Geracao(dados=dados, resultado=resultado, tentativas=tentativas, substituicoes=anonimo.substituicoes)
+        restaurado = restaurar(resultado.dados, anonimo.mapa)
+        dados = tarefa.pos_processar(entrada, restaurado)
+        return Geracao(dados=dados, resultado=resultado, tentativas=tentativas, substituicoes=anonimo.substituicoes,
+                       dados_brutos=restaurado)
 
     raise FalhaGeracao(ultimo_erro.mensagem if ultimo_erro else MSG_GENERICA, tentativas)
 

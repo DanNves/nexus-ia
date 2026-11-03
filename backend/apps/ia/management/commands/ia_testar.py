@@ -1,6 +1,6 @@
 """Faz UMA geração com o provedor ativo (IA_PROVEDOR) e mostra modelo, duração, tokens e o JSON.
 
-Uso: python manage.py ia_testar [--tarefa requisitos|sugestao_suporte]
+Uso: python manage.py ia_testar [--tarefa requisitos|sugestao_suporte|entrevista]
 Não cria Job; grava LogIA (job vazio) como qualquer outra tentativa. Nunca mostra a chave.
 """
 import json
@@ -41,6 +41,21 @@ EXEMPLOS = {
         'conhecimentos': [{'codigo': 'KB-007', 'titulo': 'Falha de autenticação na v1.2.0',
                            'procedimento': ['Conferir o horário do servidor', 'Reenviar o código ao usuário']}],
         'chamadosResolvidos': [],
+    },
+    'entrevista': {
+        'demanda': {
+            'codigo': 'DEM-099',
+            'nome': 'Agenda de manutenção da frota',
+            'descricao': 'Controlar as revisões dos veículos da empresa e avisar quando estiverem perto do prazo.',
+            'necessidade': ['Hoje controlamos as revisões numa planilha e já perdemos prazos. Queremos ver os '
+                            'veículos, a quilometragem e receber aviso antes da revisão vencer.'],
+        },
+        'respostas': [
+            {'id': 'usuarios', 'pergunta': 'Quem vai usar o sistema no dia a dia?', 'respostas': ['Uma equipe interna'],
+             'naoSei': False},
+        ],
+        'rodada': 1,
+        'rodadaMaxima': 3,
     },
 }
 

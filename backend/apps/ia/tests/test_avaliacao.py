@@ -32,7 +32,8 @@ class CasosComFakeTests(TestCase):
         injecao = [k for k in CASOS if 'injection' in k.descricao]
         self.assertEqual({k.tarefa for k in injecao}, set(TAREFAS))
         com_rejeicao = [k for k in CASOS if k.entrada.get('requisitosRejeitados') or k.entrada.get('sugestoesRejeitadas')]
-        self.assertEqual({k.tarefa for k in com_rejeicao}, set(TAREFAS))
+        # Só requisitos e sugestão passam pela máquina de estados (têm rejeições); a entrevista não (CLAUDE.md §3).
+        self.assertEqual({k.tarefa for k in com_rejeicao}, {'requisitos', 'sugestao_suporte'})
 
     def test_fake_respeita_rejeicoes(self):
         """O fake não repete requisito nem causa rejeitados (demonstração offline coerente com §6)."""
@@ -89,6 +90,33 @@ class CasosComFakeTests(TestCase):
         self.assertEqual(len(pessoais), 1, r.falhas)
         self.assertIn('frota@exemplo.com.br', pessoais[0])
         self.assertIn('(71) 99876-5432', pessoais[0])
+
+    def test_criterios_da_entrevista_medem_o_modelo_e_nao_o_filtro(self):
+        """O pós-processamento remove "Outro" e a pergunta repetida; a avaliação ainda assim acusa o modelo."""
+        caso = casos(caso='AV-ENT-02')[0]
+
+        class Ruim(LLMProvider):
+            nome, real = 'ruim', False
+
+            def gerar_estruturado(self, prompt, schema, contexto, *, modelo=None, parametros=None):
+                opcoes = [{'valor': v, 'rotulo': r, 'sinais': []} for v, r in
+                          (('a', 'Sim, sempre'), ('b', 'Às vezes'), ('c', 'Não'), ('o', 'Outro'))]
+                return ResultadoGeracao(dados={'perguntas': [
+                    {'id': 'internet', 'enunciado': 'O sistema precisa funcionar sem internet?', 'ajuda': 'x',
+                     'multipla': False, 'opcoes': opcoes},
+                    {'id': 'rede', 'enunciado': 'A conexão costuma cair no almoxarifado?', 'ajuda': 'x',
+                     'multipla': False, 'opcoes': opcoes}],
+                    'suficiente': False, 'resumo': 'r', 'lacunas': []}, modelo='ruim-1')
+
+            def embedding(self, texto):
+                return []
+
+        r = avaliar_caso(caso, Ruim(['ruim-1']))
+        self.assertTrue(r.executou)
+        self.assertEqual([p['id'] for p in r.saida['perguntas']], ['rede'])  # filtro aplicado na saída final
+        self.assertEqual([o['rotulo'] for o in r.saida['perguntas'][0]['opcoes']], ['Sim, sempre', 'Às vezes', 'Não'])
+        nomes = {f.split(':')[0] for f in r.falhas}
+        self.assertEqual(nomes, {'sem opções "Outro"/"Não sei" (modelo)', 'não repete pergunta respondida (modelo)'})
 
     def test_comando_com_fake(self):
         saida = StringIO()

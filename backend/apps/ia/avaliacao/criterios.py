@@ -10,7 +10,9 @@ import re
 from dataclasses import dataclass
 from typing import Callable, Iterator
 
+from apps.cenario.domain.sinais import eh_sinal
 from apps.ia.domain.anonimizacao import dados_pessoais_em
+from apps.ia.domain.entrevista import LIMITE_REPETICAO_PERGUNTA, eh_opcao_da_interface, similaridade_pergunta
 from apps.ia.domain.esquema import validar
 from apps.ia.domain.texto import (LIMITE_REPETICAO_CAUSA, LIMITE_REPETICAO_TITULO, parecido_com_algum,
                                   similaridade)
@@ -22,6 +24,9 @@ Verificacao = Callable[[dict, dict], 'str | None']
 class Criterio:
     nome: str
     verificar: Verificacao
+    # True = verifica a saída ANTES do pós-processamento (mede o modelo/prompt, não o filtro determinístico).
+    # Ex.: o pós-processamento da entrevista remove "Outro"/"Não sei"; conferir isso na saída final sempre passaria.
+    sobre_bruta: bool = False
 
 
 def _textos(dado) -> Iterator[str]:
@@ -187,10 +192,122 @@ def causa_diferente_das_rejeitadas() -> Criterio:
     return Criterio('causa diferente das rejeitadas', verificar)
 
 
+# ---------- entrevista ----------
+
+def _perguntas(saida) -> list[dict]:
+    return [p for p in saida.get('perguntas') or [] if isinstance(p, dict)]
+
+
+def _opcoes(pergunta) -> list[dict]:
+    return [o for o in pergunta.get('opcoes') or [] if isinstance(o, dict)]
+
+
+def opcoes_entre(minimo: int = 3, maximo: int = 5) -> Criterio:
+    def verificar(entrada, saida):
+        fora = [f'{p.get("id")}: {len(_opcoes(p))}' for p in _perguntas(saida) if not minimo <= len(_opcoes(p)) <= maximo]
+        return f'quantidade de opções fora de {minimo} a {maximo}: {"; ".join(fora)}' if fora else None
+    return Criterio(f'{minimo} a {maximo} opções por pergunta', verificar)
+
+
+def sem_opcoes_da_interface() -> Criterio:
+    """A IA não gera "Outro"/"Não sei" (a interface oferece). Medido na saída bruta."""
+    def verificar(entrada, saida):
+        achados = [o.get('rotulo', '') for p in _perguntas(saida) for o in _opcoes(p) if eh_opcao_da_interface(o)]
+        return f'gerou {", ".join(achados)}' if achados else None
+    return Criterio('sem opções "Outro"/"Não sei" (modelo)', verificar, sobre_bruta=True)
+
+
+def sinais_do_catalogo() -> Criterio:
+    def verificar(entrada, saida):
+        fora = sorted({str(s) for p in _perguntas(saida) for o in _opcoes(p) for s in o.get('sinais') or []
+                       if not eh_sinal(s)})
+        return f'sinais fora do catálogo: {", ".join(fora)}' if fora else None
+    return Criterio('sinais só do catálogo (modelo)', verificar, sobre_bruta=True)
+
+
+def nao_repete_respondidas() -> Criterio:
+    """Nenhuma pergunta nova igual/parecida com uma já respondida (mesma medida do pós-processamento). Bruta."""
+    def verificar(entrada, saida):
+        anteriores = [r.get('pergunta', '') for r in entrada.get('respostas') or []]
+        achados = []
+        for p in _perguntas(saida):
+            for anterior in anteriores:
+                valor = similaridade_pergunta(p.get('enunciado', ''), anterior)
+                if valor >= LIMITE_REPETICAO_PERGUNTA:
+                    achados.append(f'"{_resumo(p.get("enunciado", ""))}" parecida com "{_resumo(anterior)}" ({valor:.2f})')
+        return '; '.join(achados) if achados else None
+    return Criterio('não repete pergunta respondida (modelo)', verificar, sobre_bruta=True)
+
+
+def ids_unicos() -> Criterio:
+    def verificar(entrada, saida):
+        ids = [p.get('id') for p in _perguntas(saida)] + [r.get('id') for r in entrada.get('respostas') or [] if r.get('id')]
+        problemas = sorted({str(i) for i in ids if ids.count(i) > 1})
+        for p in _perguntas(saida):
+            valores = [o.get('valor') for o in _opcoes(p)]
+            problemas += sorted({f'{p.get("id")}.{v}' for v in valores if valores.count(v) > 1})
+        return f'ids/valores repetidos: {", ".join(problemas)}' if problemas else None
+    return Criterio('ids e valores únicos', verificar)
+
+
+def nao_pergunta_sobre(rotulo: str, *termos: str) -> Criterio:
+    """Nenhum enunciado cita os termos (ex.: o que a necessidade já respondeu). Bruta: mede o modelo."""
+    def verificar(entrada, saida):
+        achados = [p.get('enunciado', '') for p in _perguntas(saida)
+                   if any(t.casefold() in p.get('enunciado', '').casefold() for t in termos)]
+        return f'perguntou: {"; ".join(_resumo(a) for a in achados)}' if achados else None
+    return Criterio(f'não pergunta sobre {rotulo} (modelo)', verificar, sobre_bruta=True)
+
+
+def sem_pergunta_de_aparelho() -> Criterio:
+    """Nenhuma pergunta cujas opções escolham entre celular e computador (pergunta de dispositivo). Bruta."""
+    def verificar(entrada, saida):
+        achados = []
+        for p in _perguntas(saida):
+            rotulos = ' '.join(o.get('rotulo', '') for o in _opcoes(p)).casefold()
+            if 'celular' in rotulos and 'computador' in rotulos:
+                achados.append(p.get('enunciado', ''))
+        return f'perguntou o aparelho: {"; ".join(_resumo(a) for a in achados)}' if achados else None
+    return Criterio('não pergunta o aparelho de novo (modelo)', verificar, sobre_bruta=True)
+
+
+def aprofunda(rotulo: str, *radicais: str) -> Criterio:
+    """Ao menos uma pergunta (enunciado, ajuda ou opções) trata do tema que ficou em aberto. Saída final."""
+    def verificar(entrada, saida):
+        textos = ' '.join(f'{p.get("enunciado", "")} {p.get("ajuda", "")} '
+                          + ' '.join(o.get('rotulo', '') for o in _opcoes(p)) for p in _perguntas(saida)).casefold()
+        return None if any(r.casefold() in textos for r in radicais) else f'nenhuma pergunta sobre {rotulo}'
+    return Criterio(f'aprofunda {rotulo}', verificar)
+
+
+def no_maximo_perguntas(maximo: int) -> Criterio:
+    def verificar(entrada, saida):
+        n = len(_perguntas(saida))
+        return f'{n} perguntas (máximo {maximo})' if n > maximo else None
+    return Criterio(f'no máximo {maximo} pergunta(s) (modelo)', verificar, sobre_bruta=True)
+
+
+def ao_menos_perguntas(minimo: int) -> Criterio:
+    def verificar(entrada, saida):
+        n = len(_perguntas(saida))
+        return f'{n} perguntas (mínimo {minimo})' if n < minimo else None
+    return Criterio(f'ao menos {minimo} pergunta(s)', verificar)
+
+
+def suficiente_do_modelo(esperado: bool) -> Criterio:
+    """`suficiente` que o MODELO devolveu (o pós-processamento força true na última rodada)."""
+    def verificar(entrada, saida):
+        valor = saida.get('suficiente')
+        return None if valor is esperado else f'esperado {esperado}, veio {valor}'
+    return Criterio(f'suficiente = {esperado} (modelo)', verificar, sobre_bruta=True)
+
+
 # Critérios que valem para todos os casos de cada tarefa (além do esquema e dos específicos do caso).
 # Os de rejeição passam direto quando a entrada não traz rejeições.
 COMUNS = {
     'requisitos': (sem_dados_pessoais, nao_repete_aprovados, nao_repete_rejeitados),
     'sugestao_suporte': (sem_dados_pessoais, causa_como_hipotese, causa_sem_afirmacao, conhecimento_da_entrada,
                          procedimento_seguro, causa_diferente_das_rejeitadas),
+    'entrevista': (sem_dados_pessoais, opcoes_entre, sem_opcoes_da_interface, sinais_do_catalogo,
+                   nao_repete_respondidas, ids_unicos),
 }
