@@ -23,9 +23,10 @@ function lerVisao(usuarioId: string): Perfil | null {
 
 // Perfil e identificação de quem está logado, derivados do AuthService (usuário vindo do Django).
 //
-// PERFIL REAL x VISÃO: quem é da equipe escolhe ver o NEXUS como cliente ou como equipe (seletor no topo).
-// `perfil()` é a VISÃO ativa: tudo na tela (menu, abas, ações, mock) segue ela. Cliente só tem a visão de cliente.
-// Ver como cliente só REDUZ o que aparece; as permissões reais continuam no Django (perfil e admin do usuário).
+// Papéis (docs/PERFIS.md): Solicitante (código CLIENTE), Equipe responsável (EQUIPE) e Administrador (EQUIPE + admin).
+// PERFIL REAL x VISÃO: quem é da equipe escolhe ver o NEXUS como solicitante ou como equipe (seletor no topo).
+// `perfil()` é a VISÃO ativa: tudo na tela (menu, abas, ações, mock) segue ela. Solicitante só tem a própria visão.
+// Ver como solicitante só REDUZ o que aparece; as permissões reais continuam no Django (perfil e admin do usuário).
 // As páginas usam `effect(() => this.sessao.perfil(); ...)` para recarregar quando o usuário ou a visão muda.
 @Injectable({ providedIn: 'root' })
 export class SessionService {
@@ -47,7 +48,7 @@ export class SessionService {
   });
   readonly perfil = this.visao.asReadonly();
 
-  /** Só quem é da equipe alterna entre a visão de cliente e a da equipe. */
+  /** Só quem é da equipe alterna entre a visão de solicitante e a da equipe. */
   readonly podeAlternarVisao = computed(() => this.auth.usuario()?.perfil === 'EQUIPE');
 
   /** Administrador (gerencia usuários). A tela de usuários aparece só na visão da equipe. */
@@ -59,7 +60,7 @@ export class SessionService {
   private readonly identificacao = computed(() => {
     const u = this.auth.usuario();
     if (!u) return { nome: '', papel: '' };
-    const papel = u.perfil === 'EQUIPE' ? (u.admin ? 'Equipe · administrador' : 'Equipe') : `Cliente${u.organizacao ? ' · ' + u.organizacao : ''}`;
+    const papel = u.perfil === 'EQUIPE' ? (u.admin ? 'Administrador' : 'Equipe responsável') : `Solicitante${u.organizacao ? ' · ' + u.organizacao : ''}`;
     return { nome: u.nome, papel };
   });
 

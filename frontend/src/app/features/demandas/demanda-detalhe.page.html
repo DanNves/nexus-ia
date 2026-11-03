@@ -196,7 +196,7 @@
             } @else if (podeEditarLevantamento() && !d.cenario) {
               <div class="carregando" aria-busy="true" aria-label="Carregando a pergunta"><span></span><span></span><span></span></div>
             } @else if (!d.cenario && (d.estado === 'RASCUNHO' || d.estado === 'EM_LEVANTAMENTO')) {
-              <nx-vazio icone="clock" titulo="O cliente ainda está respondendo"
+              <nx-vazio icone="clock" titulo="O solicitante ainda está respondendo"
                 [texto]="d.respostas.length + ' perguntas respondidas até agora. As respostas aparecem ao lado conforme ele avança.'" />
             } @else if (!d.cenario) {
               <nx-vazio icone="inbox" titulo="Sem recomendação registrada" texto="Esta demanda não tem tipo de solução recomendado." />
@@ -251,7 +251,7 @@
 
           <aside class="coluna">
             <section class="secao">
-              <h2>{{ souSolicitante() ? 'Suas respostas' : 'Respostas do cliente' }}</h2>
+              <h2>{{ souSolicitante() ? 'Suas respostas' : 'Respostas do solicitante' }}</h2>
               @if (d.respostas.length) {
                 <ol class="respostas-dadas">
                   @for (r of d.respostas; track r.perguntaId) {

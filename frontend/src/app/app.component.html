@@ -18,11 +18,11 @@
     </nav>
 
     <div class="topo-acoes">
-      <!-- Só a equipe alterna: ver o NEXUS como um cliente vê ou como a equipe trabalha. -->
+      <!-- Só a equipe alterna: ver o NEXUS como um solicitante vê ou como a equipe trabalha. -->
       @if (sessao.podeAlternarVisao()) {
         <div class="visao" role="radiogroup" aria-label="Ver o NEXUS como" data-tour="visao">
-          <button type="button" role="radio" class="visao-opcao" [class.ativo]="!sessao.ehEquipe()" [attr.aria-checked]="!sessao.ehEquipe()" (click)="trocarVisao('CLIENTE')" title="Ver como cliente">
-            <nx-icon name="user" [size]="15" /><span>Cliente</span>
+          <button type="button" role="radio" class="visao-opcao" [class.ativo]="!sessao.ehEquipe()" [attr.aria-checked]="!sessao.ehEquipe()" (click)="trocarVisao('CLIENTE')" title="Ver como solicitante">
+            <nx-icon name="user" [size]="15" /><span>Solicitante</span>
           </button>
           <button type="button" role="radio" class="visao-opcao" [class.ativo]="sessao.ehEquipe()" [attr.aria-checked]="sessao.ehEquipe()" (click)="trocarVisao('EQUIPE')" title="Ver como equipe">
             <nx-icon name="users" [size]="15" /><span>Equipe</span>
@@ -52,7 +52,7 @@
         }
       </div>
 
-      <!-- Abrir demanda é coisa de cliente: na visão da equipe o botão some. -->
+      <!-- Abrir demanda é coisa de quem pede a solução: na visão da equipe o botão some. -->
       @if (!sessao.ehEquipe()) {
         <a routerLink="/demandas/nova" class="btn btn-primario btn-nova">
           <nx-icon name="plus" [size]="16" />
@@ -71,7 +71,7 @@
               @if (auth.usuario(); as u) { <span class="mudo">{{ u.email }}</span> }
               <span class="menu-papel">{{ sessao.usuario.papel }}</span>
               @if (sessao.podeAlternarVisao()) {
-                <span class="mudo">Vendo agora como {{ sessao.ehEquipe() ? 'equipe' : 'cliente' }}</span>
+                <span class="mudo">Vendo agora como {{ sessao.ehEquipe() ? 'equipe' : 'solicitante' }}</span>
               }
             </div>
             <button type="button" class="menu-opcao" (click)="abrirBusca()">

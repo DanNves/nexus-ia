@@ -101,7 +101,7 @@ export class UsuariosPage {
     this.novoAberto.set(true);
   }
 
-  /** Cliente não pode ser administrador: ao trocar o perfil, desmarca. */
+  /** Solicitante não pode ser administrador: ao trocar o perfil, desmarca. */
   perfilNovo(p: Perfil) {
     this.novo.perfil = p;
     if (p === 'CLIENTE') this.novo.admin = false;

@@ -29,16 +29,18 @@ export class AppComponent {
   private router = inject(Router);
   private rascunhos = inject(RascunhoService);
 
-  // Itens conforme a visão ativa: o cliente vê os próprios pedidos; a equipe, o trabalho; o administrador, também Usuários.
+  // Itens conforme a visão ativa (docs/PERFIS.md): o solicitante vê os próprios pedidos; a equipe, o trabalho;
+  // o administrador, também Usuários. As rotas são as mesmas; só o rótulo muda (curto, para caber na navbar).
   readonly nav = computed(() => {
+    const equipe = this.sessao.ehEquipe();
     const itens = [
       { rotulo: 'Visão geral', link: '/visao-geral', icone: 'home' },
       { rotulo: 'Demandas', link: '/demandas', icone: 'demand' },
-      { rotulo: 'Calendário', link: '/calendario', icone: 'calendar' },
+      { rotulo: equipe ? 'Calendário' : 'Agenda', link: '/calendario', icone: 'calendar' },
       { rotulo: 'Soluções', link: '/solucoes', icone: 'layers' },
-      { rotulo: 'Fila', link: '/fila', icone: 'queue' },
+      { rotulo: equipe ? 'Fila' : 'Chamados', link: '/fila', icone: 'queue' },
     ];
-    if (this.sessao.ehEquipe() && this.sessao.ehAdmin()) itens.push({ rotulo: 'Usuários', link: '/usuarios', icone: 'users' });
+    if (equipe && this.sessao.ehAdmin()) itens.push({ rotulo: 'Usuários', link: '/usuarios', icone: 'users' });
     return itens;
   });
 
@@ -105,12 +107,12 @@ export class AppComponent {
     });
   }
 
-  /** Equipe alterna entre ver o NEXUS como cliente ou como equipe. Volta para a visão geral (a página atual pode não existir na outra visão). */
+  /** Equipe alterna entre ver o NEXUS como solicitante ou como equipe. Volta para a visão geral (a página atual pode não existir na outra visão). */
   trocarVisao(v: Perfil) {
     if (this.sessao.perfil() === v) return;
     this.sessao.trocarVisao(v);
     this.fecharMenus();
-    this.toast.ok(v === 'CLIENTE' ? 'Visão do cliente: você vê o NEXUS como um cliente vê.' : 'Visão da equipe: solicitações, validações e atendimento.');
+    this.toast.ok(v === 'CLIENTE' ? 'Visão do solicitante: você vê o NEXUS como um solicitante vê.' : 'Visão da equipe: solicitações, validações e atendimento.');
     void this.router.navigateByUrl('/visao-geral');
   }
 

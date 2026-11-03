@@ -34,7 +34,7 @@ function passosGlobais({ equipe, podeAlternarVisao, admin }: OpcoesTour): PassoT
       seletor: '.nav a[href="/demandas"]',
       titulo: 'Demandas',
       texto: equipe
-        ? 'Todas as demandas dos clientes e as atividades da equipe. Abra uma demanda para avaliar se é possível fazer, validar o que a IA sugeriu e acompanhar os requisitos.'
+        ? 'Todas as demandas dos solicitantes e as atividades da equipe. Abra uma demanda para avaliar se é possível fazer, validar o que a IA sugeriu e acompanhar os requisitos.'
         : 'Tudo o que você já pediu. Cada demanda guarda a sua necessidade, as respostas da entrevista, o protótipo, a solicitação e o documento de requisitos.',
       alternativa: MENU_MOBILE,
     },
@@ -43,7 +43,7 @@ function passosGlobais({ equipe, podeAlternarVisao, admin }: OpcoesTour): PassoT
       seletor: '.nav a[href="/calendario"]',
       titulo: 'Calendário',
       texto: equipe
-        ? 'Reuniões para validar as regras com o cliente, prazos, sprints e entregas. Marque aqui os compromissos de cada demanda.'
+        ? 'Reuniões para validar as regras com o solicitante, prazos, sprints e entregas. Marque aqui os compromissos de cada demanda.'
         : 'As datas combinadas com a equipe, como a reunião para validar as regras do seu sistema, prazos e entregas.',
       alternativa: MENU_MOBILE,
     },
@@ -95,7 +95,7 @@ function passosGlobais({ equipe, podeAlternarVisao, admin }: OpcoesTour): PassoT
       id: 'usuarios',
       seletor: '.nav a[href="/usuarios"]',
       titulo: 'Usuários',
-      texto: 'Só para administradores: cadastre pessoas, defina quem é cliente e quem é da equipe, desative contas e redefina senhas.',
+      texto: 'Só para administradores: cadastre pessoas, defina quem é solicitante e quem é da equipe, desative contas e redefina senhas.',
       alternativa: MENU_MOBILE,
     });
   }
@@ -104,10 +104,10 @@ function passosGlobais({ equipe, podeAlternarVisao, admin }: OpcoesTour): PassoT
     passos.unshift({
       id: 'visao',
       seletor: '[data-tour="visao"]',
-      titulo: 'Cliente ou equipe?',
+      titulo: 'Solicitante ou equipe?',
       texto: equipe
-        ? 'Você está na visão da EQUIPE (linha roxa no topo): solicitações, validações e atendimento. Clique em "Cliente" para ver o NEXUS exatamente como um cliente vê.'
-        : 'Você está na visão do CLIENTE: vê só o que um cliente veria e pode abrir demandas. Clique em "Equipe" para voltar ao trabalho da equipe.',
+        ? 'Você está na visão da EQUIPE (linha roxa no topo): solicitações, validações e atendimento. Clique em "Solicitante" para ver o NEXUS exatamente como um solicitante vê.'
+        : 'Você está na visão do SOLICITANTE: vê só o que um solicitante veria e pode abrir demandas. Clique em "Equipe" para voltar ao trabalho da equipe.',
     });
   }
   return passos;
