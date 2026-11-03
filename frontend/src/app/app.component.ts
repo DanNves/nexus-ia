@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, HostListener, Injector, afterNextRender, computed, effect, inject, signal, untracked, viewChild } from '@angular/core';
-import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
+import { ChangeDetectionStrategy, Component, HostListener, computed, effect, inject, signal, untracked } from '@angular/core';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { Subject, debounceTime, distinctUntilChanged, filter, switchMap } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -13,24 +13,10 @@ import { UI } from './shared/ui/ui.components';
 import { AjudaComponent } from './shared/ajuda/ajuda.component';
 import { RascunhoService } from './shared/rascunho/rascunho';
 import { relativo } from './shared/labels';
-import { AVISO_VISAO, ROTULO_VISAO, itemAtivo, menuDa, paginaDaUrl, trilhaDa } from './shared/perfis';
-
-const CHAVE_RECOLHIDO = 'nexus.menu-recolhido';
-/** Até aqui o menu lateral vira gaveta (sheet do template). Mesmo valor do CSS. */
-const MOBILE = '(max-width: 760px)';
-
-function lerRecolhido(): boolean {
-  try {
-    const v = localStorage.getItem(CHAVE_RECOLHIDO);
-    if (v === '1' || v === '0') return v === '1';
-  } catch { /* ignora */ }
-  // Sem preferência salva: em telas médias começa só com ícones, para o conteúdo respirar.
-  return window.matchMedia?.('(max-width: 980px)').matches ?? false;
-}
 
 @Component({
   selector: 'nx-root',
-  imports: [RouterOutlet, RouterLink, FormsModule, AjudaComponent, ...UI],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, FormsModule, AjudaComponent, ...UI],
   templateUrl: './app.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -42,29 +28,25 @@ export class AppComponent {
   private api = inject(NexusApi);
   private router = inject(Router);
   private rascunhos = inject(RascunhoService);
-  private injector = inject(Injector);
 
-  readonly rotuloVisao = ROTULO_VISAO;
+  // Itens conforme a visão ativa: o cliente vê os próprios pedidos; a equipe, o trabalho; o administrador, também Usuários.
+  readonly nav = computed(() => {
+    const itens = [
+      { rotulo: 'Visão geral', link: '/visao-geral', icone: 'home' },
+      { rotulo: 'Demandas', link: '/demandas', icone: 'demand' },
+      { rotulo: 'Calendário', link: '/calendario', icone: 'calendar' },
+      { rotulo: 'Soluções', link: '/solucoes', icone: 'layers' },
+      { rotulo: 'Fila', link: '/fila', icone: 'queue' },
+    ];
+    if (this.sessao.ehEquipe() && this.sessao.ehAdmin()) itens.push({ rotulo: 'Usuários', link: '/usuarios', icone: 'users' });
+    return itens;
+  });
 
-  private readonly url = signal(location.pathname + location.search);
-  private readonly pagina = computed(() => paginaDaUrl(this.url()));
-  /** Menu lateral da visão ativa (shared/perfis.ts): solicitante, equipe ou administrador. */
-  readonly menu = computed(() => menuDa(this.sessao.perfil(), this.sessao.ehEquipe() && this.sessao.ehAdmin()));
-  readonly ativo = computed(() => itemAtivo(this.pagina()));
-  readonly trilha = computed(() => trilhaDa(this.pagina(), this.sessao.perfil(), this.sessao.ehEquipe() && this.sessao.ehAdmin()));
-
-  // /entrar e /criar-conta: só o conteúdo da página e os avisos, sem a casca.
+  // /entrar e /criar-conta: só o conteúdo da página e os avisos, sem o topo.
   private readonly rotaPublica = signal(ehRotaPublica(location.pathname));
   readonly mostrarTopo = computed(() => this.auth.autenticado() && !this.rotaPublica());
 
-  /** Desktop: menu só com ícones (lembrado neste navegador). Mobile: gaveta aberta ou fechada. */
-  readonly recolhida = signal(lerRecolhido());
-  readonly mobile = signal(window.matchMedia?.(MOBILE).matches ?? false);
-  readonly gavetaAberta = signal(false);
-  readonly icones = computed(() => this.recolhida() && !this.mobile());
-  private sidebar = viewChild<ElementRef<HTMLElement>>('sidebar');
-  private botaoMenu = viewChild<ElementRef<HTMLButtonElement>>('alternar');
-
+  readonly menuMobile = signal(false);
   readonly menuUsuario = signal(false);
   readonly painelNotificacoes = signal(false);
   readonly buscaAberta = signal(false);
@@ -77,19 +59,9 @@ export class AppComponent {
 
   constructor() {
     this.router.events.pipe(filter((e) => e instanceof NavigationEnd), takeUntilDestroyed()).subscribe((e) => {
-      this.url.set(e.urlAfterRedirects);
       this.rotaPublica.set(ehRotaPublica(e.urlAfterRedirects));
       this.fecharMenus();
-      this.gavetaAberta.set(false);
     });
-
-    const consulta = window.matchMedia?.(MOBILE);
-    if (consulta) {
-      const aoMudar = (e: MediaQueryListEvent) => { this.mobile.set(e.matches); if (!e.matches) this.gavetaAberta.set(false); };
-      consulta.addEventListener('change', aoMudar);
-      inject(DestroyRef).onDestroy(() => consulta.removeEventListener('change', aoMudar));
-    }
-
     // Notificações do usuário logado (e da visão ativa); sem sessão não há o que buscar.
     effect(() => {
       const u = this.auth.usuario();
@@ -108,49 +80,6 @@ export class AppComponent {
   }
 
   naoLidas() { return this.notificacoes().filter((n) => !n.lida).length; }
-
-  // ---------------------------------------------------------------- Menu lateral
-
-  alternarMenu() {
-    if (this.mobile()) {
-      if (this.gavetaAberta()) this.fecharGaveta(true);
-      else this.abrirGaveta();
-      return;
-    }
-    const v = !this.recolhida();
-    this.recolhida.set(v);
-    try { localStorage.setItem(CHAVE_RECOLHIDO, v ? '1' : '0'); } catch { /* ignora */ }
-  }
-
-  private abrirGaveta() {
-    this.fecharMenus();
-    this.gavetaAberta.set(true);
-    afterNextRender(() => this.focaveis()[0]?.focus(), { injector: this.injector });
-  }
-
-  fecharGaveta(devolverFoco = false) {
-    if (!this.gavetaAberta()) return;
-    this.gavetaAberta.set(false);
-    if (devolverFoco) this.botaoMenu()?.nativeElement.focus();
-  }
-
-  /** Foco preso na gaveta aberta (mobile): Tab e Shift+Tab giram dentro dela. */
-  teclasGaveta(e: KeyboardEvent) {
-    if (!this.mobile() || !this.gavetaAberta() || e.key !== 'Tab') return;
-    const lista = this.focaveis();
-    if (!lista.length) return;
-    const primeiro = lista[0];
-    const ultimo = lista[lista.length - 1];
-    if (e.shiftKey && document.activeElement === primeiro) { e.preventDefault(); ultimo.focus(); }
-    else if (!e.shiftKey && document.activeElement === ultimo) { e.preventDefault(); primeiro.focus(); }
-  }
-
-  private focaveis(): HTMLElement[] {
-    const el = this.sidebar()?.nativeElement;
-    return el ? Array.from(el.querySelectorAll<HTMLElement>('a[href], button:not([disabled])')) : [];
-  }
-
-  // ---------------------------------------------------------------- Cabeçalho
 
   alternarNotificacoes() {
     const abrir = !this.painelNotificacoes();
@@ -176,12 +105,12 @@ export class AppComponent {
     });
   }
 
-  /** Equipe alterna entre ver o NEXUS como solicitante ou como equipe. Volta para a visão geral (a página atual pode não existir na outra visão). */
+  /** Equipe alterna entre ver o NEXUS como cliente ou como equipe. Volta para a visão geral (a página atual pode não existir na outra visão). */
   trocarVisao(v: Perfil) {
     if (this.sessao.perfil() === v) return;
     this.sessao.trocarVisao(v);
     this.fecharMenus();
-    this.toast.ok(AVISO_VISAO[v]);
+    this.toast.ok(v === 'CLIENTE' ? 'Visão do cliente: você vê o NEXUS como um cliente vê.' : 'Visão da equipe: solicitações, validações e atendimento.');
     void this.router.navigateByUrl('/visao-geral');
   }
 
@@ -192,7 +121,6 @@ export class AppComponent {
 
   abrirBusca() {
     this.fecharMenus();
-    this.gavetaAberta.set(false);
     this.termo = '';
     this.resultados.set([]);
     this.buscaAberta.set(true);
@@ -206,6 +134,7 @@ export class AppComponent {
   }
 
   fecharMenus() {
+    this.menuMobile.set(false);
     this.menuUsuario.set(false);
     this.painelNotificacoes.set(false);
   }
@@ -214,10 +143,7 @@ export class AppComponent {
   atalho(e: KeyboardEvent) {
     if (!this.mostrarTopo()) return;
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); this.abrirBusca(); }
-    if (e.key === 'Escape') {
-      if (this.gavetaAberta()) this.fecharGaveta(true);
-      this.fecharMenus();
-    }
+    if (e.key === 'Escape') this.fecharMenus();
   }
 
   @HostListener('document:click', ['$event'])

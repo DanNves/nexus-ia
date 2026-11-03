@@ -111,7 +111,7 @@ export class DemandaDetalhePage {
   readonly erros = signal<Record<string, string[]>>({});
   readonly salvando = signal(false);
   viab = { possivel: null as boolean | null, justificativa: '' };
-  reuniao = { data: '', local: 'Videochamada', pauta: 'Validar as regras de negócio com o solicitante.' };
+  reuniao = { data: '', local: 'Videochamada', pauta: 'Validar as regras de negócio com o cliente.' };
   plano = { metodologia: '', inicio: '', previsao: '' };
 
   // Requisitos
@@ -158,7 +158,7 @@ export class DemandaDetalhePage {
     let lev: Pick<Etapa, 'situacao' | 'status'>;
     if (e === 'STAND_BY') lev = { situacao: 'pausado', status: 'Em stand-by' };
     else if (!LEVANTANDO.includes(e)) lev = { situacao: 'feito', status: 'Concluído' };
-    else if (!this.souSolicitante()) lev = { situacao: 'atual', status: 'Solicitante respondendo' };
+    else if (!this.souSolicitante()) lev = { situacao: 'atual', status: 'Cliente respondendo' };
     else if (d.cenario) lev = { situacao: 'atual', status: 'Escolha como seguir' };
     else if (d.respostas.length) lev = { situacao: 'atual', status: `${d.respostas.length} respondidas` };
     else lev = { situacao: 'atual', status: 'Comece por aqui' };
@@ -204,10 +204,10 @@ export class DemandaDetalhePage {
     if (e === 'STAND_BY') {
       return meu
         ? { titulo: 'Esta demanda está em stand-by', texto: 'Retome quando quiser continuar o levantamento ou enviar para a equipe.', icone: 'pause', tom: 'neutra', acao: { rotulo: 'Retomar', retomar: true } }
-        : { titulo: 'Em stand-by', texto: 'O solicitante guardou a demanda para decidir depois.', icone: 'pause', tom: 'neutra' };
+        : { titulo: 'Em stand-by', texto: 'O cliente guardou a demanda para decidir depois.', icone: 'pause', tom: 'neutra' };
     }
     if (LEVANTANDO.includes(e)) {
-      if (!meu) return { titulo: 'O solicitante ainda está no levantamento', texto: `${d.respostas.length} perguntas respondidas até agora. A demanda chega para a equipe quando ele enviar a solicitação.`, icone: 'clock', tom: 'neutra' };
+      if (!meu) return { titulo: 'O cliente ainda está no levantamento', texto: `${d.respostas.length} perguntas respondidas até agora. A demanda chega para a equipe quando ele enviar a solicitação.`, icone: 'clock', tom: 'neutra' };
       if (d.cenario) return { titulo: 'Falta escolher como seguir', texto: 'Veja o tipo de solução recomendado e o protótipo, e decida entre stand-by ou enviar para a equipe.', icone: 'send', tom: 'acao', acao: { rotulo: 'Decidir', aba: 'levantamento' } };
       return d.respostas.length
         ? { titulo: 'Continue o levantamento', texto: `${d.respostas.length} perguntas respondidas. Suas respostas ficam salvas: continue de onde parou.`, icone: 'spark', tom: 'acao', acao: { rotulo: 'Continuar', aba: 'levantamento' } }
@@ -220,8 +220,8 @@ export class DemandaDetalhePage {
       return { titulo: `${this.propostos()} requisitos aguardando sua validação`, texto: 'Aprove, edite ou rejeite cada sugestão. Nada é aprovado sozinho.', icone: 'check-circle', tom: 'acao', acao: { rotulo: 'Validar', aba: 'requisitos' } };
     }
     if (e === 'SOLICITADO' || e === 'EM_ANALISE') {
-      if (equipe && !s?.viabilidade) return { titulo: 'Avalie se é possível fazer', texto: 'Marque a viabilidade com uma justificativa. Depois, agende a reunião com o solicitante.', icone: 'send', tom: 'acao', acao: { rotulo: 'Avaliar', aba: 'solicitacao' } };
-      if (equipe) return { titulo: 'Agende a reunião com o solicitante', texto: 'A reunião serve para validar as regras de negócio antes do planejamento.', icone: 'calendar', tom: 'acao', acao: { rotulo: 'Agendar', aba: 'solicitacao' } };
+      if (equipe && !s?.viabilidade) return { titulo: 'Avalie se é possível fazer', texto: 'Marque a viabilidade com uma justificativa. Depois, agende a reunião com o cliente.', icone: 'send', tom: 'acao', acao: { rotulo: 'Avaliar', aba: 'solicitacao' } };
+      if (equipe) return { titulo: 'Agende a reunião com o cliente', texto: 'A reunião serve para validar as regras de negócio antes do planejamento.', icone: 'calendar', tom: 'acao', acao: { rotulo: 'Agendar', aba: 'solicitacao' } };
       return { titulo: 'A equipe está analisando sua solicitação', texto: 'Você recebe uma notificação quando ela responder.', icone: 'clock', tom: 'neutra', acao: { rotulo: 'Acompanhar', aba: 'solicitacao' } };
     }
     if (e === 'REUNIAO_AGENDADA') {

@@ -26,7 +26,7 @@ export class EntrarPage {
   readonly modoDev = isDevMode();
   readonly CONTAS_DEMO: ContaDemo[] = [
     { usuario: 'EquipeAdmin', papel: 'Equipe responsável', icone: 'users', tom: 'roxo' },
-    { usuario: 'Usuario', papel: 'Solicitante', icone: 'user', tom: 'azul' },
+    { usuario: 'Usuario', papel: 'Cliente', icone: 'user', tom: 'azul' },
   ];
 
   form = { usuario: '', senha: '' };

@@ -41,8 +41,6 @@ export class FilaPage {
   readonly meusNaFila = computed(() => this.meus().filter((c) => c.estado === 'NA_FILA').sort((a, b) => (a.posicao ?? 0) - (b.posicao ?? 0)));
   readonly meusEmAtendimento = computed(() => this.meus().filter((c) => c.estado === 'EM_ATENDIMENTO'));
   readonly meusResolvidos = computed(() => this.meus().filter((c) => c.estado === 'RESOLVIDO'));
-  /** Chamados em atendimento com sugestão da IA ainda sem validação humana. */
-  readonly sugestoesPendentes = computed(() => (this.fila()?.emAtendimento ?? []).filter((c) => c.sugestao?.estado === 'PROPOSTO').length);
 
   // Abrir chamado
   readonly abrirAberto = signal(false);

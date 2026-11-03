@@ -1,8 +1,8 @@
 <div class="pagina">
   <header class="pagina-topo">
     <div>
-      <h1>{{ sessao.pagina(abaAtual()).titulo }}</h1>
-      <p class="mudo">{{ sessao.pagina(abaAtual()).subtitulo }}</p>
+      <h1>Demandas</h1>
+      <p class="mudo">{{ sessao.ehEquipe() ? 'Tudo o que foi pedido e o trabalho para entregar.' : 'Tudo o que você pediu e em que etapa cada pedido está.' }}</p>
     </div>
     @if (sessao.ehEquipe()) {
       @if (abaAtual() === 'atividades') {

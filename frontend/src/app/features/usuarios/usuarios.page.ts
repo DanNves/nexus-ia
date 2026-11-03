@@ -5,7 +5,6 @@ import { NexusApi, lerErro } from '../../core/api/nexus-api.service';
 import { Perfil, UsuarioGestao } from '../../core/api/models';
 import { AuthService } from '../../core/auth/auth.service';
 import { UI } from '../../shared/ui/ui.components';
-import { ROTULO_PERFIL, textoPagina } from '../../shared/perfis';
 import { ToastService } from '../../shared/ui/toast.service';
 import { relativo } from '../../shared/labels';
 
@@ -14,7 +13,7 @@ type Filtro = 'todos' | 'EQUIPE' | 'CLIENTE' | 'inativos';
 const FILTROS: { id: Filtro; rotulo: string }[] = [
   { id: 'todos', rotulo: 'Todos' },
   { id: 'EQUIPE', rotulo: 'Equipe' },
-  { id: 'CLIENTE', rotulo: 'Solicitantes' },
+  { id: 'CLIENTE', rotulo: 'Clientes' },
   { id: 'inativos', rotulo: 'Inativos' },
 ];
 
@@ -29,8 +28,6 @@ const NOVO = { nome: '', usuario: '', email: '', organizacao: '', perfil: 'CLIEN
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class UsuariosPage {
-  readonly texto = textoPagina('usuarios', 'EQUIPE');
-  readonly ROTULO_PERFIL = ROTULO_PERFIL;
   private api = inject(NexusApi);
   private auth = inject(AuthService);
   private toast = inject(ToastService);
@@ -104,7 +101,7 @@ export class UsuariosPage {
     this.novoAberto.set(true);
   }
 
-  /** Solicitante (CLIENTE) não pode ser administrador: ao trocar o perfil, desmarca. */
+  /** Cliente não pode ser administrador: ao trocar o perfil, desmarca. */
   perfilNovo(p: Perfil) {
     this.novo.perfil = p;
     if (p === 'CLIENTE') this.novo.admin = false;

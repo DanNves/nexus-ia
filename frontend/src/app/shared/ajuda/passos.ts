@@ -1,7 +1,5 @@
 // Conteúdo do tour de ajuda (<nx-ajuda>). Só texto e seletores: nada aqui acessa o DOM.
-// Os seletores da casca vêm de app.component.html (itens do menu lateral: data-tour="menu-<id>");
-// os das páginas usam atributos data-tour. Itens do menu por visão: shared/perfis.ts.
-import { ChavePagina, ROTULO_VISAO, menuDa } from '../perfis';
+// Os seletores do topo vêm de app.component.html; os das páginas usam atributos data-tour.
 
 export interface PassoTour {
   id: string;
@@ -9,97 +7,63 @@ export interface PassoTour {
   seletor: string;
   titulo: string;
   texto: string;
-  /** Usado quando o elemento principal está escondido (ex.: menu lateral fechado em telas estreitas). */
+  /** Usado quando o elemento principal está escondido (ex.: navbar recolhida em telas estreitas). */
   alternativa?: { seletor: string; dica: string };
 }
 
 const MENU_MOBILE = {
-  seletor: '[data-tour="alternar-menu"]',
-  dica: 'Nesta largura de tela, o menu lateral abre por este botão.',
+  seletor: 'button[aria-label="Abrir menu"]',
+  dica: 'Nesta largura de tela, as abas ficam no botão de menu.',
 };
 
 export interface OpcoesTour { equipe: boolean; podeAlternarVisao: boolean; admin: boolean }
 
-/** O que cada item do menu lateral faz, por visão (solicitante × equipe). */
-const TEXTO_ITEM: Partial<Record<ChavePagina, { solicitante?: string; equipe?: string }>> = {
-  'visao-geral': {
-    solicitante: 'Seu ponto de partida. Mostra suas demandas, em que etapa cada uma está e o que está esperando uma ação sua.',
-    equipe: 'O resumo do dia da equipe: solicitações novas, validações pendentes, reuniões marcadas e demandas em andamento.',
-  },
-  demandas: {
-    solicitante: 'Tudo o que você já pediu. Cada demanda guarda a sua necessidade, as respostas da entrevista, o protótipo, a solicitação e o documento de requisitos.',
-    equipe: 'Todas as demandas dos solicitantes. Abra uma demanda para avaliar se é possível fazer, validar o que a IA sugeriu e acompanhar os requisitos.',
-  },
-  'nova-demanda': {
-    solicitante: 'Comece aqui quando precisar de algo novo. Você descreve o que precisa (ou anexa a ata da reunião em .txt) e o NEXUS faz perguntas simples, com opções, para entender o que se encaixa.',
-  },
-  atividades: {
-    equipe: 'As tarefas da equipe para entregar as demandas, em quadro (por situação) ou em lista. Só a equipe vê.',
-  },
-  calendario: {
-    solicitante: 'Sua agenda com a equipe: a reunião para validar as regras do seu sistema, prazos e entregas.',
-    equipe: 'Reuniões para validar as regras com o solicitante, prazos, sprints e entregas. Marque aqui os compromissos de cada demanda.',
-  },
-  solucoes: {
-    solicitante: 'Os sistemas que a equipe já entregou para você e as versões de cada um. Daqui você abre um chamado se algo não funcionar.',
-    equipe: 'Os sistemas já entregues e suas versões. Cada versão lembra de qual demanda veio e quais chamados recebeu: é a ponte entre o desenvolvimento e o suporte.',
-  },
-  fila: {
-    solicitante: 'Seus chamados de suporte: a posição de cada um na fila de atendimento e quanto falta para ser atendido.',
-    equipe: 'Os chamados de suporte por ordem de impacto. Ao atender, o NEXUS reúne o histórico da solução e a IA sugere um caminho; uma pessoa sempre valida antes de concluir.',
-  },
-  usuarios: {
-    equipe: 'Só para administradores: cadastre pessoas, defina quem é solicitante e quem é da equipe responsável, desative contas e redefina senhas.',
-  },
-};
-
 function passosGlobais({ equipe, podeAlternarVisao, admin }: OpcoesTour): PassoTour[] {
-  const passos: PassoTour[] = [];
-
-  // Primeiro passo para quem é da equipe: deixar claro de que lado está.
-  if (podeAlternarVisao) {
-    passos.push({
-      id: 'visao',
-      seletor: '[data-tour="visao"]',
-      titulo: `${ROTULO_VISAO.CLIENTE} ou ${ROTULO_VISAO.EQUIPE.toLowerCase()}?`,
-      texto: equipe
-        ? `Você está na visão da EQUIPE responsável (linha roxa no topo): solicitações, validações e atendimento. Clique em "${ROTULO_VISAO.CLIENTE}" para ver o NEXUS exatamente como quem pede a solução vê.`
-        : `Você está na visão do SOLICITANTE: vê só o que quem pede a solução veria e pode abrir demandas. Clique em "${ROTULO_VISAO.EQUIPE}" para voltar ao trabalho da equipe.`,
-    });
-  }
-
-  passos.push({
-    id: 'menu',
-    seletor: '#menu-lateral .sidebar-nav',
-    titulo: 'Menu lateral',
-    texto: equipe
-      ? 'O menu da equipe responsável, em seções: Projetos (demandas, atividades e calendário), Pós-entrega (soluções e fila de atendimento)' + (admin ? ' e Administração.' : '.') + ' O botão no alto do cabeçalho recolhe o menu para ficar só com os ícones.'
-      : 'O menu do solicitante, em seções: Meus pedidos (suas demandas e uma nova) e Acompanhamento (agenda, soluções entregues e chamados). O botão no alto do cabeçalho recolhe o menu para ficar só com os ícones.',
-    alternativa: MENU_MOBILE,
-  });
-
-  for (const secao of menuDa(equipe ? 'EQUIPE' : 'CLIENTE', admin)) {
-    for (const item of secao.itens) {
-      const texto = TEXTO_ITEM[item.id]?.[equipe ? 'equipe' : 'solicitante'];
-      if (!texto) continue;
-      passos.push({
-        id: item.id,
-        seletor: `[data-tour="menu-${item.id}"]`,
-        titulo: secao.titulo ? `${secao.titulo} · ${item.rotulo}` : item.rotulo,
-        texto,
-        alternativa: MENU_MOBILE,
-      });
-    }
-  }
-
-  passos.push(
+  const passos: PassoTour[] = [
     {
-      id: 'busca',
-      seletor: '.cabecalho-busca',
-      titulo: 'Buscar',
+      id: 'visao-geral',
+      seletor: '.nav a[href="/visao-geral"]',
+      titulo: 'Visão geral',
       texto: equipe
-        ? 'Encontre qualquer demanda, chamado ou solução pelo código ou pelo nome. Atalho: Ctrl K.'
-        : 'Encontre suas demandas, chamados e soluções pelo código ou pelo nome. Atalho: Ctrl K.',
+        ? 'O resumo do dia da equipe: solicitações novas, validações pendentes, reuniões marcadas e demandas em andamento.'
+        : 'Seu ponto de partida. Mostra suas demandas, em que etapa cada uma está e o que está esperando uma ação sua.',
+      alternativa: MENU_MOBILE,
+    },
+    {
+      id: 'demandas',
+      seletor: '.nav a[href="/demandas"]',
+      titulo: 'Demandas',
+      texto: equipe
+        ? 'Todas as demandas dos clientes e as atividades da equipe. Abra uma demanda para avaliar se é possível fazer, validar o que a IA sugeriu e acompanhar os requisitos.'
+        : 'Tudo o que você já pediu. Cada demanda guarda a sua necessidade, as respostas da entrevista, o protótipo, a solicitação e o documento de requisitos.',
+      alternativa: MENU_MOBILE,
+    },
+    {
+      id: 'calendario',
+      seletor: '.nav a[href="/calendario"]',
+      titulo: 'Calendário',
+      texto: equipe
+        ? 'Reuniões para validar as regras com o cliente, prazos, sprints e entregas. Marque aqui os compromissos de cada demanda.'
+        : 'As datas combinadas com a equipe, como a reunião para validar as regras do seu sistema, prazos e entregas.',
+      alternativa: MENU_MOBILE,
+    },
+    {
+      id: 'solucoes',
+      seletor: '.nav a[href="/solucoes"]',
+      titulo: 'Soluções',
+      texto: equipe
+        ? 'Os sistemas já entregues e suas versões. Cada versão lembra de qual demanda veio e quais chamados recebeu: é a ponte entre o desenvolvimento e o suporte.'
+        : 'Os sistemas que a equipe já entregou para você e as versões de cada um. Daqui você abre um chamado se algo não funcionar.',
+      alternativa: MENU_MOBILE,
+    },
+    {
+      id: 'fila',
+      seletor: '.nav a[href="/fila"]',
+      titulo: 'Fila',
+      texto: equipe
+        ? 'Os chamados de suporte por ordem de impacto. Ao atender, o NEXUS reúne o histórico da solução e a IA sugere um caminho; uma pessoa sempre valida antes de concluir.'
+        : 'Acompanhe a posição do seu chamado na fila de atendimento e quanto falta para ele ser atendido.',
+      alternativa: MENU_MOBILE,
     },
     {
       id: 'notificacoes',
@@ -113,9 +77,39 @@ function passosGlobais({ equipe, podeAlternarVisao, admin }: OpcoesTour): PassoT
       id: 'usuario',
       seletor: '.usuario',
       titulo: 'Seu menu',
-      texto: 'Veja com qual conta você entrou e o seu perfil, ligue o modo escuro ou saia do NEXUS. Seu nome e perfil também ficam no rodapé do menu lateral.',
+      texto: 'Veja com qual conta você entrou e o seu perfil, busque qualquer registro (atalho Ctrl K), ligue o modo escuro ou saia do NEXUS.',
     },
-  );
+  ];
+  // Abrir demanda é coisa de cliente: o botão só existe na visão do cliente.
+  if (!equipe) {
+    passos.splice(passos.length - 1, 0, {
+      id: 'nova-demanda',
+      seletor: '.btn-nova',
+      titulo: 'Nova demanda',
+      texto: 'Comece aqui quando precisar de algo novo. Você descreve o que precisa (ou anexa a ata da reunião em .txt) e o NEXUS faz perguntas simples, com opções, para entender o que se encaixa.',
+      alternativa: MENU_MOBILE,
+    });
+  }
+  if (admin && equipe) {
+    passos.splice(5, 0, {
+      id: 'usuarios',
+      seletor: '.nav a[href="/usuarios"]',
+      titulo: 'Usuários',
+      texto: 'Só para administradores: cadastre pessoas, defina quem é cliente e quem é da equipe, desative contas e redefina senhas.',
+      alternativa: MENU_MOBILE,
+    });
+  }
+  // Primeiro passo para quem é da equipe: deixar claro de que lado está.
+  if (podeAlternarVisao) {
+    passos.unshift({
+      id: 'visao',
+      seletor: '[data-tour="visao"]',
+      titulo: 'Cliente ou equipe?',
+      texto: equipe
+        ? 'Você está na visão da EQUIPE (linha roxa no topo): solicitações, validações e atendimento. Clique em "Cliente" para ver o NEXUS exatamente como um cliente vê.'
+        : 'Você está na visão do CLIENTE: vê só o que um cliente veria e pode abrir demandas. Clique em "Equipe" para voltar ao trabalho da equipe.',
+    });
+  }
   return passos;
 }
 
@@ -130,7 +124,7 @@ function passosListaDemandas(equipe: boolean): PassoTour[] {
         : 'A lista do que você pediu, com a etapa de cada demanda. Clique em uma para ver tudo o que ela guarda.',
     },
   ];
-  // Atividades são o quadro interno da equipe; o solicitante não vê a aba.
+  // Atividades são o quadro interno da equipe; o cliente não vê a aba.
   if (equipe) {
     passos.push({
       id: 'aba-atividades',

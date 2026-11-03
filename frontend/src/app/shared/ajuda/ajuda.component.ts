@@ -14,7 +14,7 @@ const SETA_BORDA = 18; // a seta não encosta nos cantos arredondados do balão
 
 interface Retangulo { top: number; left: number; width: number; height: number; }
 
-// Botão "Ajuda" do cabeçalho + tour guiado pelo menu lateral e pelas abas.
+// Botão "Ajuda" do topo + tour guiado pelas abas.
 // Usa <dialog> nativo com showModal(): fica na camada superior (acima do topo sticky),
 // prende o foco e deixa o resto da página inerte. Nada é salvo no servidor.
 @Component({
@@ -43,7 +43,7 @@ interface Retangulo { top: number; left: number; width: number; height: number; 
 
         <div #balao class="tour-balao" tabindex="-1" [class.posicionado]="!!posicao()" [class.animar]="animar()"
           [style.top.px]="posicao()?.top" [style.left.px]="posicao()?.left">
-          @if (seta(); as s) { <span class="tour-seta" aria-hidden="true" [attr.data-lado]="s.lado" [style.left.px]="s.x" [style.top.px]="s.y"></span> }
+          @if (seta(); as s) { <span class="tour-seta" aria-hidden="true" [attr.data-lado]="s.lado" [style.left.px]="s.x"></span> }
           <div aria-live="polite" aria-atomic="true">
             <div class="tour-cabeca">
               <p class="tour-contador">Passo {{ indice() + 1 }} de {{ passos().length }}</p>
@@ -77,7 +77,7 @@ interface Retangulo { top: number; left: number; width: number; height: number; 
     .ajuda-icone { position: relative; display: inline-flex; }
     .ajuda-ponto {
       position: absolute; top: -2px; right: -3px; width: 8px; height: 8px; border-radius: 50%;
-      background: var(--brand); box-shadow: 0 0 0 2px var(--background);
+      background: var(--azul); box-shadow: 0 0 0 2px var(--superficie);
     }
 
     /* Véu do tour: um pouco mais denso no escuro, onde a página já é escura e o recorte some. */
@@ -86,61 +86,59 @@ interface Retangulo { top: number; left: number; width: number; height: number; 
 
     .tour {
       position: fixed; inset: 0; width: 100%; height: 100%; max-width: 100%; max-height: 100%;
-      margin: 0; padding: 0; border: 0; background: transparent; overflow: hidden; color: var(--foreground);
+      margin: 0; padding: 0; border: 0; background: transparent; overflow: hidden; color: var(--texto);
     }
     .tour::backdrop { background: transparent; }
 
     .tour-veu { position: fixed; inset: 0; background: var(--tour-veu); }
     .tour-destaque {
-      position: fixed; border-radius: var(--radius-md); outline: 2px solid var(--primary); outline-offset: 0;
+      position: fixed; border-radius: var(--r-2); outline: 2px solid var(--azul); outline-offset: 0;
       box-shadow: 0 0 0 5px rgb(8 120 255 / 0.22), 0 0 0 9999px var(--tour-veu); pointer-events: none;
       transition: top 0.2s ease, left 0.2s ease, width 0.2s ease, height 0.2s ease;
     }
 
     .tour-balao {
       position: fixed; top: 0; left: 0; width: min(340px, calc(100% - 24px)); visibility: hidden;
-      background: var(--popover); border: 1px solid var(--border); border-radius: var(--radius-md);
-      box-shadow: var(--shadow-lg); padding: 16px 18px 14px;
+      background: var(--superficie); border: 1px solid var(--borda); border-radius: var(--r-3);
+      box-shadow: var(--sombra-menu); padding: 16px 18px 14px;
     }
     .tour-balao.posicionado { visibility: visible; }
     .tour-balao.animar { transition: top 0.2s ease, left 0.2s ease; }
     .tour-balao:focus { outline: none; }
-    .tour-balao:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+    .tour-balao:focus-visible { outline: 2px solid var(--azul); outline-offset: 2px; }
 
     /* Seta: quadrado girado com a mesma cor e borda do balão, apontando para o centro do destaque. */
     .tour-seta {
       position: absolute; width: 12px; height: 12px; margin-left: -6px;
-      background: var(--popover); border: 1px solid var(--border); rotate: 45deg;
+      background: var(--superficie); border: 1px solid var(--borda); rotate: 45deg;
     }
     .tour-seta[data-lado='cima'] { top: -7px; border-right: 0; border-bottom: 0; }
     .tour-seta[data-lado='baixo'] { bottom: -7px; border-left: 0; border-top: 0; }
-    /* Balão à direita do alvo (itens do menu lateral): seta na borda esquerda. */
-    .tour-seta[data-lado='esquerda'] { left: -7px; margin-left: 0; margin-top: -6px; border-top: 0; border-right: 0; }
-    .tour-balao.animar .tour-seta { transition: left 0.2s ease, top 0.2s ease; }
+    .tour-balao.animar .tour-seta { transition: left 0.2s ease; }
 
     .tour-cabeca { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
     .tour-contador { margin: 0; font-size: 12px; font-weight: 500; color: var(--tom-azul-tx); font-variant-numeric: tabular-nums; white-space: nowrap; }
-    .tour-progresso { flex: 1; height: 3px; border-radius: 2px; background: var(--border); overflow: hidden; }
-    .tour-progresso i { display: block; height: 100%; border-radius: 2px; background: var(--primary); transition: width 0.2s ease; }
-    .tour-titulo { margin: 0 0 4px; font-size: 15px; line-height: 1.3; letter-spacing: -0.01em; color: var(--heading); }
-    .tour-texto { margin: 0; font-size: 14px; line-height: 1.55; color: var(--foreground); }
+    .tour-progresso { flex: 1; height: 3px; border-radius: 2px; background: var(--borda); overflow: hidden; }
+    .tour-progresso i { display: block; height: 100%; border-radius: 2px; background: var(--azul); transition: width 0.2s ease; }
+    .tour-titulo { margin: 0 0 4px; font-size: 17px; line-height: 1.3; letter-spacing: -0.01em; color: var(--titulo); }
+    .tour-texto { margin: 0; font-size: 14px; line-height: 1.55; color: var(--texto); }
     .tour-dica {
-      display: flex; gap: 6px; align-items: flex-start; margin: 10px 0 0; padding: 8px 10px; border-radius: var(--radius-md);
-      font-size: 13px; color: var(--foreground); background: var(--tom-azul-bg);
+      display: flex; gap: 6px; align-items: flex-start; margin: 10px 0 0; padding: 8px 10px; border-radius: var(--r-1);
+      font-size: 13px; color: var(--texto); background: var(--tom-azul-bg);
     }
     .tour-dica nx-icon { color: var(--tom-azul-tx); margin-top: 2px; }
 
     .tour-acoes {
       display: flex; align-items: center; justify-content: space-between; gap: 8px;
-      margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border);
+      margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--borda);
     }
-    .tour-pular { font-size: 13px; color: var(--muted-foreground); font-weight: 500; padding: 6px 0; }
-    .tour-pular:hover { color: var(--foreground); }
+    .tour-pular { font-size: 13px; color: var(--texto-2); font-weight: 500; padding: 6px 0; }
+    .tour-pular:hover { color: var(--texto); }
     .tour-navegacao { display: flex; gap: 6px; }
 
-    /* Até 1280px o texto sai para o cabeçalho caber sem quebrar (ícone + aria-label continuam). */
+    /* Até 1280px o texto sai para a navbar caber sem quebrar (ícone + aria-label continuam). */
     @media (max-width: 1280px) {
-      .ajuda-botao { width: 32px; padding: 0; justify-content: center; }
+      .ajuda-botao { width: 36px; padding: 0; justify-content: center; }
       .ajuda-texto { display: none; }
     }
     @media (max-width: 520px) {
@@ -171,7 +169,7 @@ export class AjudaComponent {
   readonly posicao = signal<{ top: number; left: number } | null>(null);
   readonly dica = signal('');
   /** Seta do balão: lado em que fica (cima = balão abaixo do alvo) e posição x dentro do balão. */
-  readonly seta = signal<{ lado: 'cima' | 'baixo' | 'esquerda'; x: number | null; y: number | null } | null>(null);
+  readonly seta = signal<{ lado: 'cima' | 'baixo'; x: number } | null>(null);
   /** Liga a transição do balão só depois da 1ª posição (senão ele "desliza" a partir do canto). */
   readonly animar = signal(false);
 
@@ -295,17 +293,6 @@ export class AjudaComponent {
     const d: Retangulo = { top: r.top - FOLGA, left: r.left - FOLGA, width: r.width + FOLGA * 2, height: r.height + FOLGA * 2 };
     this.destaque.set(d);
 
-    // Alvo no menu lateral: o balão vai para a direita, sem cobrir os outros itens do menu.
-    const aDireita = d.left + d.width + DISTANCIA;
-    if (alvo.closest('#menu-lateral') && aDireita + w <= larguraTela - MARGEM) {
-      const meio = d.top + d.height / 2;
-      const topo = Math.min(Math.max(MARGEM, meio - h / 2), Math.max(MARGEM, alturaTela - h - MARGEM));
-      this.posicao.set({ top: topo, left: aDireita });
-      const y = meio - topo;
-      this.seta.set(y >= SETA_BORDA && y <= h - SETA_BORDA ? { lado: 'esquerda', x: null, y } : null);
-      return;
-    }
-
     const abaixo = d.top + d.height + DISTANCIA;
     const acima = d.top - DISTANCIA - h;
     let top: number;
@@ -318,7 +305,7 @@ export class AjudaComponent {
     const left = Math.min(Math.max(MARGEM, centro), Math.max(MARGEM, larguraTela - w - MARGEM));
     this.posicao.set({ top: Math.max(MARGEM, top), left });
     const x = d.left + d.width / 2 - left;
-    this.seta.set(lado && x >= SETA_BORDA && x <= w - SETA_BORDA ? { lado, x, y: null } : null);
+    this.seta.set(lado && x >= SETA_BORDA && x <= w - SETA_BORDA ? { lado, x } : null);
   }
 
   private elementoVisivel(seletor: string): HTMLElement | null {
