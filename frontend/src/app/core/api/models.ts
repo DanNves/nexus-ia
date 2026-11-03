@@ -96,6 +96,8 @@ export interface Requisito {
   decididoEm?: string;
   /** Modelo de IA que sugeriu (IA real). Ausente = dado do simulador/seed de demonstração. */
   modelo?: string;
+  /** Aprovado com edição humana (métrica do TCC: aprovado sem edição × editado × rejeitado, CLAUDE.md §6/§18). */
+  editado?: boolean;
 }
 
 export interface Solicitacao {
@@ -189,6 +191,8 @@ export interface Solucao {
   clienteId: string;
   demandaOrigemId?: string;
   versoes: Versao[];
+  /** E-mails de quem acompanha a solução sem ser o solicitante (vínculo pelo e-mail da conta). */
+  observadores: string[];
 }
 
 // ---------- Fila / Chamados ----------
@@ -307,6 +311,18 @@ export interface VisaoGeral {
   proximosEventos: Evento[];
   chamados: Chamado[];
   numeros: { demandasAtivas: number; naFila: number; validacoesPendentes: number; entregues: number };
+  /** Indicadores do painel, sempre calculados sobre o que o usuário pode ver (CLAUDE.md §18: nunca inventados). */
+  indicadores: Indicadores;
+}
+
+export interface Indicadores {
+  /** Quantidade de demandas em cada etapa, na ordem de ETAPAS (labels.ts). */
+  demandasPorEtapa: number[];
+  chamados: { naFila: number; emAtendimento: number; resolvidos: number };
+  /** Decisões humanas sobre requisitos sugeridos. */
+  requisitos: { aprovados: number; editados: number; rejeitados: number; aguardando: number };
+  /** Últimas 8 semanas (mais antiga primeiro). `inicio` = segunda-feira da semana. */
+  semanas: { inicio: string; demandas: number; chamados: number }[];
 }
 
 export interface Notificacao {

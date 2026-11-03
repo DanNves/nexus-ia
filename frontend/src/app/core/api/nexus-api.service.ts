@@ -72,6 +72,8 @@ export class NexusApi {
   // Soluções
   solucoes() { return this.http.get<Solucao[]>(`${API}/solucoes`); }
   solucao(id: string) { return this.http.get<Solucao>(`${API}/solucoes/${id}`); }
+  adicionarObservador(id: string, email: string) { return this.http.post<Solucao>(`${API}/solucoes/${id}/observadores`, { email }); }
+  removerObservador(id: string, email: string) { return this.http.delete<Solucao>(`${API}/solucoes/${id}/observadores`, { params: { email } }); }
 
   // Fila e chamados
   fila() { return this.http.get<FilaResumo>(`${API}/fila`); }

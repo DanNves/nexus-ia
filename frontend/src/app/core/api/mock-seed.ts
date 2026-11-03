@@ -7,7 +7,8 @@ import { gerarPrototipo, gerarRanking } from './mock-ia';
 
 /** Notificação guardada no mock: destinatários e quem já leu. A API devolve `Notificacao` (com `lida` do usuário). */
 export interface NotificacaoMock extends Omit<Notificacao, 'lida'> {
-  para: { perfis?: Perfil[]; usuarios?: string[] };
+  /** Destinatários: por perfil, por pessoa ou por e-mail (observadores de uma solução). */
+  para: { perfis?: Perfil[]; usuarios?: string[]; emails?: string[] };
   lidaPor: string[];
 }
 
@@ -28,6 +29,14 @@ export interface MockDb {
 }
 
 export const VERSAO_SEED = 3;
+
+/** Observadores de demonstração (e-mails das contas semeadas no Django): Marina acompanha o portal da Rota Sul;
+ *  Rafael acompanha o dashboard de relatórios (aparece para ele na visão de cliente). */
+export const OBSERVADORES_SEED: Record<string, string[]> = {
+  s1: ['usuario@nexus.local'],
+  s2: ['equipe@nexus.local'],
+  s3: [],
+};
 
 function dia(offset: number, hora = 9, minuto = 0): string {
   const d = new Date();
@@ -210,6 +219,7 @@ export function criarSeed(): MockDb {
   const solucoes: Solucao[] = [
     {
       id: 's1', codigo: 'SOL-01', nome: 'Portal de Atendimento', tipo: 'WEB', clienteId: 'p5', demandaOrigemId: 'd12',
+      observadores: [...OBSERVADORES_SEED['s1']],
       descricao: 'Portal onde os clientes da Rota Sul acompanham entregas e abrem solicitações.',
       versoes: [
         { id: 'v120', numero: '1.2.0', estado: 'PUBLICADA', publicadaEm: dia(-40), notas: ['Autenticação em dois fatores', 'Recuperação de senha por código'] },
@@ -219,6 +229,7 @@ export function criarSeed(): MockDb {
     },
     {
       id: 's2', codigo: 'SOL-02', nome: 'Dashboard de Relatórios', tipo: 'WEB', clienteId: 'p5',
+      observadores: [...OBSERVADORES_SEED['s2']],
       descricao: 'Painel com indicadores de entregas, atrasos e custos por rota.',
       versoes: [
         { id: 'v210', numero: '2.1.0', estado: 'PUBLICADA', publicadaEm: dia(-20), notas: ['Filtro por período', 'Novo gráfico de atrasos'] },
@@ -227,6 +238,7 @@ export function criarSeed(): MockDb {
     },
     {
       id: 's3', codigo: 'SOL-03', nome: 'Agenda Bem Viver', tipo: 'WEB', clienteId: 'p1', demandaOrigemId: 'd14',
+      observadores: [...OBSERVADORES_SEED['s3']],
       descricao: 'Agendamento online de consultas para os pacientes da Clínica Bem Viver.',
       versoes: [
         { id: 'v090', numero: '0.9.0', estado: 'EM_DESENVOLVIMENTO', notas: ['Marcar consulta', 'Remarcar e cancelar', 'Lembretes'] },

@@ -8,13 +8,14 @@ import { HttpErrorResponse, HttpEvent, HttpHandlerFn, HttpInterceptorFn, HttpReq
 import { inject } from '@angular/core';
 import { Observable, catchError, defaultIfEmpty, delay, dematerialize, filter, forkJoin, isObservable, map, materialize, of, throwError } from 'rxjs';
 import {
-  Atividade, Chamado, Conhecimento, Demanda, EstadoAtividade, Evento, FilaResumo, ItemHistorico, Job, Notificacao, Pendencia, Perfil, Pessoa, Prioridade,
+  Atividade, Chamado, Conhecimento, Demanda, EstadoAtividade, Evento, FilaResumo, Indicadores, ItemHistorico, Job, Notificacao, Pendencia, Perfil, Pessoa, Prioridade,
   Requisito, ResultadoBusca, RespostaEntrevista, Solucao, TipoEvento, VisaoGeral,
 } from './models';
-import { MockDb, NotificacaoMock, VERSAO_SEED, criarSeed } from './mock-seed';
+import { MockDb, NotificacaoMock, OBSERVADORES_SEED, VERSAO_SEED, criarSeed } from './mock-seed';
 import { gerarPrototipo, gerarRanking, gerarSugestao, nomeCenario, perguntaPorId, proximaPergunta } from './mock-ia';
 import { AuthService, Usuario } from '../auth/auth.service';
 import { SessionService, pessoaIdDe } from '../session.service';
+import { ETAPAS, etapaAtual } from '../../shared/labels';
 
 const CHAVE = 'nexus.mockdb';
 
@@ -42,7 +43,9 @@ function migrar(salvo: MockDb): MockDb {
     para: n.para ?? { perfis: ['EQUIPE' as Perfil] },
     lidaPor: n.lidaPor ?? (lida ? ['p2'] : []),
   }));
-  return { ...salvo, notificacoes, iaPendentes: salvo.iaPendentes ?? {} };
+  // Soluções salvas antes dos observadores: recebem os da demonstração (s1, s2) ou lista vazia.
+  const solucoes = salvo.solucoes.map((s) => ({ ...s, observadores: s.observadores ?? [...(OBSERVADORES_SEED[s.id] ?? [])] }));
+  return { ...salvo, notificacoes, solucoes, iaPendentes: salvo.iaPendentes ?? {} };
 }
 
 function salvar() {
@@ -253,6 +256,8 @@ interface Ctx {
   perfil: Perfil;
   userId: string;
   nome: string;
+  /** E-mail da conta (minúsculo): vincula a pessoa às soluções em que foi colocada como observadora. */
+  email: string;
   /** Requisição original (já com o Bearer) e o próximo handler: para repassar ao Django. */
   req: HttpRequest<unknown>;
   next: HttpHandlerFn;
@@ -292,6 +297,7 @@ type TipoAlvo = keyof Alvos;
 
 const ehEquipe = (ctx: Ctx) => ctx.perfil === 'EQUIPE';
 const ehDono = (ctx: Ctx, id: string | undefined) => !!id && id === ctx.userId;
+const ehObservador = (ctx: Ctx, s: Solucao) => !!ctx.email && (s.observadores ?? []).includes(ctx.email);
 
 /** Pessoas da equipe que aparecem nos registros do cliente (responsáveis e participantes). */
 function equipeEnvolvida(ctx: Ctx): Set<string> {
@@ -305,7 +311,8 @@ function equipeEnvolvida(ctx: Ctx): Set<string> {
 const REGRAS: { [K in TipoAlvo]: (ctx: Ctx, r: Alvos[K]) => boolean } = {
   demanda: (ctx, d) => ehEquipe(ctx) || ehDono(ctx, d.solicitanteId),
   chamado: (ctx, c) => ehEquipe(ctx) || ehDono(ctx, c.solicitanteId),
-  solucao: (ctx, s) => ehEquipe(ctx) || ehDono(ctx, s.clienteId),
+  // Solicitante, quem foi colocado como observador (pelo e-mail) e a equipe.
+  solucao: (ctx, s) => ehEquipe(ctx) || ehDono(ctx, s.clienteId) || ehObservador(ctx, s),
   // Cliente: eventos em que é participante + as ENTREGAS das demandas dele. Reuniões/análises internas,
   // sprints da equipe e prazos de atividades não aparecem.
   evento: (ctx, e) => ehEquipe(ctx) || e.participantes.includes(ctx.userId)
@@ -317,7 +324,8 @@ const REGRAS: { [K in TipoAlvo]: (ctx: Ctx, r: Alvos[K]) => boolean } = {
   // Atividades são o quadro interno da equipe.
   atividade: (ctx) => ehEquipe(ctx),
   pessoa: (ctx, p) => ehEquipe(ctx) || p.id === ctx.userId || (p.perfil === 'EQUIPE' && equipeEnvolvida(ctx).has(p.id)),
-  notificacao: (ctx, n) => !!n.para.perfis?.includes(ctx.perfil) || !!n.para.usuarios?.includes(ctx.userId),
+  notificacao: (ctx, n) => !!n.para.perfis?.includes(ctx.perfil) || !!n.para.usuarios?.includes(ctx.userId)
+    || (!!ctx.email && !!n.para.emails?.includes(ctx.email)),
   job: (ctx, j) => ehDono(ctx, j.donoId),
 };
 
@@ -492,9 +500,41 @@ rota('GET', '/visao-geral', (ctx) => {
       validacoesPendentes: pendencias.filter((p) => p.tipo !== 'demanda').length,
       entregues: demandas.filter((d) => d.estado === 'ENTREGUE').length,
     },
+    indicadores: indicadores(demandas, chamados),
   };
   return { body: corpo };
 });
+
+/** Indicadores do painel sobre o que o usuário vê (CLAUDE.md §18). */
+function indicadores(demandas: Demanda[], chamados: Chamado[]): Indicadores {
+  const demandasPorEtapa = ETAPAS.map(() => 0);
+  demandas.forEach((d) => demandasPorEtapa[etapaAtual(d.estado)]++);
+  const reqs = demandas.flatMap((d) => d.requisitos);
+  // Semanas começando na segunda-feira; a última é a atual.
+  const segunda = new Date(); segunda.setHours(0, 0, 0, 0);
+  segunda.setDate(segunda.getDate() - ((segunda.getDay() + 6) % 7));
+  const semanas = Array.from({ length: 8 }, (_, i) => {
+    const ini = new Date(segunda); ini.setDate(ini.getDate() - 7 * (7 - i));
+    const fim = new Date(ini); fim.setDate(fim.getDate() + 7);
+    const dentro = (iso: string) => { const t = new Date(iso).getTime(); return t >= ini.getTime() && t < fim.getTime(); };
+    return { inicio: ini.toISOString(), demandas: demandas.filter((d) => dentro(d.criadaEm)).length, chamados: chamados.filter((c) => dentro(c.abertoEm)).length };
+  });
+  return {
+    demandasPorEtapa,
+    chamados: {
+      naFila: chamados.filter((c) => c.estado === 'NA_FILA').length,
+      emAtendimento: chamados.filter((c) => c.estado === 'EM_ATENDIMENTO').length,
+      resolvidos: chamados.filter((c) => c.estado === 'RESOLVIDO').length,
+    },
+    requisitos: {
+      aprovados: reqs.filter((r) => r.estado === 'APROVADO' && !r.editado).length,
+      editados: reqs.filter((r) => r.estado === 'APROVADO' && r.editado).length,
+      rejeitados: reqs.filter((r) => r.estado === 'REJEITADO').length,
+      aguardando: reqs.filter((r) => r.estado === 'PROPOSTO').length,
+    },
+    semanas,
+  };
+}
 
 // Demandas
 rota('GET', '/demandas', (ctx, _p, _b, q) => {
@@ -755,6 +795,8 @@ rota('POST', '/demandas/:id/requisitos/:rid/decisao', (ctx, [id, rid], b) => {
   validar(erros);
   const titulo = texto(b['titulo']);
   const descricao = texto(b['descricao']);
+  // Aprovação com texto diferente do sugerido conta como "editado" (indicador do painel).
+  if (decisao === 'APROVAR' && ((titulo && titulo !== r.titulo) || (descricao && descricao !== r.descricao))) r.editado = true;
   if (titulo) r.titulo = titulo;
   if (descricao) r.descricao = descricao;
   r.estado = decisao === 'APROVAR' ? 'APROVADO' : 'REJEITADO';
@@ -851,6 +893,35 @@ rota('POST', '/eventos', (ctx, _p, b) => {
 // Soluções
 rota('GET', '/solucoes', (ctx) => ({ body: visiveis(ctx, 'solucao', db.solucoes) }));
 rota('GET', '/solucoes/:id', (ctx, [id]) => ({ body: obter(ctx, 'solucao', db.solucoes, id) }));
+
+const EMAIL_VALIDO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// Observadores: o solicitante e a equipe adicionam/removem; o próprio observador pode sair.
+rota('POST', '/solucoes/:id/observadores', (ctx, [id], b) => {
+  const s = obter(ctx, 'solucao', db.solucoes, id);
+  if (!ehEquipe(ctx) && !ehDono(ctx, s.clienteId)) throw new ApiErro(403, 'Só quem solicitou a solução ou a equipe pode adicionar observadores.');
+  const email = texto(b['email']).toLowerCase();
+  const erros: Record<string, string[]> = {};
+  exigir(EMAIL_VALIDO.test(email) && email.length <= 254, 'email', 'Informe um e-mail válido.', erros);
+  exigir(!s.observadores.includes(email), 'email', 'Este e-mail já acompanha a solução.', erros);
+  exigir(email !== ctx.email || !ehDono(ctx, s.clienteId), 'email', 'Você já acompanha esta solução como solicitante.', erros);
+  validar(erros);
+  s.observadores.push(email);
+  notificar(`${ctx.nome} colocou você como observador de "${s.nome}".`, `/solucoes/${s.id}`, { emails: [email] });
+  salvar();
+  return { status: 201, body: s };
+});
+
+rota('DELETE', '/solucoes/:id/observadores', (ctx, [id], _b, q) => {
+  const s = obter(ctx, 'solucao', db.solucoes, id);
+  const email = (q.get('email') ?? '').trim().toLowerCase();
+  const podeGerenciar = ehEquipe(ctx) || ehDono(ctx, s.clienteId);
+  if (!podeGerenciar && email !== ctx.email) throw new ApiErro(403, 'Você só pode deixar de observar em seu próprio nome.');
+  if (!s.observadores.includes(email)) throw new ApiErro(404, 'Este e-mail não acompanha a solução.');
+  s.observadores = s.observadores.filter((e) => e !== email);
+  salvar();
+  return { body: s };
+});
 
 // Fila / chamados
 rota('GET', '/fila', (ctx) => {
@@ -1033,7 +1104,7 @@ export const mockBackendInterceptor: HttpInterceptorFn = (req, next) => {
   if (!usuario) return erroHttp(new ApiErro(401, 'Sua sessão expirou. Entre novamente.'), req.url);
   const userId = sincronizarPessoa(usuario);
   // Responde pela VISÃO ativa (equipe vendo como cliente recebe exatamente o que um cliente receberia).
-  const ctx: Ctx = { perfil: inject(SessionService).perfil(), userId, nome: usuario.nome, req, next };
+  const ctx: Ctx = { perfil: inject(SessionService).perfil(), userId, nome: usuario.nome, email: usuario.email.trim().toLowerCase(), req, next };
 
   // Job real (não criado por este mock): consulta no Django e aplica o resultado pendente antes de responder.
   const job = ROTA_JOB.exec(caminho);

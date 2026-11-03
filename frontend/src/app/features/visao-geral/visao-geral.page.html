@@ -2,85 +2,159 @@
   <header class="pagina-topo">
     <div>
       <h1>{{ saudacao() }}, {{ primeiroNome() }}</h1>
-      @if (dados(); as d) {
-        <p class="mudo">
-          @if (d.pendencias.length) { {{ d.pendencias.length }} {{ d.pendencias.length === 1 ? 'coisa espera' : 'coisas esperam' }} por você hoje. }
-          @else { Tudo em dia por aqui. }
-        </p>
-      }
+      <p class="mudo">
+        {{ sessao.ehEquipe() ? 'Painel da equipe: o que entrou, o que espera validação e como está o atendimento.' : 'Seu painel: o andamento dos seus pedidos e chamados.' }}
+      </p>
     </div>
+    <button type="button" class="btn btn-secundario btn-p" (click)="carregar()" aria-label="Atualizar painel"><nx-icon name="refresh" [size]="15" /> Atualizar</button>
   </header>
 
-  @if (dados(); as d) {
-    <dl class="numeros">
-      <div><dt>Demandas ativas</dt><dd>{{ d.numeros.demandasAtivas }}</dd></div>
-      <div><dt>{{ sessao.ehEquipe() ? 'Chamados na fila' : 'Seus chamados na fila' }}</dt><dd>{{ d.numeros.naFila }}</dd></div>
-      @if (sessao.ehEquipe()) { <div><dt>Validações pendentes</dt><dd>{{ d.numeros.validacoesPendentes }}</dd></div> }
-      <div><dt>Entregues</dt><dd>{{ d.numeros.entregues }}</dd></div>
-    </dl>
+  @if (erro()) {
+    <nx-vazio icone="alert" titulo="Não foi possível carregar o painel" [texto]="erro()">
+      <button type="button" class="btn btn-primario" (click)="carregar()">Tentar de novo</button>
+    </nx-vazio>
+  } @else if (dados(); as d) {
+    <!-- ======= Números ======= -->
+    <div class="kpis">
+      @for (k of kpis(); track k.rotulo) {
+        <a class="kpi" [routerLink]="k.link">
+          <span class="kpi-topo"><nx-icon [name]="k.icone" [size]="16" /> {{ k.rotulo }}</span>
+          <strong class="kpi-valor">{{ k.valor }}</strong>
+          <span class="kpi-dica">{{ k.dica }}</span>
+        </a>
+      }
+    </div>
 
-    <div class="grade-2">
-      <div class="coluna">
-        <section class="secao">
-          <h2>Precisa da sua ação</h2>
-          @if (d.pendencias.length) {
-            <ul class="lista">
-              @for (p of d.pendencias; track p.id) {
-                <li class="lista-item">
-                  <span class="lista-icone" [attr.data-tipo]="p.tipo">
-                    <nx-icon [name]="p.tipo === 'chamado' ? 'spark' : p.tipo === 'requisito' ? 'check-circle' : 'demand'" [size]="16" />
-                  </span>
-                  <div class="lista-texto">
-                    <strong>{{ p.texto }}</strong>
-                    <span class="mudo">{{ p.detalhe }}</span>
-                  </div>
-                  <a class="btn btn-secundario btn-p" [routerLink]="p.link">{{ p.acao }}</a>
-                </li>
-              }
-            </ul>
-          } @else {
-            <nx-vazio icone="check-circle" titulo="Nada pendente" texto="Quando algo precisar de você, aparece aqui." />
+    <!-- ======= O que fazer agora ======= -->
+    @if (d.pendencias.length) {
+      <section class="painel cartao">
+        <header class="cartao-topo"><h2>Precisa da sua ação <span class="contador">{{ d.pendencias.length }}</span></h2></header>
+        <ul class="lista lista-solta">
+          @for (p of d.pendencias; track p.id) {
+            <li class="lista-item">
+              <span class="lista-icone" [attr.data-tipo]="p.tipo">
+                <nx-icon [name]="p.tipo === 'chamado' ? 'spark' : p.tipo === 'requisito' ? 'check-circle' : 'demand'" [size]="16" />
+              </span>
+              <div class="lista-texto"><strong>{{ p.texto }}</strong><span class="mudo">{{ p.detalhe }}</span></div>
+              <a class="btn btn-secundario btn-p" [routerLink]="p.link">{{ p.acao }}</a>
+            </li>
           }
-        </section>
+        </ul>
+      </section>
+    }
 
-        <section class="secao">
-          <div class="secao-topo">
-            <h2>{{ sessao.ehEquipe() ? 'Demandas em andamento' : 'Suas demandas' }}</h2>
-            <a routerLink="/demandas" class="link">Ver todas</a>
+    <!-- ======= Gráficos ======= -->
+    <div class="painel-grade">
+      <section class="painel cartao">
+        <header class="cartao-topo">
+          <h2>Demandas por etapa</h2>
+          <a routerLink="/demandas" class="link">Ver demandas</a>
+        </header>
+        @if (totalDemandas()) {
+          <ul class="barras" [attr.aria-label]="'Demandas por etapa, total ' + totalDemandas()">
+            @for (e of etapas(); track e.rotulo) {
+              <li class="barra-linha" [attr.title]="e.rotulo + ': ' + e.valor">
+                <span class="barra-rotulo">{{ e.rotulo }}</span>
+                <span class="barra-trilho"><span class="barra-valor" [style.width.%]="e.pct"></span></span>
+                <span class="barra-numero">{{ e.valor }}</span>
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="mudo grafico-vazio">Nenhuma demanda ainda.</p>
+        }
+      </section>
+
+      <section class="painel cartao">
+        <header class="cartao-topo">
+          <h2>{{ sessao.ehEquipe() ? 'Chamados de suporte' : 'Seus chamados' }}</h2>
+          <a routerLink="/fila" class="link">Ver fila</a>
+        </header>
+        @if (total(chamados()); as t) {
+          <p class="destaque"><strong>{{ t }}</strong> <span class="mudo">chamados no total</span></p>
+          <div class="pilha" role="img" [attr.aria-label]="'Chamados: ' + chamados()[0].valor + ' na fila, ' + chamados()[1].valor + ' em atendimento, ' + chamados()[2].valor + ' resolvidos'">
+            @for (f of chamados(); track f.rotulo) {
+              @if (f.valor) { <span class="pilha-fatia" [attr.data-serie]="f.serie" [style.flex-grow]="f.valor" [attr.title]="f.rotulo + ': ' + f.valor"></span> }
+            }
           </div>
-          @if (d.demandas.length) {
-            <ul class="lista">
-              @for (dm of d.demandas; track dm.id) {
-                <li>
-                  <a class="lista-item lista-link" [routerLink]="['/demandas', dm.id]">
-                    <div class="lista-texto">
-                      <strong>{{ dm.nome }}</strong>
-                      <span class="mudo">{{ dm.codigo }}, atualizada {{ relativo(dm.atualizadaEm) }}</span>
+          <ul class="legenda">
+            @for (f of chamados(); track f.rotulo) {
+              <li><i [attr.data-serie]="f.serie"></i>{{ f.rotulo }} <strong>{{ f.valor }}</strong></li>
+            }
+          </ul>
+        } @else {
+          <p class="mudo grafico-vazio">Nenhum chamado aberto até agora.</p>
+        }
+      </section>
+
+      <section class="painel cartao">
+        <header class="cartao-topo">
+          <h2>Movimento nas últimas 8 semanas</h2>
+        </header>
+        @if (semanas(); as s) {
+          @if (!s.vazio) {
+            <div class="colunas" role="img" aria-label="Demandas e chamados abertos por semana nas últimas 8 semanas">
+              <div class="colunas-eixo" aria-hidden="true">
+                @for (m of s.marcas; track m) { <span>{{ m }}</span> }
+              </div>
+              <div class="colunas-area">
+                @for (w of s.itens; track w.inicio) {
+                  <div class="colunas-grupo" tabindex="0" [attr.aria-label]="'Semana de ' + dataCurta(w.inicio) + ': ' + w.demandas + ' demandas, ' + w.chamados + ' chamados'">
+                    <div class="colunas-par">
+                      <span class="coluna-barra" data-serie="1" [style.height.%]="w.hD"></span>
+                      <span class="coluna-barra" data-serie="2" [style.height.%]="w.hC"></span>
                     </div>
-                    <div class="progresso-etapas" [attr.aria-label]="'Etapa: ' + ETAPAS[etapaAtual(dm.estado)]">
-                      @for (e of ETAPAS; track e; let i = $index) {
-                        <span class="etapa-ponto" [class.feita]="i < etapaAtual(dm.estado)" [class.atual]="i === etapaAtual(dm.estado)"></span>
-                      }
-                    </div>
-                    <nx-badge [tom]="ESTADO_DEMANDA[dm.estado].tom">{{ ESTADO_DEMANDA[dm.estado].rotulo }}</nx-badge>
-                  </a>
-                </li>
+                    <span class="colunas-rotulo">{{ w.rotulo }}</span>
+                    <span class="dica-grafico" role="tooltip">
+                      <strong>Semana de {{ dataCurta(w.inicio) }}</strong>
+                      <span><i data-serie="1"></i>{{ w.demandas }} {{ w.demandas === 1 ? 'demanda' : 'demandas' }}</span>
+                      <span><i data-serie="2"></i>{{ w.chamados }} {{ w.chamados === 1 ? 'chamado' : 'chamados' }}</span>
+                    </span>
+                  </div>
+                }
+              </div>
+            </div>
+            <ul class="legenda">
+              <li><i data-serie="1"></i>Demandas abertas</li>
+              <li><i data-serie="2"></i>Chamados abertos</li>
+            </ul>
+          } @else {
+            <p class="mudo grafico-vazio">Nada aberto nas últimas 8 semanas.</p>
+          }
+        }
+      </section>
+
+      @if (sessao.ehEquipe()) {
+        <section class="painel cartao">
+          <header class="cartao-topo">
+            <h2>Validação humana das sugestões</h2>
+            <span class="selo-ia"><nx-icon name="spark" [size]="13" /> Requisitos</span>
+          </header>
+          @if (total(requisitos()); as t) {
+            <p class="destaque">
+              @if (aceitacao() !== null) { <strong>{{ aceitacao() }}%</strong> <span class="mudo">das decisões aprovaram sem editar</span> }
+              @else { <strong>{{ t }}</strong> <span class="mudo">sugestões ainda sem decisão</span> }
+            </p>
+            <div class="pilha" role="img" [attr.aria-label]="'Requisitos: ' + requisitos()[0].valor + ' aprovados sem edição, ' + requisitos()[1].valor + ' com edição, ' + requisitos()[2].valor + ' rejeitados, ' + requisitos()[3].valor + ' aguardando'">
+              @for (f of requisitos(); track f.rotulo) {
+                @if (f.valor) { <span class="pilha-fatia" [attr.data-serie]="f.serie" [style.flex-grow]="f.valor" [attr.title]="f.rotulo + ': ' + f.valor"></span> }
+              }
+            </div>
+            <ul class="legenda">
+              @for (f of requisitos(); track f.rotulo) {
+                <li><i [attr.data-serie]="f.serie"></i>{{ f.rotulo }} <strong>{{ f.valor }}</strong></li>
               }
             </ul>
           } @else {
-            <nx-vazio icone="demand" titulo="Nenhuma demanda ainda" [texto]="sessao.ehEquipe() ? 'As demandas dos clientes aparecem aqui quando forem abertas.' : 'Conte o que você precisa e o NEXUS guia o resto.'">
-              @if (!sessao.ehEquipe()) { <a routerLink="/demandas/nova" class="btn btn-primario"><nx-icon name="plus" [size]="16" /> Nova demanda</a> }
-            </nx-vazio>
+            <p class="mudo grafico-vazio">Nenhum requisito sugerido ainda.</p>
           }
         </section>
-      </div>
-
-      <aside class="coluna">
-        <section class="secao">
-          <div class="secao-topo">
+      } @else {
+        <section class="painel cartao">
+          <header class="cartao-topo">
             <h2>Próximos compromissos</h2>
             <a routerLink="/calendario" class="link">Calendário</a>
-          </div>
+          </header>
           @if (d.proximosEventos.length) {
             <ul class="agenda">
               @for (e of d.proximosEventos; track e.id) {
@@ -92,41 +166,61 @@
               }
             </ul>
           } @else {
-            <p class="mudo">Sem compromissos marcados.</p>
+            <p class="mudo grafico-vazio">Sem compromissos marcados.</p>
           }
         </section>
+      }
+    </div>
 
-        <section class="secao">
-          <div class="secao-topo">
-            <h2>{{ sessao.ehEquipe() ? 'Atendimento' : 'Seus chamados' }}</h2>
-            <a routerLink="/fila" class="link">Fila</a>
-          </div>
-          @if (d.chamados.length) {
-            <ul class="lista lista-compacta">
-              @for (c of d.chamados; track c.id) {
-                <li>
-                  <a class="lista-item lista-link" [routerLink]="['/fila', c.id]">
-                    @if (c.posicao) {
-                      <span class="posicao-mini">{{ c.posicao }}º</span>
-                    } @else {
-                      <span class="lista-icone" data-tipo="chamado"><nx-icon name="users" [size]="15" /></span>
-                    }
-                    <div class="lista-texto">
-                      <strong>{{ c.titulo }}</strong>
-                      <span class="mudo">
-                        @if (c.posicao) { Espera estimada de {{ duracao(c.esperaEstimadaMin ?? 0) }} }
-                        @else { {{ ESTADO_CHAMADO[c.estado].rotulo }} }
-                      </span>
-                    </div>
-                  </a>
+    <!-- ======= Listas ======= -->
+    <div class="painel-grade painel-grade-lista">
+      <section class="painel cartao">
+        <header class="cartao-topo">
+          <h2>{{ sessao.ehEquipe() ? 'Demandas recentes' : 'Suas demandas' }}</h2>
+          <a routerLink="/demandas" class="link">Ver todas</a>
+        </header>
+        @if (d.demandas.length) {
+          <ul class="lista lista-solta">
+            @for (dm of d.demandas; track dm.id) {
+              <li>
+                <a class="lista-item lista-link" [routerLink]="['/demandas', dm.id]">
+                  <div class="lista-texto">
+                    <strong>{{ dm.nome }}</strong>
+                    <span class="mudo">{{ dm.codigo }} · {{ ETAPAS[etapaAtual(dm.estado)] }} · atualizada {{ relativo(dm.atualizadaEm) }}</span>
+                  </div>
+                  <nx-badge [tom]="ESTADO_DEMANDA[dm.estado].tom">{{ ESTADO_DEMANDA[dm.estado].rotulo }}</nx-badge>
+                </a>
+              </li>
+            }
+          </ul>
+        } @else {
+          <nx-vazio icone="demand" titulo="Nenhuma demanda ainda" [texto]="sessao.ehEquipe() ? 'As demandas dos clientes aparecem aqui quando forem abertas.' : 'Conte o que você precisa e o NEXUS guia o resto.'">
+            @if (!sessao.ehEquipe()) { <a routerLink="/demandas/nova" class="btn btn-primario"><nx-icon name="plus" [size]="16" /> Nova demanda</a> }
+          </nx-vazio>
+        }
+      </section>
+
+      @if (sessao.ehEquipe()) {
+        <section class="painel cartao">
+          <header class="cartao-topo">
+            <h2>Próximos compromissos</h2>
+            <a routerLink="/calendario" class="link">Calendário</a>
+          </header>
+          @if (d.proximosEventos.length) {
+            <ul class="agenda">
+              @for (e of d.proximosEventos; track e.id) {
+                <li class="agenda-item">
+                  <span class="agenda-quando"><strong>{{ diaRelativo(e.inicio) }}</strong><span class="mudo">{{ hora(e.inicio) }}</span></span>
+                  <span class="agenda-barra" [attr.data-tom]="TIPO_EVENTO[e.tipo].tom"></span>
+                  <span class="agenda-texto">{{ e.titulo }}<small class="mudo">{{ TIPO_EVENTO[e.tipo].rotulo }}</small></span>
                 </li>
               }
             </ul>
           } @else {
-            <p class="mudo">Nenhum chamado aberto.</p>
+            <p class="mudo grafico-vazio">Sem compromissos marcados.</p>
           }
         </section>
-      </aside>
+      }
     </div>
   } @else {
     <div class="carregando" aria-busy="true"><span></span><span></span><span></span></div>
