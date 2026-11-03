@@ -811,6 +811,9 @@ a.faixa:hover { filter: brightness(0.98); }
 .respostas-dadas .mudo { font-size: 13px; }
 .respostas-dadas strong { font-weight: 500; }
 .respostas-dadas .link { width: fit-content; font-size: 13px; }
+/* Resumo da IA abaixo das respostas: separado por um fio, sem cartão. */
+.resumo-entrevista { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border); }
+.resumo-entrevista .mudo { font-size: 13px; }
 
 .ranking { display: flex; flex-direction: column; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-card); }
 .ranking-item { display: flex; align-items: center; gap: 14px; padding: 14px 16px; color: var(--muted-foreground); }

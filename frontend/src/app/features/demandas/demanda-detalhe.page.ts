@@ -1,9 +1,10 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { Observable, finalize, forkJoin, of, switchMap } from 'rxjs';
+import { Observable, Subscription, finalize, forkJoin, of, switchMap } from 'rxjs';
 import { NexusApi, lerErro } from '../../core/api/nexus-api.service';
-import { Atividade, Demanda, Job, Pergunta, Pessoa, ProximaPergunta, Requisito, TipoCenario } from '../../core/api/models';
+import { Atividade, Demanda, Job, Pergunta, Pessoa, ProximaPergunta, Requisito, StatusIa, TipoCenario } from '../../core/api/models';
 import { SessionService } from '../../core/session.service';
 import { UI } from '../../shared/ui/ui.components';
 import { ToastService } from '../../shared/ui/toast.service';
@@ -32,6 +33,13 @@ interface ProximoPasso {
 
 const LEVANTANDO = ['RASCUNHO', 'EM_LEVANTAMENTO'];
 
+/** Pedidos de rodada seguidos sem nenhuma pergunta nova antes de desistir da IA nesta rodada (evita laço). */
+const MAX_PEDIDOS_SEGUIDOS = 2;
+/** Mostra a linha da cota quando restarem até tantas gerações com IA hoje. */
+const AVISO_COTA_A_PARTIR = 5;
+
+interface EscolhaSalva { perguntaId: string; valores: string[]; outro: string; usarOutro: boolean; naoSei?: boolean }
+
 @Component({
   selector: 'nx-demanda-detalhe',
   imports: [RouterLink, FormsModule, ...UI, ...RASCUNHO],
@@ -44,6 +52,7 @@ export class DemandaDetalhePage {
   private router = inject(Router);
   private toast = inject(ToastService);
   private rascunhos = inject(RascunhoService);
+  private destroyRef = inject(DestroyRef);
 
   id = input.required<string>();
   aba = input<string>();
@@ -73,6 +82,27 @@ export class DemandaDetalhePage {
   readonly erroPergunta = signal('');
   readonly carregandoPergunta = signal(false);
   readonly erroCargaPergunta = signal('');
+  readonly naoSei = signal(false);
+  /** Motivo de as perguntas atuais virem do roteiro padrão (linha discreta na tela). */
+  readonly motivoRoteiro = signal('');
+  /** "O que já entendemos" da última rodada gerada (IA ou simulador); o roteiro padrão não tem resumo. */
+  readonly resumoEntrevista = computed(() =>
+    [...(this.d()?.entrevista?.rodadas ?? [])].reverse().find((r) => r.fonte !== 'ROTEIRO' && !!r.resumo));
+  /** Rodada da IA em preparo: etapa do job para o estado de espera. */
+  readonly preparando = signal<{ etapa: string; percentual: number } | null>(null);
+  readonly statusIa = signal<StatusIa | null>(null);
+  private pedidosSeguidos = 0;
+  private rodada$?: Subscription;
+
+  /** Linha discreta da cota: só quando falta pouco ou acabou (nada de alarme). */
+  readonly avisoCota = computed(() => {
+    const c = this.statusIa()?.cota;
+    if (!c) return '';
+    const restam = Math.max(0, c.limiteDiario - c.usadasHoje);
+    if (restam === 0) return 'Os usos da IA de hoje acabaram. As próximas perguntas seguem pelo roteiro padrão.';
+    if (restam <= AVISO_COTA_A_PARTIR) return `Restam ${restam} ${restam === 1 ? 'uso' : 'usos'} da IA hoje. Depois, as perguntas seguem pelo roteiro padrão.`;
+    return '';
+  });
 
   // Jobs
   readonly job = signal<Job | null>(null);
@@ -274,40 +304,90 @@ export class DemandaDetalhePage {
     if (!d || !this.podeEditarLevantamento()) return;
     this.carregandoPergunta.set(true);
     this.erroCargaPergunta.set('');
+    this.atualizarStatusIa();
     this.api.proximaPergunta(d.id).pipe(finalize(() => this.carregandoPergunta.set(false))).subscribe({
       next: (r) => this.aplicarPergunta(r),
       error: (e) => this.erroCargaPergunta.set(lerErro(e).mensagem),
     });
   }
 
+  /** Cota e provedor (rota real). Falha aqui não atrapalha a entrevista: só some a linha da cota. */
+  private atualizarStatusIa() {
+    this.api.iaStatus().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({ next: (s) => this.statusIa.set(s), error: () => this.statusIa.set(null) });
+  }
+
   private aplicarPergunta(r: ProximaPergunta) {
+    this.motivoRoteiro.set(r.roteiro ?? '');
+    if (r.precisaRodada) { this.pedirRodada(); return; }
+    this.pedidosSeguidos = 0;
     this.pergunta.set(r.pergunta ?? null);
     this.progresso.set(r.progresso);
     this.entrevistaFim.set(r.concluida);
     this.escolhidas.set([]);
     this.outro = '';
     this.usarOutro.set(false);
+    this.naoSei.set(false);
     this.erroPergunta.set('');
     // Autosave: a escolha feita antes de sair (sem clicar em Continuar) volta marcada.
-    const salvo = this.rascunhos.ler<{ perguntaId: string; valores: string[]; outro: string; usarOutro: boolean }>(this.rascunho('entrevista'));
+    const salvo = this.rascunhos.ler<EscolhaSalva>(this.rascunho('entrevista'));
     if (salvo && r.pergunta && salvo.valor.perguntaId === r.pergunta.id) {
       const validos = salvo.valor.valores.filter((v) => r.pergunta!.opcoes.some((o) => o.valor === v));
       this.escolhidas.set(validos);
       this.outro = salvo.valor.outro;
       this.usarOutro.set(salvo.valor.usarOutro);
+      this.naoSei.set(!!salvo.valor.naoSei && !validos.length && !salvo.valor.usarOutro);
     }
+  }
+
+  /**
+   * Pede a próxima rodada de perguntas. Se a IA vai gerar, acompanha o job (mesmo polling de requisitos e suporte)
+   * e depois busca a pergunta. Qualquer falha cai no roteiro padrão (decidido no mock/servidor); se o próprio
+   * acompanhamento cair (rede), pede a rodada de novo com `semIa` para seguir pelo roteiro.
+   */
+  private pedirRodada(semIa = false) {
+    const d = this.d();
+    if (!d) return;
+    if (!semIa && ++this.pedidosSeguidos > MAX_PEDIDOS_SEGUIDOS) semIa = true;
+    this.rodada$?.unsubscribe();
+    this.pergunta.set(null);
+    this.preparando.set({ etapa: 'Começando', percentual: 0 });
+    this.rodada$ = this.api.pedirRodada(d.id, semIa ? { semIa: true } : {}).pipe(
+      switchMap((r) => {
+        if (!r.job) return of(r.proxima ?? null);
+        return this.api.acompanharJob(r.job.id).pipe(switchMap((j: Job) => {
+          this.preparando.set({ etapa: j.etapa || 'Preparando', percentual: j.percentual });
+          // Terminou (CONCLUIDO ou FALHOU): o mock já guardou a rodada ou passou para o roteiro.
+          return j.estado === 'CONCLUIDO' || j.estado === 'FALHOU' ? this.api.proximaPergunta(d.id) : of(undefined);
+        }));
+      }),
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe({
+      next: (r) => {
+        if (r === undefined) return;
+        this.preparando.set(null);
+        if (r) { this.atualizarStatusIa(); this.aplicarPergunta(r); } else this.carregarPergunta();
+      },
+      error: (e) => {
+        this.preparando.set(null);
+        // Polling perdido (rede) com a IA: segue pelo roteiro. Erro no próprio pedido do roteiro: mostra.
+        if (!semIa) this.pedirRodada(true);
+        else this.erroCargaPergunta.set(lerErro(e).mensagem);
+      },
+    });
   }
 
   /** Guarda a escolha em andamento da pergunta atual (autosave). */
   guardarEscolha() {
     const p = this.pergunta();
     if (!p) return;
-    this.rascunhos.salvar(this.rascunho('entrevista'), { perguntaId: p.id, valores: this.escolhidas(), outro: this.outro, usarOutro: this.usarOutro() });
+    const valor: EscolhaSalva = { perguntaId: p.id, valores: this.escolhidas(), outro: this.outro, usarOutro: this.usarOutro(), naoSei: this.naoSei() };
+    this.rascunhos.salvar(this.rascunho('entrevista'), valor);
   }
 
   alternar(valor: string) {
     const p = this.pergunta();
     if (!p) return;
+    this.naoSei.set(false);
     if (p.multipla) this.escolhidas.update((l) => (l.includes(valor) ? l.filter((v) => v !== valor) : [...l, valor]));
     else { this.escolhidas.set([valor]); this.usarOutro.set(false); }
     this.guardarEscolha();
@@ -315,8 +395,17 @@ export class DemandaDetalhePage {
 
   marcarOutro() {
     const p = this.pergunta();
+    this.naoSei.set(false);
     if (p && !p.multipla) this.escolhidas.set([]);
     this.usarOutro.set(!this.usarOutro() || !p?.multipla);
+    this.guardarEscolha();
+  }
+
+  /** "Não sei" é exclusivo: desmarca as opções e o "Outro". */
+  marcarNaoSei() {
+    const marcar = !this.naoSei();
+    this.naoSei.set(marcar);
+    if (marcar) { this.escolhidas.set([]); this.usarOutro.set(false); }
     this.guardarEscolha();
   }
 
@@ -325,9 +414,15 @@ export class DemandaDetalhePage {
     const p = this.pergunta();
     if (!d || !p) return;
     const outro = this.usarOutro() ? this.outro.trim() : '';
-    if (!this.escolhidas().length && !outro) { this.erroPergunta.set('Escolha uma opção ou escreva em "Outro".'); return; }
+    const naoSei = this.naoSei();
+    // Mesmas regras do servidor (contrato): pelo menos uma escolha; "Não sei" sozinho; opções da pergunta; tamanhos.
+    if (!this.escolhidas().length && !outro && !naoSei) { this.erroPergunta.set('Escolha uma opção, escreva em "Outro" ou marque "Não sei".'); return; }
+    if (this.usarOutro() && !outro && !this.escolhidas().length) { this.erroPergunta.set('Escreva sua resposta em "Outro".'); return; }
+    if (outro.length > 200) { this.erroPergunta.set('Use no máximo 200 caracteres em "Outro".'); return; }
+    const valores = this.escolhidas().filter((v) => p.opcoes.some((o) => o.valor === v));
+    if (!p.multipla && valores.length > 1) { this.erroPergunta.set('Esta pergunta aceita só uma opção.'); return; }
     this.respondendo.set(true);
-    this.api.responder(d.id, { perguntaId: p.id, valores: this.escolhidas(), outro: outro || undefined })
+    this.api.responder(d.id, { perguntaId: p.id, valores: naoSei ? [] : valores, outro: naoSei ? undefined : outro || undefined, naoSei: naoSei || undefined })
       .pipe(finalize(() => this.respondendo.set(false)))
       .subscribe({
         next: (r) => {
@@ -335,7 +430,11 @@ export class DemandaDetalhePage {
           this.api.demanda(d.id).subscribe((nd) => this.d.set(nd));
           this.aplicarPergunta(r);
         },
-        error: (e) => this.erroPergunta.set(lerErro(e).campos?.['valores']?.[0] ?? lerErro(e).mensagem),
+        error: (e) => {
+          const er = lerErro(e);
+          // Erros do servidor por campo (formato DRF): valores, outro, perguntaId.
+          this.erroPergunta.set(er.campos?.['valores']?.[0] ?? er.campos?.['outro']?.[0] ?? er.campos?.['perguntaId']?.[0] ?? er.mensagem);
+        },
       });
   }
 
@@ -343,14 +442,21 @@ export class DemandaDetalhePage {
     const d = this.d();
     const r = d?.respostas.find((x) => x.perguntaId === perguntaId);
     if (!d || !r) return;
-    this.api.pergunta(d.id, perguntaId).subscribe((p) => {
-      this.pergunta.set(p);
-      this.entrevistaFim.set(false);
-      this.escolhidas.set(r.valores);
-      this.outro = r.outro ?? '';
-      this.usarOutro.set(!!r.outro);
-      this.erroPergunta.set('');
-      this.progresso.set({ respondidas: d.respostas.indexOf(r), estimadas: this.progresso().estimadas });
+    this.rodada$?.unsubscribe();
+    this.preparando.set(null);
+    this.api.pergunta(d.id, perguntaId).subscribe({
+      next: (p) => {
+        this.pergunta.set(p);
+        this.entrevistaFim.set(false);
+        this.motivoRoteiro.set('');
+        this.escolhidas.set(r.valores);
+        this.outro = r.outro ?? '';
+        this.usarOutro.set(!!r.outro);
+        this.naoSei.set(!!r.naoSei);
+        this.erroPergunta.set('');
+        this.progresso.set({ respondidas: d.respostas.indexOf(r), estimadas: this.progresso().estimadas });
+      },
+      error: (e) => this.toast.erro(lerErro(e).mensagem),
     });
   }
 

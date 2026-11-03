@@ -40,7 +40,15 @@ export interface Fonte {
 export interface OpcaoPergunta {
   valor: string;
   rotulo: string;
+  /** Códigos do catálogo de sinais (backend/apps/cenario/domain/sinais.py) que esta opção indica. */
+  sinais?: string[];
 }
+
+/**
+ * De onde veio a pergunta (CLAUDE.md §3: rótulo honesto).
+ * IA = provedor real (Gemini); SIMULADOR = provedor `fake` do backend; ROTEIRO = roteiro padrão fixo (BANCO do mock).
+ */
+export type OrigemPergunta = 'IA' | 'SIMULADOR' | 'ROTEIRO';
 
 export interface Pergunta {
   id: string;
@@ -48,6 +56,10 @@ export interface Pergunta {
   ajuda?: string;
   multipla: boolean;
   opcoes: OpcaoPergunta[];
+  /** Ausente em dados antigos = roteiro padrão. */
+  origem?: OrigemPergunta;
+  /** Modelo que sugeriu a pergunta (origem IA ou SIMULADOR). */
+  modelo?: string;
 }
 
 export interface RespostaEntrevista {
@@ -56,6 +68,37 @@ export interface RespostaEntrevista {
   valores: string[];
   rotulos: string[];
   outro?: string;
+  /** Escolheu "Não sei" (sem valores e sem "Outro"). */
+  naoSei?: boolean;
+  /** Sinais das opções escolhidas; ausente em dados antigos (derivado pela equivalência do roteiro padrão). */
+  sinais?: string[];
+  /** Rodada da entrevista em que foi respondida (ausente/0 = antes das rodadas). */
+  rodada?: number;
+  origem?: OrigemPergunta;
+}
+
+/** Uma rodada de perguntas: gerada pela IA (até 5) ou servida pelo roteiro padrão quando a IA não está disponível. */
+export interface RodadaEntrevista {
+  numero: number;
+  fonte: OrigemPergunta;
+  modelo?: string;
+  /** IA: perguntas geradas (fila). ROTEIRO: vazio (as perguntas saem do roteiro na hora, adaptativas). */
+  perguntas: Pergunta[];
+  /** A IA indicou que não precisa de outra rodada. */
+  suficiente: boolean;
+  /** "O que já entendemos", escrito pela IA (sugestão). */
+  resumo?: string;
+  lacunas?: string[];
+  /** ROTEIRO: por que a IA não foi usada nesta rodada (linguagem simples). */
+  motivo?: string;
+}
+
+export interface EstadoEntrevista {
+  rodadas: RodadaEntrevista[];
+  /** IA_ENTREVISTA_MAX_RODADAS do backend (GET /ia/status → cota.entrevistaMaxRodadas). */
+  rodadaMaxima: number;
+  /** Preenchido quando a IA não pode mais ser usada nesta demanda (rodadas esgotadas ou cota do registro): motivo. */
+  semIa?: string;
 }
 
 export interface CenarioPontuado {
@@ -129,6 +172,8 @@ export interface Demanda {
   fontes: Fonte[];
   respostas: RespostaEntrevista[];
   entrevistaConcluida: boolean;
+  /** Rodadas da entrevista guiada (ausente em demandas antigas). */
+  entrevista?: EstadoEntrevista;
   cenario?: Cenario;
   prototipo?: Prototipo;
   solicitacao?: Solicitacao;
@@ -140,6 +185,19 @@ export interface ProximaPergunta {
   concluida: boolean;
   pergunta?: Pergunta;
   progresso: { respondidas: number; estimadas: number };
+  /** Não há pergunta na fila e a entrevista não acabou: peça a próxima rodada (POST /entrevista/rodada). */
+  precisaRodada?: boolean;
+  rodada?: { numero: number; maxima: number };
+  /** Motivo (linguagem simples) de as perguntas atuais virem do roteiro padrão. */
+  roteiro?: string;
+  /** Resumo da última rodada gerada (IA ou simulador), com a origem para o rótulo. */
+  resumo?: { texto: string; origem: OrigemPergunta; modelo?: string };
+}
+
+/** POST /demandas/:id/entrevista/rodada: ou um job de IA para acompanhar, ou a próxima pergunta já pronta (roteiro). */
+export interface RespostaRodada {
+  job?: Job;
+  proxima?: ProximaPergunta;
 }
 
 // ---------- Atividades ----------
@@ -294,6 +352,16 @@ export interface Job {
   modelo?: string;
 }
 
+/** GET /api/v1/ia/status (rota real no Django). */
+export interface StatusIa {
+  provedor: string;
+  modelo: string;
+  modelosReserva: string[];
+  /** false = provedor `fake` (simulador): nada pode ser rotulado como IA. */
+  real: boolean;
+  cota?: { usadasHoje: number; limiteDiario: number; entrevistaMaxRodadas: number };
+}
+
 // ---------- Visão geral / transversal ----------
 
 export interface Pendencia {
@@ -357,4 +425,6 @@ export interface UsuarioGestao {
 export interface ErroApi {
   mensagem: string;
   campos?: Record<string, string[]>;
+  /** Código estável de alguns erros (ex.: 429 de cota: IA_COTA_DIARIA, IA_RODADAS_ESGOTADAS, IA_COTA_ALVO). */
+  codigo?: string;
 }

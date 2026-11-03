@@ -103,7 +103,7 @@
                   <nx-icon [name]="CENARIO[d.cenario.recomendado].icone" [size]="20" />
                   <div class="lista-texto"><strong>{{ CENARIO[d.cenario.recomendado].nome }}</strong><span class="mudo">{{ CENARIO[d.cenario.recomendado].resumo }}</span></div>
                 </div>
-                @if (d.cenario.estado === 'PROPOSTO') { <p class="selo-ia selo-simulador"><nx-icon name="flask" [size]="14" /> Gerada pelo simulador de demonstração · ainda não validada pela equipe</p> }
+                @if (d.cenario.estado === 'PROPOSTO') { <p class="selo-ia selo-simulador"><nx-icon name="list" [size]="14" /> Calculado por regra a partir das respostas · ainda não validado pela equipe</p> }
               </section>
             }
             <section class="secao">
@@ -124,17 +124,28 @@
           <div class="coluna">
             @if (job(); as j) {
               <section class="painel processando" aria-live="polite">
-                <nx-icon name="flask" [size]="22" />
+                <nx-icon name="list" [size]="22" />
                 <h2>{{ j.etapa }}…</h2>
                 <div class="barra"><span [style.width.%]="j.percentual"></span></div>
-                <p class="mudo">O simulador de demonstração está comparando suas respostas com os tipos de solução. Leva alguns segundos.</p>
+                <p class="mudo">Somando os sinais das suas respostas para comparar os tipos de solução (uma regra fixa, não a IA) e montando um protótipo de exemplo. Leva alguns segundos.</p>
+              </section>
+            } @else if (podeEditarLevantamento() && preparando(); as pr) {
+              <section class="painel processando" aria-live="polite" aria-busy="true">
+                <nx-icon name="message" [size]="22" />
+                <h2>Preparando as próximas perguntas…</h2>
+                <div class="barra"><span [style.width.%]="pr.percentual"></span></div>
+                <p class="mudo">{{ pr.etapa }}. Suas respostas já estão salvas e você pode revisá-las ao lado enquanto isso.</p>
               </section>
             } @else if (podeEditarLevantamento() && pergunta(); as p) {
               <section class="painel entrevista" aria-live="polite">
                 <div class="entrevista-topo">
                   <span class="mudo">Pergunta {{ progresso().respondidas + 1 }} de cerca de {{ progresso().estimadas }}</span>
                   <div class="barra barra-fina"><span [style.width.%]="progressoPct()"></span></div>
-                  <span class="selo-ia selo-simulador entrevista-origem"><nx-icon name="flask" [size]="13" /> Perguntas do simulador de demonstração</span>
+                  @switch (p.origem) {
+                    @case ('IA') { <span class="selo-ia entrevista-origem"><nx-icon name="spark" [size]="13" /> Pergunta sugerida por {{ p.modelo }}</span> }
+                    @case ('SIMULADOR') { <span class="selo-ia selo-simulador entrevista-origem"><nx-icon name="flask" [size]="13" /> Pergunta do simulador de demonstração</span> }
+                    @default { <span class="mudo entrevista-origem">Roteiro padrão</span> }
+                  }
                 </div>
                 <h2 class="pergunta">{{ p.enunciado }}</h2>
                 @if (p.ajuda) { <p class="mudo">{{ p.ajuda }}</p> }
@@ -153,8 +164,19 @@
                   @if (usarOutro()) {
                     <input class="input" [(ngModel)]="outro" (ngModelChange)="guardarEscolha()" placeholder="Escreva com suas palavras" maxlength="200" aria-label="Outra resposta" />
                   }
+                  <button type="button" class="resposta" [class.marcada]="naoSei()" [attr.aria-pressed]="naoSei()" (click)="marcarNaoSei()">
+                    <span class="resposta-tecla">{{ p.opcoes.length + 2 }}</span>
+                    <span>Não sei</span>
+                    @if (naoSei()) { <nx-icon name="check" [size]="16" class="fim" /> }
+                  </button>
                 </div>
                 @if (erroPergunta()) { <p class="erro-campo" role="alert">{{ erroPergunta() }}</p> }
+                @if ((motivoRoteiro() && p.origem === 'ROTEIRO') || avisoCota()) {
+                  <div class="notas">
+                    @if (motivoRoteiro() && p.origem === 'ROTEIRO') { <p class="aviso-dados"><nx-icon name="list" [size]="14" /> <span>As próximas perguntas são do roteiro padrão porque {{ motivoRoteiro() }}.</span></p> }
+                    @if (avisoCota()) { <p class="aviso-dados"><nx-icon name="clock" [size]="14" /> <span>{{ avisoCota() }}</span></p> }
+                  </div>
+                }
                 <div class="form-acoes">
                   <nx-salvo dica="Cada resposta fica salva. Pode sair e continuar depois." />
                   <button type="button" class="btn btn-primario" [disabled]="respondendo()" (click)="responder()">{{ respondendo() ? 'Salvando…' : 'Continuar' }}</button>
@@ -164,7 +186,7 @@
               <section class="painel processando">
                 <nx-icon name="check-circle" [size]="22" />
                 <h2>Pronto, já temos o suficiente</h2>
-                <p class="mudo">Com base nas {{ d.respostas.length }} respostas, o simulador de demonstração sugere o tipo de solução e monta um protótipo das telas. É uma sugestão: a equipe valida depois.</p>
+                <p class="mudo">Com base nas {{ d.respostas.length }} respostas, o NEXUS soma os sinais de cada resposta para indicar o tipo de solução (uma regra fixa, não a IA) e o simulador de demonstração monta um protótipo das telas. É uma sugestão: a equipe valida depois.</p>
                 <button type="button" class="btn btn-primario" (click)="gerarCenario()">Ver recomendação <nx-icon name="arrow-right" [size]="16" /></button>
               </section>
             } @else if (podeEditarLevantamento() && erroCargaPergunta()) {
@@ -184,7 +206,7 @@
               <section class="secao">
                 <div class="secao-topo">
                   <h2>Tipo de solução recomendado</h2>
-                  @if (d.cenario.estado === 'PROPOSTO') { <span class="selo-ia selo-simulador"><nx-icon name="flask" [size]="14" /> Gerada pelo simulador de demonstração · ainda não validada</span> }
+                  @if (d.cenario.estado === 'PROPOSTO') { <span class="selo-ia selo-simulador"><nx-icon name="list" [size]="14" /> Calculado por regra a partir das respostas · ainda não validado</span> }
                   @else { <nx-badge tom="verde">Validado pela equipe</nx-badge> }
                 </div>
                 <ol class="ranking">
@@ -235,13 +257,20 @@
                   @for (r of d.respostas; track r.perguntaId) {
                     <li>
                       <span class="mudo">{{ r.enunciado }}</span>
-                      <strong>{{ r.rotulos.concat(r.outro ? [r.outro] : []).join(', ') }}</strong>
+                      <strong>{{ r.naoSei ? 'Não sei' : r.rotulos.concat(r.outro ? [r.outro] : []).join(', ') }}</strong>
                       @if (podeEditarLevantamento() && !job()) { <button type="button" class="link" (click)="refazer(r.perguntaId)">Alterar</button> }
                     </li>
                   }
                 </ol>
               } @else {
                 <p class="mudo">{{ souSolicitante() ? 'Cada resposta aparece aqui, e você pode alterá-la antes de concluir.' : 'Nenhuma resposta ainda.' }}</p>
+              }
+              @if (resumoEntrevista(); as rs) {
+                <div class="notas resumo-entrevista">
+                  @if (rs.fonte === 'IA') { <span class="selo-ia"><nx-icon name="spark" [size]="13" /> Resumo sugerido por {{ rs.modelo }} · pode conter erros</span> }
+                  @else { <span class="selo-ia selo-simulador"><nx-icon name="flask" [size]="13" /> Resumo do simulador de demonstração</span> }
+                  <p class="mudo">{{ rs.resumo }}</p>
+                </div>
               }
             </section>
           </aside>

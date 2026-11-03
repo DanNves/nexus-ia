@@ -161,8 +161,8 @@ function passosDetalheDemanda(equipe: boolean): PassoTour[] {
       seletor: '[data-tour="aba-levantamento"]',
       titulo: 'Levantamento',
       texto: equipe
-        ? 'A necessidade contada pelo solicitante e as respostas da entrevista guiada, com o tipo de solução recomendado e os sinais que pesaram na escolha.'
-        : 'Onde você responde a entrevista guiada: perguntas simples, uma por vez, com opções ou "Outro". Suas respostas indicam o tipo de solução que faz sentido (web, desktop, rotina agendada…).',
+        ? 'A necessidade contada pelo solicitante e as respostas da entrevista guiada (perguntas sugeridas pela IA em rodadas, ou do roteiro padrão quando ela não está disponível), com o tipo de solução calculado por regra e os sinais que pesaram na escolha.'
+        : 'Onde você responde a entrevista guiada: perguntas simples, uma por vez, com opções, "Outro" ou "Não sei". A IA prepara as perguntas em poucas rodadas a partir do que você contou; se ela não estiver disponível, seguimos com um roteiro padrão. Suas respostas indicam, por uma regra fixa, o tipo de solução que faz sentido (web, desktop, rotina agendada…).',
     },
     {
       id: 'aba-prototipo',

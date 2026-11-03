@@ -1,18 +1,23 @@
 // Backend HÍBRIDO. Intercepta /api/v1/* e responde o domínio (demandas, chamados...) como o Django responderia.
 // Passam direto para o Django real (proxy do ng serve): /auth/*, /me, /ia/*, /usuarios* e /jobs/:id de jobs reais.
-// Requisitos e sugestão de suporte usam a IA real: o mock monta a entrada, cria o job no Django
-// (POST /ia/jobs) e aplica o resultado no "banco" local quando o polling recebe CONCLUIDO.
-// Cenário, protótipo e entrevista continuam determinísticos aqui (mock-ia.ts).
+// Requisitos, sugestão de suporte e as rodadas da entrevista usam a IA real: o mock monta a entrada, cria o job no
+// Django (POST /ia/jobs) e aplica o resultado no "banco" local quando o polling recebe CONCLUIDO.
+// A entrevista cai no roteiro padrão (mock-ia.ts, BANCO) quando a IA falha ou a cota acaba (mock-entrevista.ts).
+// O cenário é regra determinística sobre os sinais das respostas; o protótipo continua simulado (mock-ia.ts).
 // Para usar só o backend real: environment.useMock = false (o interceptor sai da cadeia em app.config.ts).
 import { HttpErrorResponse, HttpEvent, HttpHandlerFn, HttpInterceptorFn, HttpRequest, HttpResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { Observable, catchError, defaultIfEmpty, delay, dematerialize, filter, forkJoin, isObservable, map, materialize, of, throwError } from 'rxjs';
+import { Observable, catchError, defaultIfEmpty, delay, dematerialize, filter, forkJoin, isObservable, map, materialize, of, switchMap, throwError } from 'rxjs';
 import {
   Atividade, Chamado, Conhecimento, Demanda, EstadoAtividade, Evento, FilaResumo, Indicadores, ItemHistorico, Job, Notificacao, Pendencia, Perfil, Pessoa, Prioridade,
-  Requisito, ResultadoBusca, RespostaEntrevista, Solucao, TipoEvento, VisaoGeral,
+  Requisito, ResultadoBusca, RespostaRodada, Solucao, StatusIa, TipoEvento, VisaoGeral,
 } from './models';
 import { MockDb, NotificacaoMock, OBSERVADORES_SEED, VERSAO_SEED, criarSeed } from './mock-seed';
-import { gerarPrototipo, gerarRanking, gerarSugestao, nomeCenario, perguntaPorId, proximaPergunta } from './mock-ia';
+import { gerarPrototipo, gerarRanking, gerarSugestao, nomeCenario } from './mock-ia';
+import {
+  LIMITE_NECESSIDADE, MOTIVO_ROTEIRO, aplicarRodadaIa, assinatura, cortar, garantirEstado, iniciarRoteiro, montarEntrada,
+  perguntaDa, proximaDaEntrevista, proximaRodada, registrarResposta, truncarTextos,
+} from './mock-entrevista';
 import { AuthService, Usuario } from '../auth/auth.service';
 import { SessionService, pessoaIdDe } from '../session.service';
 import { ETAPAS, etapaAtual } from '../../shared/labels';
@@ -45,7 +50,7 @@ function migrar(salvo: MockDb): MockDb {
   }));
   // Soluções salvas antes dos observadores: recebem os da demonstração (s1, s2) ou lista vazia.
   const solucoes = salvo.solucoes.map((s) => ({ ...s, observadores: s.observadores ?? [...(OBSERVADORES_SEED[s.id] ?? [])] }));
-  return { ...salvo, notificacoes, solucoes, iaPendentes: salvo.iaPendentes ?? {} };
+  return { ...salvo, notificacoes, solucoes, iaPendentes: salvo.iaPendentes ?? {}, iaCotaAte: salvo.iaCotaAte ?? {} };
 }
 
 function salvar() {
@@ -109,12 +114,10 @@ function consultarJob(ctx: Ctx, id: string): Job {
 
 // ---------- IA real (Django) ----------
 
-type TarefaIa = MockDb['iaPendentes'][string]['tarefa'];
-const LIMITE_NECESSIDADE = 20_000;
+type PendenciaIa = MockDb['iaPendentes'][string];
+type TarefaIa = PendenciaIa['tarefa'];
 /** Pendência cujo job não responde mais (Django fora, job apagado) expira depois disso. */
 const VALIDADE_PENDENCIA_MS = 15 * 60_000;
-
-const cortar = (t: string, max: number) => (t.length > max ? t.slice(0, max) : t);
 
 /** Rejeições do chamado; inclui a sugestão atual rejeitada de bancos anteriores ao histórico. */
 function rejeitadasDoChamado(c: Chamado): { causa: string; motivo: string }[] {
@@ -157,20 +160,9 @@ function reconsultarPendencias(ctx: Ctx, alvoId: string): Observable<void> {
     ))).pipe(map(() => undefined), defaultIfEmpty(undefined));
 }
 
-/** Corta a lista de textos para que a soma não passe do limite (contrato: 20 mil caracteres no total). */
-function truncarTextos(textos: string[], limite: number): string[] {
-  const saida: string[] = [];
-  let resta = limite;
-  for (const t of textos.map((x) => x.trim()).filter(Boolean)) {
-    if (resta <= 0) break;
-    saida.push(t.length > resta ? t.slice(0, resta) : t);
-    resta -= t.length;
-  }
-  return saida;
-}
-
 /** POST /api/v1/ia/jobs no Django com os headers da requisição original; devolve o Job real (202). */
-function criarJobIa(ctx: Ctx, tarefa: TarefaIa, alvoTipo: 'demanda' | 'chamado', alvoId: string, entrada: unknown): Observable<Resposta> {
+function criarJobIa(ctx: Ctx, tarefa: TarefaIa, alvoTipo: 'demanda' | 'chamado', alvoId: string, entrada: unknown,
+  extra: Omit<PendenciaIa, 'tarefa' | 'alvoId' | 'criadoEm'> = {}): Observable<Resposta> {
   const req = new HttpRequest('POST', `${PREFIXO}/ia/jobs`, { tarefa, alvoTipo, alvoId, entrada }, {
     headers: ctx.req.headers,
     withCredentials: ctx.req.withCredentials,
@@ -180,7 +172,7 @@ function criarJobIa(ctx: Ctx, tarefa: TarefaIa, alvoTipo: 'demanda' | 'chamado',
     map((res) => {
       const job = res.body;
       if (!job?.id) throw new ApiErro(502, 'O servidor de IA respondeu de forma inesperada.');
-      db.iaPendentes[job.id] = { tarefa, alvoId, criadoEm: agora() };
+      db.iaPendentes[job.id] = { tarefa, alvoId, criadoEm: agora(), ...extra };
       salvar();
       return { status: res.status, body: job };
     }),
@@ -201,12 +193,29 @@ function aplicarResultadoIa(job: Job, ctx: Ctx) {
   const pendente = db.iaPendentes[job.id];
   if (!pendente || (job.estado !== 'CONCLUIDO' && job.estado !== 'FALHOU')) return;
   delete db.iaPendentes[job.id];
-  if (job.estado === 'CONCLUIDO') {
+  if (pendente.tarefa === 'entrevista') aplicarEntrevista(pendente, job);
+  else if (job.estado === 'CONCLUIDO') {
     const modelo = job.modelo || 'modelo não informado';
     if (pendente.tarefa === 'requisitos') aplicarRequisitos(pendente.alvoId, job.resultado as ResultadoRequisitos | undefined, modelo, ctx);
     else aplicarSugestao(pendente.alvoId, job.resultado as ResultadoSugestao | undefined, modelo);
   }
   salvar();
+}
+
+/** Rodada da entrevista: guarda as perguntas (CONCLUIDO) ou passa a rodada para o roteiro padrão (FALHOU). */
+function aplicarEntrevista(p: PendenciaIa, job: Job) {
+  const d = db.demandas.find((x) => x.id === p.alvoId);
+  // Resultado de um pedido feito com outras respostas (o cliente alterou algo no meio) não vale mais.
+  if (!d || !p.rodada || p.assinatura !== assinatura(d) || proximaRodada(d) !== p.rodada || !proximaDaEntrevista(d).precisaRodada) return;
+  if (job.estado === 'FALHOU') {
+    iniciarRoteiro(d, p.rodada, MOTIVO_ROTEIRO.falhou);
+  } else {
+    const modelo = job.modelo || 'modelo não informado';
+    const n = aplicarRodadaIa(d, p.rodada, job.resultado, !!p.real, modelo);
+    const autor = p.real ? `IA (${modelo})` : 'Simulador de demonstração';
+    d.historico.push({ data: agora(), autor, texto: `${p.real ? `A IA (${modelo})` : 'O simulador de demonstração'} preparou ${n} perguntas (rodada ${p.rodada}).` });
+  }
+  d.atualizadaEm = agora();
 }
 
 function aplicarRequisitos(demandaId: string, r: ResultadoRequisitos | undefined, modelo: string, ctx: Ctx) {
@@ -269,7 +278,7 @@ function sincronizarPessoa(u: Usuario): string {
   const atual = db.pessoas.find((p) => p.id === id);
   const organizacao = u.organizacao || (u.perfil === 'EQUIPE' ? 'Equipe NEXUS' : '');
   if (!atual) {
-    db.pessoas.push({ id, nome: u.nome, cargo: u.perfil === 'EQUIPE' ? 'Equipe responsável' : 'Cliente', organizacao, perfil: u.perfil });
+    db.pessoas.push({ id, nome: u.nome, cargo: u.perfil === 'EQUIPE' ? 'Equipe responsável' : 'Solicitante', organizacao, perfil: u.perfil });
     salvar();
   } else if (atual.nome !== u.nome || atual.organizacao !== organizacao || atual.perfil !== u.perfil) {
     Object.assign(atual, { nome: u.nome, organizacao, perfil: u.perfil });
@@ -594,60 +603,160 @@ rota('POST', '/demandas/:id/fontes', (ctx, [id], b) => {
   return { status: 201, body: d };
 });
 
-rota('GET', '/demandas/:id/entrevista/proxima', (ctx, [id]) => {
-  const d = demanda(ctx, id);
-  const { pergunta, estimadas } = proximaPergunta(d.respostas);
-  return { body: { concluida: !pergunta, pergunta, progresso: { respondidas: d.respostas.length, estimadas } } };
-});
+// ---------- Entrevista guiada em rodadas (IA real + queda obrigatória para o roteiro padrão) ----------
+
+/** Só quem abriu a demanda responde a entrevista, e só durante o levantamento. */
+function exigirEntrevistado(ctx: Ctx, d: Demanda) {
+  if (!ehDono(ctx, d.solicitanteId)) throw new ApiErro(403, 'Só quem abriu a demanda responde a entrevista.');
+  if (!['RASCUNHO', 'EM_LEVANTAMENTO'].includes(d.estado)) throw new ApiErro(400, 'O levantamento desta demanda já foi encerrado.');
+}
+
+/** Meia-noite local de hoje para amanhã: até lá a cota diária esgotada manda a entrevista para o roteiro. */
+function amanha(): string {
+  const d = new Date();
+  d.setHours(24, 0, 0, 0);
+  return d.toISOString();
+}
+
+/** GET /api/v1/ia/status no Django (real × simulador, rodada máxima e cota). */
+function statusIa(ctx: Ctx): Observable<StatusIa> {
+  return ctx.next(new HttpRequest('GET', `${PREFIXO}/ia/status`, { headers: ctx.req.headers, withCredentials: ctx.req.withCredentials })).pipe(
+    filter((ev): ev is HttpResponse<StatusIa> => ev instanceof HttpResponse),
+    map((res) => {
+      if (!res.body || typeof res.body.real !== 'boolean') throw new ApiErro(502, 'O servidor de IA respondeu de forma inesperada.');
+      return res.body;
+    }),
+  );
+}
+
+/** Motivo e alcance da queda para o roteiro conforme o erro do Django (contrato 2026-11-03). */
+function quedaPorErro(ctx: Ctx, e: unknown): { motivo: string; ateOFim: boolean } {
+  if (!(e instanceof HttpErrorResponse)) return { motivo: MOTIVO_ROTEIRO.falhou, ateOFim: false };
+  const corpo: unknown = e.error;
+  const codigo = corpo && typeof corpo === 'object' && 'codigo' in corpo ? corpo.codigo : undefined;
+  if (e.status === 429 && codigo === 'IA_COTA_DIARIA') {
+    (db.iaCotaAte ??= {})[ctx.userId] = amanha();
+    return { motivo: MOTIVO_ROTEIRO.cotaDiaria, ateOFim: false };
+  }
+  if (e.status === 429 && codigo === 'IA_RODADAS_ESGOTADAS') return { motivo: MOTIVO_ROTEIRO.rodadas, ateOFim: true };
+  if (e.status === 429 && codigo === 'IA_COTA_ALVO') return { motivo: MOTIVO_ROTEIRO.cotaAlvo, ateOFim: true };
+  // Limite por minuto (sem código): não trava a tela esperando; esta rodada sai do roteiro e a próxima tenta a IA.
+  if (e.status === 429) return { motivo: MOTIVO_ROTEIRO.minuto, ateOFim: false };
+  if (e.status === 400) return { motivo: MOTIVO_ROTEIRO.entrada, ateOFim: false };
+  if (e.status === 0 || e.status >= 500) return { motivo: MOTIVO_ROTEIRO.conexao, ateOFim: false };
+  return { motivo: MOTIVO_ROTEIRO.falhou, ateOFim: false };
+}
+
+rota('GET', '/demandas/:id/entrevista/proxima', (ctx, [id]) => ({ body: proximaDaEntrevista(demanda(ctx, id)) }));
 
 rota('GET', '/demandas/:id/entrevista/perguntas/:pid', (ctx, [id, pid]) => {
-  demanda(ctx, id);
-  const p = perguntaPorId(pid);
+  const p = perguntaDa(demanda(ctx, id), pid);
   if (!p) throw new ApiErro(404, 'Pergunta não encontrada.');
-  const { enunciado, ajuda, multipla, opcoes } = p;
-  return { body: { id: p.id, enunciado, ajuda, multipla, opcoes } };
+  return { body: p };
+});
+
+// Pede a próxima rodada. 202 { job } quando a IA vai gerar (o front acompanha o job e depois pede /proxima);
+// 200 { proxima } quando a rodada já está pronta (job reaproveitado) ou caiu no roteiro padrão.
+// Corpo: { semIa?: true } quando o front perdeu o acompanhamento do job (rede): esta rodada vai para o roteiro.
+rota('POST', '/demandas/:id/entrevista/rodada', (ctx, [id], b) => {
+  const d = demanda(ctx, id);
+  exigirEntrevistado(ctx, d);
+  const est = garantirEstado(d);
+  const pronta = (): Resposta => {
+    const corpo: RespostaRodada = { proxima: proximaDaEntrevista(d) };
+    return { body: corpo };
+  };
+  if (!proximaDaEntrevista(d).precisaRodada) return pronta();
+  const numero = proximaRodada(d);
+  // Um pedido novo substitui qualquer rodada ainda pendente desta demanda.
+  Object.entries(db.iaPendentes)
+    .filter(([, p]) => p.tarefa === 'entrevista' && p.alvoId === d.id)
+    .forEach(([jid]) => delete db.iaPendentes[jid]);
+  const roteiro = (motivo: string, ateOFim = false): Resposta => {
+    iniciarRoteiro(d, numero, motivo, ateOFim);
+    d.atualizadaEm = agora();
+    salvar();
+    return pronta();
+  };
+  if (b['semIa'] === true) return roteiro(MOTIVO_ROTEIRO.conexao);
+  const bloqueio = db.iaCotaAte?.[ctx.userId];
+  if (bloqueio && Date.parse(bloqueio) > Date.now()) return roteiro(MOTIVO_ROTEIRO.cotaDiaria);
+
+  return statusIa(ctx).pipe(
+    switchMap((status) => {
+      const maxima = status.cota?.entrevistaMaxRodadas;
+      if (typeof maxima === 'number' && Number.isInteger(maxima) && maxima >= 1) est.rodadaMaxima = maxima;
+      if (numero > est.rodadaMaxima) {
+        // O limite diminuiu no servidor: encerra com o que já foi respondido.
+        const ultima = est.rodadas.at(-1);
+        if (ultima) ultima.suficiente = true;
+        salvar();
+        return of(pronta());
+      }
+      // Cota do dia já usada: nem tenta (contrato). Um job reaproveitado não contaria cota, mas não dá para saber antes.
+      if (status.cota && status.cota.usadasHoje >= status.cota.limiteDiario) return of(roteiro(MOTIVO_ROTEIRO.cotaDiaria));
+      const extra = { rodada: numero, real: status.real, assinatura: assinatura(d) };
+      return criarJobIa(ctx, 'entrevista', 'demanda', d.id, montarEntrada(d, numero), extra).pipe(map((res): Resposta => {
+        const job = res.body as Job;
+        // Job reaproveitado já concluído: aplica agora e devolve a pergunta.
+        if (job.estado === 'CONCLUIDO' || job.estado === 'FALHOU') {
+          aplicarResultadoIa(job, ctx);
+          return pronta();
+        }
+        const corpo: RespostaRodada = { job };
+        return { status: 202, body: corpo };
+      }));
+    }),
+    catchError((e: unknown) => {
+      // Sessão expirada não vira roteiro: sobe para o fluxo de login.
+      if (e instanceof HttpErrorResponse && e.status === 401) return throwError(() => e);
+      const { motivo, ateOFim } = quedaPorErro(ctx, e);
+      return of(roteiro(motivo, ateOFim));
+    }),
+  );
 });
 
 rota('POST', '/demandas/:id/entrevista/respostas', (ctx, [id], b) => {
   const d = demanda(ctx, id);
+  exigirEntrevistado(ctx, d);
   const perguntaId = texto(b['perguntaId']);
-  const p = perguntaPorId(perguntaId);
-  const valores = Array.isArray(b['valores']) ? (b['valores'] as string[]) : [];
+  const p = perguntaDa(d, perguntaId);
+  const jaRespondida = d.respostas.some((r) => r.perguntaId === perguntaId);
+  const esperada = proximaDaEntrevista(d).pergunta;
+  const valores = Array.isArray(b['valores']) ? (b['valores'] as unknown[]).filter((v): v is string => typeof v === 'string') : [];
   const outro = texto(b['outro']);
+  const naoSei = b['naoSei'] === true;
   const erros: Record<string, string[]> = {};
-  exigir(p, 'perguntaId', 'Pergunta inválida.', erros);
-  exigir(valores.length > 0 || outro, 'valores', 'Escolha uma opção ou escreva em "Outro".', erros);
+  exigir(p && (jaRespondida || esperada?.id === perguntaId), 'perguntaId', 'Pergunta inválida.', erros);
+  exigir(valores.length > 0 || outro || naoSei, 'valores', 'Escolha uma opção, escreva em "Outro" ou marque "Não sei".', erros);
+  exigir(!naoSei || (!valores.length && !outro), 'valores', '"Não sei" não combina com outras opções.', erros);
   exigir(!p || valores.every((v) => p.opcoes.some((o) => o.valor === v)), 'valores', 'Opção inválida.', erros);
+  exigir(new Set(valores).size === valores.length, 'valores', 'Opção repetida.', erros);
   exigir(p?.multipla || valores.length <= 1, 'valores', 'Esta pergunta aceita só uma opção.', erros);
+  exigir(outro.length <= 300, 'outro', 'Use no máximo 300 caracteres.', erros);
   validar(erros);
-  const resp: RespostaEntrevista = {
-    perguntaId, enunciado: p!.enunciado, valores,
-    rotulos: valores.map((v) => p!.opcoes.find((o) => o.valor === v)!.rotulo), outro: outro || undefined,
-  };
-  // Alterar uma resposta descarta as seguintes, porque as próximas perguntas dependem dela.
-  const idx = d.respostas.findIndex((r) => r.perguntaId === perguntaId);
-  if (idx >= 0) d.respostas = d.respostas.slice(0, idx);
-  d.respostas.push(resp);
+  // Alterar uma resposta descarta as seguintes (e as rodadas depois dela), porque as próximas perguntas dependem dela.
+  registrarResposta(d, p!, valores, outro, naoSei);
   d.entrevistaConcluida = false;
   // Respostas mudaram: a recomendação anterior deixa de valer.
   d.cenario = undefined;
   d.prototipo = undefined;
   d.atualizadaEm = agora();
   salvar();
-  const { pergunta, estimadas } = proximaPergunta(d.respostas);
-  return { body: { concluida: !pergunta, pergunta, progresso: { respondidas: d.respostas.length, estimadas } } };
+  return { body: proximaDaEntrevista(d) };
 });
 
 rota('POST', '/demandas/:id/cenario/gerar', (ctx, [id]) => {
   const d = demanda(ctx, id);
   if (!d.respostas.length) throw new ApiErro(400, 'Responda pelo menos uma pergunta antes de gerar o cenário.');
-  const job = criarJob(ctx, ['Lendo suas respostas', 'Extraindo sinais', 'Comparando cenários', 'Montando o protótipo'], 3200, () => {
+  const job = criarJob(ctx, ['Lendo suas respostas', 'Somando os sinais', 'Comparando cenários', 'Montando o protótipo'], 3200, () => {
     const ranking = gerarRanking(d.respostas);
     d.entrevistaConcluida = true;
     d.cenario = { estado: 'PROPOSTO', recomendado: ranking[0].tipo, ranking, geradoEm: agora() };
     d.prototipo = { estado: 'PROPOSTO', telas: gerarPrototipo(d.nome, ranking[0].tipo), geradoEm: agora() };
     d.estado = 'EM_LEVANTAMENTO';
-    registrar(d, ctx, `O simulador de demonstração recomendou o cenário "${nomeCenario(ranking[0].tipo)}" e montou um protótipo.`);
+    // Cenário = regra determinística sobre os sinais das respostas (CLAUDE.md §5.4); o protótipo ainda é simulado.
+    registrar(d, ctx, `A pontuação por sinais recomendou o cenário "${nomeCenario(ranking[0].tipo)}" e o simulador de demonstração montou um protótipo.`);
   });
   return { status: 202, body: job };
 });
@@ -771,7 +880,9 @@ rota('POST', '/demandas/:id/requisitos/gerar', (ctx, [id]) => {
       cenario: d.cenario ? nomeCenario(d.cenario.recomendado) : undefined,
       necessidade: truncarTextos(d.fontes.map((f) => f.conteudo), LIMITE_NECESSIDADE).slice(0, 20),
       respostas: d.respostas.slice(0, 100).map((r) => ({
-        pergunta: cortar(r.enunciado, 500), respostas: r.rotulos.slice(0, 20).map((x) => cortar(x, 300)), outro: r.outro ? cortar(r.outro, 500) : undefined,
+        pergunta: cortar(r.enunciado, 500),
+        respostas: (r.naoSei ? ['Não sei'] : r.rotulos).slice(0, 20).map((x) => cortar(x, 300)),
+        outro: r.outro ? cortar(r.outro, 500) : undefined,
       })),
     },
     requisitosAprovados: d.requisitos.filter((r) => r.estado === 'APROVADO').slice(0, 200).map((r) => ({ tipo: r.tipo, titulo: cortar(r.titulo, 300) })),

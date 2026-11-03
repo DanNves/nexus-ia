@@ -3,7 +3,8 @@ import { Injectable, inject } from '@angular/core';
 import { EMPTY, Observable, defer, expand, filter, retry, switchMap, take, throwError, timer } from 'rxjs';
 import {
   Atividade, Chamado, Conhecimento, Demanda, ErroApi, EstadoAtividade, Evento, FilaResumo, Job, Notificacao,
-  Perfil, Pergunta, Pessoa, Prioridade, ProximaPergunta, ResultadoBusca, Solucao, TipoEvento, UsuarioGestao, VisaoGeral,
+  Perfil, Pergunta, Pessoa, Prioridade, ProximaPergunta, RespostaRodada, ResultadoBusca, Solucao, StatusIa, TipoEvento, UsuarioGestao,
+  VisaoGeral,
 } from './models';
 
 const API = '/api/v1';
@@ -35,8 +36,12 @@ export class NexusApi {
   anexarFonte(id: string, body: { titulo: string; conteudo: string }) { return this.http.post<Demanda>(`${API}/demandas/${id}/fontes`, body); }
   pergunta(id: string, perguntaId: string) { return this.http.get<Pergunta>(`${API}/demandas/${id}/entrevista/perguntas/${perguntaId}`); }
   proximaPergunta(id: string) { return this.http.get<ProximaPergunta>(`${API}/demandas/${id}/entrevista/proxima`); }
-  responder(id: string, body: { perguntaId: string; valores: string[]; outro?: string }) {
+  responder(id: string, body: { perguntaId: string; valores: string[]; outro?: string; naoSei?: boolean }) {
     return this.http.post<ProximaPergunta>(`${API}/demandas/${id}/entrevista/respostas`, body);
+  }
+  /** Próxima rodada da entrevista: `{ job }` (IA gerando; acompanhe com acompanharJob) ou `{ proxima }` (pronta/roteiro). */
+  pedirRodada(id: string, body: { semIa?: boolean } = {}) {
+    return this.http.post<RespostaRodada>(`${API}/demandas/${id}/entrevista/rodada`, body);
   }
   gerarCenario(id: string) { return this.http.post<Job>(`${API}/demandas/${id}/cenario/gerar`, {}); }
   escolherCenario(id: string, tipo: string) { return this.http.post<Demanda>(`${API}/demandas/${id}/cenario/escolher`, { tipo }); }
@@ -88,6 +93,9 @@ export class NexusApi {
   decidirSugestao(id: string, body: { decisao: 'APROVAR' | 'REJEITAR'; motivo?: string }) { return this.http.post<Chamado>(`${API}/chamados/${id}/sugestao/decisao`, body); }
   resolver(id: string, body: { solucao: string; registrarConhecimento: boolean }) { return this.http.post<Chamado>(`${API}/chamados/${id}/resolver`, body); }
   conhecimento(id: string) { return this.http.get<Conhecimento>(`${API}/conhecimentos/${id}`); }
+
+  // IA (rota real no Django): provedor real × simulador e cota do usuário.
+  iaStatus() { return this.http.get<StatusIa>(`${API}/ia/status`); }
 
   // Usuários (rotas reais no Django; só administrador)
   usuarios(filtro: { q?: string; perfil?: Perfil | ''; ativo?: boolean } = {}) {

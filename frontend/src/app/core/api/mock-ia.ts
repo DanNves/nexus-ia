@@ -1,5 +1,7 @@
-// Simulação determinística da IA (equivalente ao fake_adapter do backend).
-// Entrevista adaptativa, pontuação de cenário, protótipo, requisitos e sugestão de suporte.
+// Simulação determinística do que ainda não tem API no Django (equivalente ao fake_adapter do backend):
+// roteiro padrão da entrevista (BANCO), pontuação do cenário por sinais, protótipo, requisitos e sugestão de suporte.
+// As perguntas da entrevista vêm da IA real em rodadas (tarefa `entrevista`, ver mock-entrevista.ts);
+// o BANCO abaixo é o ROTEIRO PADRÃO, usado quando a IA falha ou a cota acaba (claude/front/contratos.md, 2026-11-03).
 import {
   CenarioPontuado, Chamado, Conhecimento, Demanda, FonteContexto, Pergunta, RespostaEntrevista,
   Requisito, Solucao, Sugestao, TelaPrototipo, TipoCenario,
@@ -7,9 +9,56 @@ import {
 
 type Pesos = Partial<Record<TipoCenario, number>>;
 
+// ---------- Catálogo de sinais e pesos ----------
+// ESPELHO TEMPORÁRIO de backend/apps/cenario/domain/sinais.py (CATALOGO), até o módulo cenário ter API no Django.
+// Mudou lá? Atualize aqui e em claude/front/contratos.md. A IA marca em cada opção só códigos deste catálogo;
+// a pontuação é regra determinística (CLAUDE.md §5.4: a IA extrai sinais, a regra pontua).
+export const SINAIS: Readonly<Record<string, { motivo: string; pesos: Pesos }>> = {
+  USO_INDIVIDUAL: { motivo: 'Uso individual', pesos: { DESKTOP: 2, WEB: 1 } },
+  EQUIPE_INTERNA: { motivo: 'Usado por uma equipe interna', pesos: { WEB: 2, DESKTOP: 2 } },
+  PUBLICO_EXTERNO: { motivo: 'Usado por pessoas de fora da organização', pesos: { WEB: 3, MOBILE: 2 } },
+  SEM_OPERADOR: { motivo: 'Funciona sem ninguém operando', pesos: { JOB: 4, API: 2 } },
+  USO_COMPUTADOR: { motivo: 'Uso no computador', pesos: { DESKTOP: 3, WEB: 2 } },
+  USO_CELULAR: { motivo: 'Uso principal no celular', pesos: { MOBILE: 4, WEB: 1 } },
+  USO_MULTIPLATAFORMA: { motivo: 'Precisa funcionar no computador e no celular', pesos: { WEB: 4, MOBILE: 1 } },
+  USO_EM_CAMPO: { motivo: 'Uso em campo, fora do escritório', pesos: { MOBILE: 5 } },
+  PRECISA_OFFLINE: { motivo: 'Precisa funcionar sem internet', pesos: { DESKTOP: 4, MOBILE: 2 } },
+  INTERNET_INSTAVEL: { motivo: 'Internet instável', pesos: { DESKTOP: 2, MOBILE: 1 } },
+  INTERNET_DISPONIVEL: { motivo: 'Internet sempre disponível', pesos: { WEB: 2 } },
+  PERIFERICOS_LOCAIS: { motivo: 'Usa equipamento ligado ao computador (leitor, impressora)', pesos: { DESKTOP: 2 } },
+  SEM_PERIFERICOS: { motivo: 'Sem equipamentos especiais', pesos: { WEB: 1 } },
+  LOCALIZACAO: { motivo: 'Usa a localização do aparelho', pesos: { MOBILE: 3 } },
+  USO_CAMERA: { motivo: 'Usa a câmera do aparelho (fotos, leitura de códigos)', pesos: { MOBILE: 2 } },
+  AVISO_NO_CELULAR: { motivo: 'Precisa de avisos no celular', pesos: { MOBILE: 2 } },
+  USO_CONTINUO: { motivo: 'Uso contínuo', pesos: { WEB: 1, DESKTOP: 1, MOBILE: 1 } },
+  EXECUCAO_AGENDADA: { motivo: 'Acontece todo dia em horário fixo', pesos: { JOB: 4 } },
+  EXECUCAO_PERIODICA: { motivo: 'Acontece em datas fixas', pesos: { JOB: 3 } },
+  SOB_DEMANDA: { motivo: 'Acontece sob demanda', pesos: { WEB: 1, API: 1 } },
+  RESULTADO_EMAIL: { motivo: 'Entrega o resultado por e-mail', pesos: { JOB: 2 } },
+  RESULTADO_ARQUIVO: { motivo: 'Gera arquivos automaticamente', pesos: { JOB: 2 } },
+  RESULTADO_OUTRO_SISTEMA: { motivo: 'Troca dados com outro sistema', pesos: { API: 4, JOB: 1 } },
+  INTEGRA_SISTEMA: { motivo: 'Integra com um sistema existente', pesos: { API: 2, WEB: 1 } },
+  POUCOS_USUARIOS: { motivo: 'Poucos usuários simultâneos', pesos: { DESKTOP: 1 } },
+  DEZENAS_USUARIOS: { motivo: 'Dezenas de usuários simultâneos', pesos: { WEB: 2 } },
+  MUITOS_USUARIOS: { motivo: 'Muitos usuários simultâneos', pesos: { WEB: 3 } },
+};
+
+/** Igual a `PESO_MINIMO_MOTIVO` do backend: o motivo só aparece no cenário em que o sinal pesa pelo menos isto. */
+const PESO_MINIMO_MOTIVO = 2;
+
+export const ehSinal = (s: unknown): s is string => typeof s === 'string' && Object.prototype.hasOwnProperty.call(SINAIS, s);
+
+/** Só códigos do catálogo, sem repetição, na ordem em que vieram (igual a `filtrar` do backend). */
+export function filtrarSinais(sinais: unknown): string[] {
+  return Array.isArray(sinais) ? [...new Set(sinais.filter(ehSinal))] : [];
+}
+
+// ---------- Roteiro padrão (BANCO) ----------
+
 interface PerguntaBanco extends Pergunta {
   quando?: (r: Map<string, string[]>) => boolean;
-  pesos: Record<string, { pesos: Pesos; motivo: string }>;
+  /** Equivalência opção → sinais (contrato de 2026-11-03). Opção sem entrada não gera sinal. */
+  sinais: Record<string, string[]>;
 }
 
 const tem = (r: Map<string, string[]>, id: string, ...valores: string[]) =>
@@ -24,12 +73,7 @@ const BANCO: PerguntaBanco[] = [
       { valor: 'externos', rotulo: 'Clientes ou pacientes' },
       { valor: 'ninguem', rotulo: 'Ninguém, ele roda sozinho' },
     ],
-    pesos: {
-      so_eu: { pesos: { DESKTOP: 2, WEB: 1 }, motivo: 'Uso individual' },
-      equipe: { pesos: { WEB: 2, DESKTOP: 2 }, motivo: 'Usado por uma equipe interna' },
-      externos: { pesos: { WEB: 3, MOBILE: 2 }, motivo: 'Usado por pessoas de fora da organização' },
-      ninguem: { pesos: { JOB: 4, API: 2 }, motivo: 'Funciona sem ninguém operando' },
-    },
+    sinais: { so_eu: ['USO_INDIVIDUAL'], equipe: ['EQUIPE_INTERNA'], externos: ['PUBLICO_EXTERNO'], ninguem: ['SEM_OPERADOR'] },
   },
   {
     id: 'onde', enunciado: 'Onde as pessoas vão usar?', multipla: false,
@@ -40,12 +84,7 @@ const BANCO: PerguntaBanco[] = [
       { valor: 'ambos', rotulo: 'No computador e no celular' },
       { valor: 'campo', rotulo: 'Na rua, em campo' },
     ],
-    pesos: {
-      computador: { pesos: { DESKTOP: 3, WEB: 2 }, motivo: 'Uso no computador' },
-      celular: { pesos: { MOBILE: 4, WEB: 1 }, motivo: 'Uso principal no celular' },
-      ambos: { pesos: { WEB: 4, MOBILE: 1 }, motivo: 'Precisa funcionar no computador e no celular' },
-      campo: { pesos: { MOBILE: 5 }, motivo: 'Uso em campo, fora do escritório' },
-    },
+    sinais: { computador: ['USO_COMPUTADOR'], celular: ['USO_CELULAR'], ambos: ['USO_MULTIPLATAFORMA'], campo: ['USO_EM_CAMPO'] },
   },
   {
     id: 'internet', enunciado: 'Precisa funcionar sem internet?', multipla: false,
@@ -55,11 +94,7 @@ const BANCO: PerguntaBanco[] = [
       { valor: 'as_vezes', rotulo: 'Às vezes a internet cai' },
       { valor: 'nao', rotulo: 'Não, sempre haverá internet' },
     ],
-    pesos: {
-      sempre: { pesos: { DESKTOP: 4, MOBILE: 2 }, motivo: 'Precisa funcionar sem internet' },
-      as_vezes: { pesos: { DESKTOP: 2, MOBILE: 1 }, motivo: 'Internet instável' },
-      nao: { pesos: { WEB: 2 }, motivo: 'Internet sempre disponível' },
-    },
+    sinais: { sempre: ['PRECISA_OFFLINE'], as_vezes: ['INTERNET_INSTAVEL'], nao: ['INTERNET_DISPONIVEL'] },
   },
   {
     id: 'perifericos', enunciado: 'Vai usar algum equipamento ligado ao computador?', multipla: true,
@@ -69,11 +104,7 @@ const BANCO: PerguntaBanco[] = [
       { valor: 'impressora', rotulo: 'Impressora de etiquetas' },
       { valor: 'nenhum', rotulo: 'Nenhum equipamento' },
     ],
-    pesos: {
-      leitor: { pesos: { DESKTOP: 2 }, motivo: 'Usa leitor de código de barras' },
-      impressora: { pesos: { DESKTOP: 2 }, motivo: 'Imprime etiquetas' },
-      nenhum: { pesos: { WEB: 1 }, motivo: 'Sem equipamentos especiais' },
-    },
+    sinais: { leitor: ['PERIFERICOS_LOCAIS'], impressora: ['PERIFERICOS_LOCAIS'], nenhum: ['SEM_PERIFERICOS'] },
   },
   {
     id: 'localizacao', enunciado: 'Precisa saber onde a pessoa está quando usa?', multipla: false,
@@ -82,10 +113,7 @@ const BANCO: PerguntaBanco[] = [
       { valor: 'sim', rotulo: 'Sim, a localização é importante' },
       { valor: 'nao', rotulo: 'Não precisa' },
     ],
-    pesos: {
-      sim: { pesos: { MOBILE: 3 }, motivo: 'Usa a localização do aparelho' },
-      nao: { pesos: {}, motivo: '' },
-    },
+    sinais: { sim: ['LOCALIZACAO'] },
   },
   {
     id: 'frequencia', enunciado: 'Com que frequência a tarefa acontece?', multipla: false,
@@ -95,12 +123,7 @@ const BANCO: PerguntaBanco[] = [
       { valor: 'periodico', rotulo: 'De vez em quando, em datas fixas' },
       { valor: 'sob_demanda', rotulo: 'Quando alguém pede' },
     ],
-    pesos: {
-      continuo: { pesos: { WEB: 1, DESKTOP: 1, MOBILE: 1 }, motivo: 'Uso contínuo' },
-      diario: { pesos: { JOB: 4 }, motivo: 'Acontece todo dia em horário fixo' },
-      periodico: { pesos: { JOB: 3 }, motivo: 'Acontece em datas fixas' },
-      sob_demanda: { pesos: { WEB: 1, API: 1 }, motivo: 'Acontece sob demanda' },
-    },
+    sinais: { continuo: ['USO_CONTINUO'], diario: ['EXECUCAO_AGENDADA'], periodico: ['EXECUCAO_PERIODICA'], sob_demanda: ['SOB_DEMANDA'] },
   },
   {
     id: 'resultado', enunciado: 'O que deve acontecer no final?', multipla: false,
@@ -110,11 +133,7 @@ const BANCO: PerguntaBanco[] = [
       { valor: 'arquivo', rotulo: 'Gerar um arquivo em uma pasta' },
       { valor: 'outro_sistema', rotulo: 'Atualizar outro sistema' },
     ],
-    pesos: {
-      email: { pesos: { JOB: 2 }, motivo: 'Entrega o resultado por e-mail' },
-      arquivo: { pesos: { JOB: 2 }, motivo: 'Gera arquivos automaticamente' },
-      outro_sistema: { pesos: { API: 4, JOB: 1 }, motivo: 'Troca dados com outro sistema' },
-    },
+    sinais: { email: ['RESULTADO_EMAIL'], arquivo: ['RESULTADO_ARQUIVO'], outro_sistema: ['RESULTADO_OUTRO_SISTEMA'] },
   },
   {
     id: 'integracao', enunciado: 'Precisa conversar com algum sistema que vocês já usam?', multipla: false,
@@ -122,10 +141,7 @@ const BANCO: PerguntaBanco[] = [
       { valor: 'sim', rotulo: 'Sim, com um sistema que já usamos' },
       { valor: 'nao', rotulo: 'Não, funciona sozinho' },
     ],
-    pesos: {
-      sim: { pesos: { API: 2, WEB: 1 }, motivo: 'Integra com um sistema existente' },
-      nao: { pesos: {}, motivo: '' },
-    },
+    sinais: { sim: ['INTEGRA_SISTEMA'] },
   },
   {
     id: 'volume', enunciado: 'Quantas pessoas usariam ao mesmo tempo, mais ou menos?', multipla: false,
@@ -135,13 +151,17 @@ const BANCO: PerguntaBanco[] = [
       { valor: 'medio', rotulo: 'Entre 10 e 100' },
       { valor: 'muitos', rotulo: 'Mais de 100' },
     ],
-    pesos: {
-      poucos: { pesos: { DESKTOP: 1 }, motivo: 'Poucos usuários simultâneos' },
-      medio: { pesos: { WEB: 2 }, motivo: 'Dezenas de usuários simultâneos' },
-      muitos: { pesos: { WEB: 3 }, motivo: 'Muitos usuários simultâneos' },
-    },
+    sinais: { poucos: ['POUCOS_USUARIOS'], medio: ['DEZENAS_USUARIOS'], muitos: ['MUITOS_USUARIOS'] },
   },
 ];
+
+/** Sinal → [pergunta do roteiro, opção]: o tema que uma resposta da IA já cobriu (para o roteiro não repetir). */
+const TEMA_DO_SINAL = new Map<string, [string, string]>();
+for (const p of BANCO) {
+  for (const [valor, sinais] of Object.entries(p.sinais)) {
+    sinais.forEach((s) => { if (!TEMA_DO_SINAL.has(s)) TEMA_DO_SINAL.set(s, [p.id, valor]); });
+  }
+}
 
 const NOMES: Record<TipoCenario, string> = {
   WEB: 'Aplicação web', DESKTOP: 'Software desktop', MOBILE: 'Aplicativo mobile', JOB: 'Rotina automática (job)', API: 'API / integração',
@@ -149,42 +169,74 @@ const NOMES: Record<TipoCenario, string> = {
 
 export const nomeCenario = (t: TipoCenario) => NOMES[t];
 
+const doBanco = (id: string) => BANCO.find((p) => p.id === id);
+
+/** Pergunta do roteiro pronta para a API: opções com os sinais equivalentes e origem ROTEIRO. */
+function publica(p: PerguntaBanco): Pergunta {
+  const { id, enunciado, ajuda, multipla, opcoes } = p;
+  return { id, enunciado, ajuda, multipla, opcoes: opcoes.map((o) => ({ ...o, sinais: p.sinais[o.valor] ?? [] })), origem: 'ROTEIRO' };
+}
+
 function mapa(respostas: RespostaEntrevista[]) {
   return new Map(respostas.map((r) => [r.perguntaId, r.valores]));
 }
 
-export function proximaPergunta(respostas: RespostaEntrevista[]): { pergunta?: Pergunta; estimadas: number } {
-  const r = mapa(respostas);
-  const aplicaveis = BANCO.filter((p) => !p.quando || p.quando(r));
-  const pendente = aplicaveis.find((p) => !r.has(p.id));
-  if (!pendente) return { estimadas: respostas.length };
-  const { id, enunciado, ajuda, multipla, opcoes } = pendente;
-  return { pergunta: { id, enunciado, ajuda, multipla, opcoes }, estimadas: Math.max(aplicaveis.length, respostas.length + 1) };
+/**
+ * Respostas vistas pelo roteiro: as do próprio roteiro (por id) + os temas que respostas da IA já cobriram
+ * (pelo sinal escolhido). Assim o roteiro pula "Quem vai usar?" se a IA já perguntou isso com outras palavras.
+ */
+function mapaRoteiro(respostas: RespostaEntrevista[]): Map<string, string[]> {
+  const direto = new Map(respostas.filter((r) => doBanco(r.perguntaId)).map((r) => [r.perguntaId, r.valores]));
+  const coberto = new Map<string, string[]>();
+  for (const r of respostas) {
+    if (doBanco(r.perguntaId)) continue;
+    for (const s of r.sinais ?? []) {
+      const tema = TEMA_DO_SINAL.get(s);
+      if (tema && !direto.has(tema[0])) coberto.set(tema[0], [...(coberto.get(tema[0]) ?? []), tema[1]]);
+    }
+  }
+  return new Map([...coberto, ...direto]);
+}
+
+/** Próxima pergunta do roteiro padrão (sem rótulo de IA) e quantas ainda se aplicam. */
+export function proximaPergunta(respostas: RespostaEntrevista[]): { pergunta?: Pergunta; restantes: number } {
+  const r = mapaRoteiro(respostas);
+  const pendentes = BANCO.filter((p) => (!p.quando || p.quando(r)) && !r.has(p.id));
+  return { pergunta: pendentes[0] ? publica(pendentes[0]) : undefined, restantes: pendentes.length };
 }
 
 export function perguntaPorId(id: string): Pergunta | undefined {
-  return BANCO.find((p) => p.id === id);
+  const p = doBanco(id);
+  return p ? publica(p) : undefined;
 }
 
-export function gerarRanking(respostas: RespostaEntrevista[]): CenarioPontuado[] {
+/** Sinais de uma resposta: os gravados nela ou, em dados antigos, a equivalência do roteiro padrão. */
+export function sinaisDaResposta(r: RespostaEntrevista): string[] {
+  if (r.sinais) return filtrarSinais(r.sinais);
+  const p = doBanco(r.perguntaId);
+  return p ? filtrarSinais(r.valores.flatMap((v) => p.sinais[v] ?? [])) : [];
+}
+
+/** Igual a `pontuar(sinais)` do backend: cada sinal conta uma vez; empate mantém a ordem WEB, DESKTOP, MOBILE, JOB, API. */
+export function pontuar(sinais: string[]): CenarioPontuado[] {
   const pontos: Record<TipoCenario, number> = { WEB: 0, DESKTOP: 0, MOBILE: 0, JOB: 0, API: 0 };
   const motivos: Record<TipoCenario, string[]> = { WEB: [], DESKTOP: [], MOBILE: [], JOB: [], API: [] };
-  for (const resp of respostas) {
-    const p = BANCO.find((b) => b.id === resp.perguntaId);
-    if (!p) continue;
-    for (const v of resp.valores) {
-      const regra = p.pesos[v];
-      if (!regra) continue;
-      for (const [tipo, peso] of Object.entries(regra.pesos) as [TipoCenario, number][]) {
-        pontos[tipo] += peso;
-        if (regra.motivo && peso >= 2) motivos[tipo].push(regra.motivo);
-      }
+  for (const codigo of filtrarSinais(sinais)) {
+    const { motivo, pesos } = SINAIS[codigo];
+    for (const [tipo, peso] of Object.entries(pesos) as [TipoCenario, number][]) {
+      pontos[tipo] += peso;
+      if (peso >= PESO_MINIMO_MOTIVO) motivos[tipo].push(motivo);
     }
   }
   const total = Object.values(pontos).reduce((a, b) => a + b, 0) || 1;
   return (Object.keys(pontos) as TipoCenario[])
     .map((tipo) => ({ tipo, nome: NOMES[tipo], pontuacao: Math.round((pontos[tipo] / total) * 100), motivos: motivos[tipo] }))
     .sort((a, b) => b.pontuacao - a.pontuacao);
+}
+
+/** Ranking do cenário pelos sinais de todas as respostas (perguntas da IA ou do roteiro). */
+export function gerarRanking(respostas: RespostaEntrevista[]): CenarioPontuado[] {
+  return pontuar(respostas.flatMap(sinaisDaResposta));
 }
 
 // ---------- Protótipo ----------

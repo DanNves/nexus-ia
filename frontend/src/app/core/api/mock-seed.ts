@@ -25,7 +25,13 @@ export interface MockDb {
   sequencias: Record<string, number>;
   /** Jobs de IA real disparados pelo mock e ainda não aplicados: jobId → alvo. */
   /** criadoEm: para expirar pendências cujo job não pôde mais ser consultado. */
-  iaPendentes: Record<string, { tarefa: 'requisitos' | 'sugestao_suporte'; alvoId: string; criadoEm?: string }>;
+  /** Entrevista: `rodada` pedida, `real` (rótulo IA × simulador) e `assinatura` das respostas no pedido (resultado velho não se aplica). */
+  iaPendentes: Record<string, {
+    tarefa: 'requisitos' | 'sugestao_suporte' | 'entrevista'; alvoId: string; criadoEm?: string;
+    rodada?: number; real?: boolean; assinatura?: string;
+  }>;
+  /** 429 IA_COTA_DIARIA: até quando (ISO) a entrevista usa só o roteiro padrão, por usuário, em todas as demandas. */
+  iaCotaAte?: Record<string, string>;
 }
 
 export const VERSAO_SEED = 3;
@@ -323,5 +329,6 @@ export function criarSeed(): MockDb {
     notificacoes,
     sequencias: { DEM: 18, ATV: 46, CH: 32, KB: 7, REQ: 35, EV: 8 },
     iaPendentes: {},
+    iaCotaAte: {},
   };
 }
