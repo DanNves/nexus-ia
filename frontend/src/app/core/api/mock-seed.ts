@@ -1,9 +1,16 @@
 // Dados de demonstração (fictícios). Datas relativas ao dia em que o seed é criado,
 // para que calendário e fila sempre tenham conteúdo próximo de "hoje".
 import {
-  Atividade, Chamado, Conhecimento, Demanda, Evento, Notificacao, Pessoa, Solucao,
+  Atividade, Chamado, Conhecimento, Demanda, Evento, Notificacao, Perfil, Pessoa, Solucao,
 } from './models';
 import { gerarPrototipo, gerarRanking } from './mock-ia';
+
+/** Notificação guardada no mock: destinatários e quem já leu. A API devolve `Notificacao` (com `lida` do usuário). */
+export interface NotificacaoMock extends Omit<Notificacao, 'lida'> {
+  /** Destinatários: por perfil, por pessoa ou por e-mail (observadores de uma solução). */
+  para: { perfis?: Perfil[]; usuarios?: string[]; emails?: string[] };
+  lidaPor: string[];
+}
 
 export interface MockDb {
   versao: number;
@@ -14,14 +21,28 @@ export interface MockDb {
   solucoes: Solucao[];
   chamados: Chamado[];
   conhecimentos: Conhecimento[];
-  notificacoes: Notificacao[];
+  notificacoes: NotificacaoMock[];
   sequencias: Record<string, number>;
   /** Jobs de IA real disparados pelo mock e ainda não aplicados: jobId → alvo. */
   /** criadoEm: para expirar pendências cujo job não pôde mais ser consultado. */
-  iaPendentes: Record<string, { tarefa: 'requisitos' | 'sugestao_suporte'; alvoId: string; criadoEm?: string }>;
+  /** Entrevista: `rodada` pedida, `real` (rótulo IA × simulador) e `assinatura` das respostas no pedido (resultado velho não se aplica). */
+  iaPendentes: Record<string, {
+    tarefa: 'requisitos' | 'sugestao_suporte' | 'entrevista'; alvoId: string; criadoEm?: string;
+    rodada?: number; real?: boolean; assinatura?: string;
+  }>;
+  /** 429 IA_COTA_DIARIA: até quando (ISO) a entrevista usa só o roteiro padrão, por usuário, em todas as demandas. */
+  iaCotaAte?: Record<string, string>;
 }
 
 export const VERSAO_SEED = 3;
+
+/** Observadores de demonstração (e-mails das contas semeadas no Django): Marina acompanha o portal da Rota Sul;
+ *  Rafael acompanha o dashboard de relatórios (aparece para ele na visão de cliente). */
+export const OBSERVADORES_SEED: Record<string, string[]> = {
+  s1: ['usuario@nexus.local'],
+  s2: ['equipe@nexus.local'],
+  s3: [],
+};
 
 function dia(offset: number, hora = 9, minuto = 0): string {
   const d = new Date();
@@ -204,6 +225,7 @@ export function criarSeed(): MockDb {
   const solucoes: Solucao[] = [
     {
       id: 's1', codigo: 'SOL-01', nome: 'Portal de Atendimento', tipo: 'WEB', clienteId: 'p5', demandaOrigemId: 'd12',
+      observadores: [...OBSERVADORES_SEED['s1']],
       descricao: 'Portal onde os clientes da Rota Sul acompanham entregas e abrem solicitações.',
       versoes: [
         { id: 'v120', numero: '1.2.0', estado: 'PUBLICADA', publicadaEm: dia(-40), notas: ['Autenticação em dois fatores', 'Recuperação de senha por código'] },
@@ -213,6 +235,7 @@ export function criarSeed(): MockDb {
     },
     {
       id: 's2', codigo: 'SOL-02', nome: 'Dashboard de Relatórios', tipo: 'WEB', clienteId: 'p5',
+      observadores: [...OBSERVADORES_SEED['s2']],
       descricao: 'Painel com indicadores de entregas, atrasos e custos por rota.',
       versoes: [
         { id: 'v210', numero: '2.1.0', estado: 'PUBLICADA', publicadaEm: dia(-20), notas: ['Filtro por período', 'Novo gráfico de atrasos'] },
@@ -221,6 +244,7 @@ export function criarSeed(): MockDb {
     },
     {
       id: 's3', codigo: 'SOL-03', nome: 'Agenda Bem Viver', tipo: 'WEB', clienteId: 'p1', demandaOrigemId: 'd14',
+      observadores: [...OBSERVADORES_SEED['s3']],
       descricao: 'Agendamento online de consultas para os pacientes da Clínica Bem Viver.',
       versoes: [
         { id: 'v090', numero: '0.9.0', estado: 'EM_DESENVOLVIMENTO', notas: ['Marcar consulta', 'Remarcar e cancelar', 'Lembretes'] },
@@ -291,10 +315,11 @@ export function criarSeed(): MockDb {
     },
   ];
 
-  const notificacoes: Notificacao[] = [
-    { id: 'n1', texto: 'Reunião de validação do relatório de entregas em 2 dias', quando: minutosAtras(30), link: '/calendario', lida: false },
-    { id: 'n2', texto: 'Nova solicitação: Controle de estoque da farmácia', quando: minutosAtras(60 * 20), link: '/demandas/d15', lida: false },
-    { id: 'n3', texto: 'CH-028 está em atendimento com Pedro Almeida', quando: minutosAtras(20), link: '/fila/c28', lida: true },
+  const notificacoes: NotificacaoMock[] = [
+    { id: 'n1', texto: 'Reunião de validação do relatório de entregas em 2 dias', quando: minutosAtras(30), link: '/calendario', para: { perfis: ['EQUIPE'], usuarios: ['p5'] }, lidaPor: [] },
+    { id: 'n2', texto: 'Nova solicitação: Controle de estoque da farmácia', quando: minutosAtras(60 * 20), link: '/demandas/d15', para: { perfis: ['EQUIPE'] }, lidaPor: [] },
+    { id: 'n3', texto: 'Seu chamado CH-028 está em atendimento com Pedro Almeida', quando: minutosAtras(20), link: '/fila/c28', para: { usuarios: ['p5'] }, lidaPor: ['p5'] },
+    { id: 'n4', texto: 'A equipe definiu as próximas datas de "Agendamento online de consultas"', quando: minutosAtras(60 * 3), link: '/calendario', para: { usuarios: ['p1'] }, lidaPor: [] },
   ];
 
   return {
@@ -304,5 +329,6 @@ export function criarSeed(): MockDb {
     notificacoes,
     sequencias: { DEM: 18, ATV: 46, CH: 32, KB: 7, REQ: 35, EV: 8 },
     iaPendentes: {},
+    iaCotaAte: {},
   };
 }

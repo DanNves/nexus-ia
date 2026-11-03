@@ -108,7 +108,11 @@ RASCUNHO → EM_LEVANTAMENTO → LEVANTAMENTO_CONCLUIDO ─┬─▶ STAND_BY �
 ```
 Em aberto (`CLAUDE.md` §30 #7, #15): "possível com ressalvas", reabertura de INVIAVEL, duração do STAND_BY, quem publica Produto/Versão para chegar a ENTREGUE.
 
-## 6. Perfis (inferidos do fluxo — proposta, `CLAUDE.md` §30 #16)
+## 6. Perfis
+
+**Vigente (2026-11-03): ver [`PERFIS.md`](PERFIS.md)** — Solicitante (`CLIENTE`), Equipe responsável (`EQUIPE`) e Administrador (`EQUIPE` + admin), com a matriz etapa × papel, navegação e visibilidade.
+
+Proposta original (registro; separar "Analista/Suporte" da equipe continua em aberto, `CLAUDE.md` §30 #16):
 
 | Perfil | Pode |
 |---|---|

@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { autenticadoGuard, visitanteGuard } from './core/auth/guards';
+import { adminGuard, autenticadoGuard, visitanteGuard } from './core/auth/guards';
 
 export const routes: Routes = [
   // Públicas (só para quem não está logado).
@@ -22,6 +22,7 @@ export const routes: Routes = [
       { path: 'solucoes/:id', title: 'Solução · NEXUS', loadComponent: () => import('./features/solucoes/solucao-detalhe.page').then((m) => m.SolucaoDetalhePage) },
       { path: 'fila', title: 'Fila de atendimento · NEXUS', loadComponent: () => import('./features/fila/fila.page').then((m) => m.FilaPage) },
       { path: 'fila/:id', title: 'Chamado · NEXUS', loadComponent: () => import('./features/fila/chamado-detalhe.page').then((m) => m.ChamadoDetalhePage) },
+      { path: 'usuarios', title: 'Usuários · NEXUS', canActivate: [adminGuard], loadComponent: () => import('./features/usuarios/usuarios.page').then((m) => m.UsuariosPage) },
       { path: '**', title: 'Página não encontrada · NEXUS', loadComponent: () => import('./features/nao-encontrada.page').then((m) => m.NaoEncontradaPage) },
     ],
   },

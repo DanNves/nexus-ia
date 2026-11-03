@@ -11,6 +11,7 @@ Leia [`CLAUDE.md`](CLAUDE.md) antes de qualquer alteração. Ele é a especifica
 ## Arquitetura
 
 - `frontend/`: Angular 22, standalone components, Signals, Router, TypeScript strict.
+- `frontend/template/shadcn-dashboard/`: **template do protótipo gerado** (React, só referência). Vale **só** para o que a IA gera para o solicitante (telas do protótipo), montado pelo kit `frontend/src/app/core/api/prototipo-template.ts`. A interface do NEXUS **não** usa esse template: mantém o padrão próprio (`CLAUDE.md` §10 e §12). Guia: [`frontend/template/README.md`](frontend/template/README.md).
 - `backend/`: Django + DRF, monólito modular (apps por contexto de negócio; camadas api/services/domain/infra).
 - Banco SQLite em localhost (temporário).
 - IA via porta `LLMProvider` (modelo real a definir; `fake_adapter` para testes e demonstração).

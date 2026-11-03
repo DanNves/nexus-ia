@@ -155,6 +155,10 @@ IA_MODELOS_RESERVA = env_lista('IA_MODELOS_RESERVA', '')
 IA_TEMPERATURA = float(env('IA_TEMPERATURA', '0.3'))
 IA_TIMEOUT_SEGUNDOS = float(env('IA_TIMEOUT_SEGUNDOS', '60'))
 IA_COTA_POR_ALVO = int(env('IA_COTA_POR_ALVO', '20'))
+# Jobs de IA criados por usuário em 24 h (resultado reaproveitado não conta). Ver claude/ia.md.
+IA_COTA_DIARIA_POR_USUARIO = int(env('IA_COTA_DIARIA_POR_USUARIO', '40'))
+# Rodadas de perguntas da entrevista guiada por demanda (cada rodada = 1 chamada, até 5 perguntas).
+IA_ENTREVISTA_MAX_RODADAS = int(env('IA_ENTREVISTA_MAX_RODADAS', '3'))
 IA_MAX_SIMULTANEOS = int(env('IA_MAX_SIMULTANEOS', '2'))
 IA_EXECUCAO_SINCRONA = env_bool('IA_EXECUCAO_SINCRONA', False)
 

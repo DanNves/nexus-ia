@@ -16,8 +16,10 @@ const MENU_MOBILE = {
   dica: 'Nesta largura de tela, as abas ficam no botão de menu.',
 };
 
-function passosGlobais(equipe: boolean): PassoTour[] {
-  return [
+export interface OpcoesTour { equipe: boolean; podeAlternarVisao: boolean; admin: boolean }
+
+function passosGlobais({ equipe, podeAlternarVisao, admin }: OpcoesTour): PassoTour[] {
+  const passos: PassoTour[] = [
     {
       id: 'visao-geral',
       seletor: '.nav a[href="/visao-geral"]',
@@ -32,7 +34,7 @@ function passosGlobais(equipe: boolean): PassoTour[] {
       seletor: '.nav a[href="/demandas"]',
       titulo: 'Demandas',
       texto: equipe
-        ? 'Todas as demandas dos clientes e as atividades da equipe. Abra uma demanda para avaliar se é possível fazer, validar o que a IA sugeriu e acompanhar os requisitos.'
+        ? 'Todas as demandas dos solicitantes e as atividades da equipe. Abra uma demanda para avaliar se é possível fazer, validar o que a IA sugeriu e acompanhar os requisitos.'
         : 'Tudo o que você já pediu. Cada demanda guarda a sua necessidade, as respostas da entrevista, o protótipo, a solicitação e o documento de requisitos.',
       alternativa: MENU_MOBILE,
     },
@@ -41,7 +43,7 @@ function passosGlobais(equipe: boolean): PassoTour[] {
       seletor: '.nav a[href="/calendario"]',
       titulo: 'Calendário',
       texto: equipe
-        ? 'Reuniões para validar as regras com o cliente, prazos, sprints e entregas. Marque aqui os compromissos de cada demanda.'
+        ? 'Reuniões para validar as regras com o solicitante, prazos, sprints e entregas. Marque aqui os compromissos de cada demanda.'
         : 'As datas combinadas com a equipe, como a reunião para validar as regras do seu sistema, prazos e entregas.',
       alternativa: MENU_MOBILE,
     },
@@ -49,8 +51,9 @@ function passosGlobais(equipe: boolean): PassoTour[] {
       id: 'solucoes',
       seletor: '.nav a[href="/solucoes"]',
       titulo: 'Soluções',
-      texto:
-        'Os sistemas já entregues e suas versões. Cada versão lembra de qual demanda veio e quais chamados recebeu: é a ponte entre o desenvolvimento e o suporte.',
+      texto: equipe
+        ? 'Os sistemas já entregues e suas versões. Cada versão lembra de qual demanda veio e quais chamados recebeu: é a ponte entre o desenvolvimento e o suporte.'
+        : 'Os sistemas que a equipe já entregou para você e as versões de cada um. Daqui você abre um chamado se algo não funcionar.',
       alternativa: MENU_MOBILE,
     },
     {
@@ -63,54 +66,74 @@ function passosGlobais(equipe: boolean): PassoTour[] {
       alternativa: MENU_MOBILE,
     },
     {
-      id: 'buscar',
-      seletor: '.busca-gatilho',
-      titulo: 'Buscar',
-      texto: 'Encontre qualquer demanda, chamado ou solução pelo nome ou pelo código. Atalho: Ctrl K.',
-    },
-    {
       id: 'notificacoes',
       seletor: 'button[aria-label="Notificações"]',
       titulo: 'Notificações',
       texto: equipe
         ? 'Avisos do que mudou: solicitação nova, conteúdo aguardando validação, chamado aberto. O ponto vermelho indica que há algo não lido.'
-        : 'Avisos do que mudou: resposta da equipe, reunião marcada, documento disponível. O ponto vermelho indica que há algo não lido.',
-    },
-    {
-      id: 'nova-demanda',
-      seletor: '.btn-nova',
-      titulo: 'Nova demanda',
-      texto: equipe
-        ? 'Abre uma demanda pelo mesmo caminho do cliente: descrição da necessidade, ata em .txt e entrevista guiada.'
-        : 'Comece aqui quando precisar de algo novo. Você descreve o que precisa (ou anexa a ata da reunião em .txt) e o NEXUS faz perguntas simples, com opções, para entender o que se encaixa.',
-      alternativa: MENU_MOBILE,
+        : 'Avisos sobre o que é seu: resposta da equipe à sua solicitação, reunião marcada, requisito aprovado, chamado em atendimento ou resolvido. O ponto vermelho indica que há algo não lido.',
     },
     {
       id: 'usuario',
       seletor: '.usuario',
       titulo: 'Seu menu',
-      texto: 'Veja com qual conta você entrou, ligue o modo escuro ou saia do NEXUS.',
+      texto: 'Veja com qual conta você entrou e o seu perfil, busque qualquer registro (atalho Ctrl K), ligue o modo escuro ou saia do NEXUS.',
     },
   ];
+  // Abrir demanda é coisa de cliente: o botão só existe na visão do cliente.
+  if (!equipe) {
+    passos.splice(passos.length - 1, 0, {
+      id: 'nova-demanda',
+      seletor: '.btn-nova',
+      titulo: 'Nova demanda',
+      texto: 'Comece aqui quando precisar de algo novo. Você descreve o que precisa (ou anexa a ata da reunião em .txt) e o NEXUS faz perguntas simples, com opções, para entender o que se encaixa.',
+      alternativa: MENU_MOBILE,
+    });
+  }
+  if (admin && equipe) {
+    passos.splice(5, 0, {
+      id: 'usuarios',
+      seletor: '.nav a[href="/usuarios"]',
+      titulo: 'Usuários',
+      texto: 'Só para administradores: cadastre pessoas, defina quem é solicitante e quem é da equipe, desative contas e redefina senhas.',
+      alternativa: MENU_MOBILE,
+    });
+  }
+  // Primeiro passo para quem é da equipe: deixar claro de que lado está.
+  if (podeAlternarVisao) {
+    passos.unshift({
+      id: 'visao',
+      seletor: '[data-tour="visao"]',
+      titulo: 'Solicitante ou equipe?',
+      texto: equipe
+        ? 'Você está na visão da EQUIPE (linha roxa no topo): solicitações, validações e atendimento. Clique em "Solicitante" para ver o NEXUS exatamente como um solicitante vê.'
+        : 'Você está na visão do SOLICITANTE: vê só o que um solicitante veria e pode abrir demandas. Clique em "Equipe" para voltar ao trabalho da equipe.',
+    });
+  }
+  return passos;
 }
 
 function passosListaDemandas(equipe: boolean): PassoTour[] {
-  return [
+  const passos: PassoTour[] = [
     {
       id: 'aba-demandas',
       seletor: '[data-tour="aba-demandas"]',
       titulo: 'Aba Demandas',
-      texto: 'A lista do que foi pedido, com a etapa de cada demanda. Clique em uma para ver tudo o que ela guarda.',
+      texto: equipe
+        ? 'A lista do que foi pedido, com a etapa de cada demanda. Clique em uma para ver tudo o que ela guarda.'
+        : 'A lista do que você pediu, com a etapa de cada demanda. Clique em uma para ver tudo o que ela guarda.',
     },
-    {
+  ];
+  // Atividades são o quadro interno da equipe; o cliente não vê a aba.
+  if (equipe) {
+    passos.push({
       id: 'aba-atividades',
       seletor: '[data-tour="aba-atividades"]',
       titulo: 'Aba Atividades',
-      texto: equipe
-        ? 'As tarefas da equipe para entregar as demandas, em quadro (por situação) ou em lista.'
-        : 'O trabalho que a equipe está fazendo para entregar as suas demandas, em quadro ou em lista.',
-    },
-  ];
+      texto: 'As tarefas da equipe para entregar as demandas, em quadro (por situação) ou em lista.',
+    });
+  }
+  return passos;
 }
 
 function passosDetalheDemanda(equipe: boolean): PassoTour[] {
@@ -119,21 +142,21 @@ function passosDetalheDemanda(equipe: boolean): PassoTour[] {
       id: 'etapas',
       seletor: '[data-tour="etapas"]',
       titulo: 'Etapas da demanda',
-      texto: 'A linha mostra o caminho da demanda, da necessidade ao documento de requisitos, e em que ponto ela está agora.',
+      texto: 'O caminho da demanda, em ordem: levantamento, protótipo, solicitação, requisitos e documento. Clique numa etapa para abri-la. O número azul marca a etapa atual, o ✓ as concluídas, e a linha de baixo diz a situação de cada uma.',
     },
     {
       id: 'aba-resumo',
       seletor: '[data-tour="aba-resumo"]',
       titulo: 'Resumo',
-      texto: 'Uma visão rápida: o que foi pedido, quem está envolvido, a solução recomendada e o histórico do que já aconteceu.',
+      texto: 'Comece por aqui: o aviso no topo diz o que fazer agora. Abaixo, o que foi pedido, quem está envolvido, a solução recomendada e o histórico.',
     },
     {
       id: 'aba-levantamento',
       seletor: '[data-tour="aba-levantamento"]',
       titulo: 'Levantamento',
       texto: equipe
-        ? 'A necessidade contada pelo cliente e as respostas da entrevista guiada, com o tipo de solução recomendado e os sinais que pesaram na escolha.'
-        : 'Onde você responde a entrevista guiada: perguntas simples, uma por vez, com opções ou "Outro". Suas respostas indicam o tipo de solução que faz sentido (web, desktop, rotina agendada…).',
+        ? 'A necessidade contada pelo solicitante e as respostas da entrevista guiada (perguntas sugeridas pela IA em rodadas, ou do roteiro padrão quando ela não está disponível), com o tipo de solução calculado por regra e os sinais que pesaram na escolha.'
+        : 'Onde você responde a entrevista guiada: perguntas simples, uma por vez, com opções, "Outro" ou "Não sei". A IA prepara as perguntas em poucas rodadas a partir do que você contou; se ela não estiver disponível, seguimos com um roteiro padrão. Suas respostas indicam, por uma regra fixa, o tipo de solução que faz sentido (web, desktop, rotina agendada…).',
     },
     {
       id: 'aba-prototipo',
@@ -169,9 +192,10 @@ function passosDetalheDemanda(equipe: boolean): PassoTour[] {
 }
 
 /** Passos do tour: abas principais primeiro e, depois, as abas da página atual (se houver). */
-export function passosDoTour(url: string, equipe: boolean): PassoTour[] {
+export function passosDoTour(url: string, opcoes: OpcoesTour): PassoTour[] {
+  const { equipe } = opcoes;
   const caminho = url.split(/[?#]/)[0].replace(/\/+$/, '');
-  const passos = passosGlobais(equipe);
+  const passos = passosGlobais(opcoes);
   if (caminho === '/demandas') return [...passos, ...passosListaDemandas(equipe)];
   if (/^\/demandas\/(?!nova$)[^/]+(\/[^/]+)?$/.test(caminho)) return [...passos, ...passosDetalheDemanda(equipe)];
   return passos;

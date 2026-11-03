@@ -68,8 +68,8 @@
         <section class="secao coluna">
           <h2>Como a fila anda</h2>
           <dl class="numeros numeros-compactos">
-            <div><dt>Na fila agora</dt><dd>{{ f.naFila.length }}</dd></div>
-            <div><dt>Em atendimento</dt><dd>{{ f.emAtendimento.length }}</dd></div>
+            <div><dt>Na fila agora</dt><dd>{{ f.totalNaFila }}</dd></div>
+            <div><dt>Em atendimento</dt><dd>{{ f.totalEmAtendimento }}</dd></div>
             <div><dt>Tempo médio</dt><dd>{{ duracao(f.tempoMedioMin) }}</dd></div>
           </dl>
           <p class="mudo">Chamados que impedem o trabalho passam na frente. Entre chamados de mesmo impacto, vale a ordem de abertura.</p>

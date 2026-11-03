@@ -5,7 +5,7 @@
 > Versão 2 (2026-10-07): escopo ampliado para o ciclo completo — do levantamento guiado da necessidade até o suporte pós-entrega.
 > Arquitetura de referência: `docs/Nexus_Arquitetura.pdf` (resumo em `docs/ARQUITETURA.md`). Este arquivo registra as adaptações vigentes.
 
-> **ESTADO ATUAL (2026-10-15): BACKEND PARCIAL + MOCK HÍBRIDO.** Autenticação (JWT) e IA (Gemini, via porta `LLMProvider`) são **reais** no Django; demandas, chamados, cenário, protótipo e entrevista continuam respondidos por `core/api/mock-backend.interceptor.ts`, que repassa ao Django as rotas reais. Ver §31 e `claude/front/contratos.md`.
+> **ESTADO ATUAL (2026-11-03): BACKEND PARCIAL + MOCK HÍBRIDO.** Autenticação (JWT) e IA (Gemini, via porta `LLMProvider`) são **reais** no Django; a IA gera requisitos, sugestão de suporte e as **perguntas da entrevista** (em rodadas, com cota). Demandas, chamados, cenário (pontuado por sinais, espelho de `apps/cenario/domain/sinais.py`) e protótipo continuam respondidos por `core/api/mock-backend.interceptor.ts`, que repassa ao Django as rotas reais. A interface do NEXUS mantém o padrão próprio (navbar, §10); o template shadcn-dashboard vale só para o protótipo gerado (§12). Papéis em `docs/PERFIS.md`. Ver §31 e `claude/front/contratos.md`.
 
 ---
 
@@ -144,6 +144,12 @@ O conteúdo original fica na plataforma; o que vai para a IA é a versão anonim
 - **Inúmeras** perguntas **simples e fáceis**, para entender exatamente o que se encaixa na solução.
 - Normalmente **3 ou mais opções** (1, 2, 3…) **ou "Outro"**.
 
+**Implementado (2026-11-03, pedido do autor: "perguntas mais precisas, respeitando o limite de uso"):**
+- a IA sugere as perguntas **em rodadas** (até 5 por chamada, no máximo 3 rodadas por demanda — `IA_ENTREVISTA_MAX_RODADAS`), lendo a necessidade e as respostas anteriores: não pergunta o que já foi dito, aprofunda "Não sei"/"Outro" e diz quando a informação já basta;
+- cada opção traz os **sinais** do catálogo (`backend/apps/cenario/domain/sinais.py`); o cenário é pontuado por regra a partir deles;
+- a interface acrescenta "Outro" e "Não sei"; perguntas da IA aparecem como sugestão (modelo indicado);
+- se a IA falhar ou a cota acabar, a entrevista continua pelo **roteiro padrão** fixo (sem rótulo de IA).
+
 **Detalhamento *(proposta — a confirmar)*:**
 - uma pergunta por vez, em linguagem não técnica;
 - opção "Não sei";
@@ -170,6 +176,8 @@ A partir dos sinais, o sistema recomenda o tipo de solução: **aplicação web,
 **Pendente (§30):**
 - direção dos templates: (a) ADM mantém catálogo → sistema seleciona e adapta; (b) telas geradas → são inseridas no ADM como template; (c) ambos;
 - formato: só HTML puro · imagem renderizada a partir do HTML · imagem gerada por IA.
+
+**Visual (decidido, 2026-11-03):** as telas geradas seguem o template `frontend/template/shadcn-dashboard/`, montadas pelo kit `frontend/src/app/core/api/prototipo-template.ts` (§12). Só o protótipo usa esse template; a interface do NEXUS não.
 
 **Regras de segurança (decididas):** HTML sem scripts, sanitizado, renderizado em `iframe sandbox` (§19). Versionado.
 **Detalhamento *(proposta — a confirmar)*:** comentários por tela.
@@ -284,7 +292,8 @@ Regra de fronteira: um módulo **nunca importa models de outro**; usa serviços 
 ```
 nexus-ia/
 ├── frontend/   Angular (standalone, Signals, Router, TypeScript strict)
-│   └── src/app/{core, shared, features/<modulo>}   ← implementado (2026-10-07)
+│   ├── src/app/{core, shared, features/<modulo>}   ← implementado (2026-10-07)
+│   └── template/shadcn-dashboard/                   ← template do PROTÓTIPO gerado (React, só referência; §5.5, §12)
 ├── backend/    Django
 │   ├── config/settings/{base,dev}.py               ← implementado (2026-10-15), mais test.py
 │   ├── apps/<modulo>/{api, services, domain, models.py, repositories.py, tasks.py, tests}
@@ -323,11 +332,12 @@ Front faz polling com intervalo crescente (implementado: começa em ~1 s, ×1,4,
 /calendario                    mês + agenda do dia + novo compromisso
 /solucoes, /solucoes/:id       versões, demanda de origem, chamados
 /fila, /fila/:id               posição na fila (cliente), fila ordenada e atendimento com IA (equipe)
+/usuarios                      gestão de usuários (só administrador, na visão da equipe): cadastrar, perfil, admin, ativar/desativar, redefinir senha
 /entrar, /criar-conta          acesso (públicas; demais rotas exigem sessão). Cadastro público cria sempre CLIENTE
 **                             página não encontrada
 ```
 
-Perfil: vem do usuário logado (JWT). Usuários de demonstração: `EquipeAdmin` (Equipe responsável) e `Usuario` (Cliente), senha `123`, só em desenvolvimento. O botão **Ajuda** no topo abre o tour guiado aba por aba (`shared/ajuda/`).
+Perfil: vem do usuário logado (JWT). **Papéis (2026-11-03, `docs/PERFIS.md`):** **Solicitante** (código `CLIENTE`), **Equipe responsável** (`EQUIPE`) e **Administrador** (`EQUIPE` + `is_staff`, vê o item Usuários); rótulos da navbar e do papel em `app.component.ts` e `core/session.service.ts`. **Visão:** quem é da equipe alterna na navbar entre **Solicitante** (vê exatamente o que um solicitante vê, pode abrir demandas) e **Equipe** (linha roxa no topo; sem "Nova demanda"). Solicitante só tem a própria visão. Usuários de demonstração: `EquipeAdmin` (Equipe responsável) e `Usuario` (Solicitante), senha `123`, só em desenvolvimento. O botão **Ajuda** no topo abre o tour guiado aba por aba (`shared/ajuda/`).
 
 Proposta original do novo escopo (referência para itens ainda não implementados, como validações, indicadores e ADM):
 
@@ -359,7 +369,7 @@ Regra permanente: cada rota abre uma tela real; nunca criar link visual sem rota
 
 ## 10. NAVEGAÇÃO — CONTRATO VISUAL
 
-A navbar principal deve ser **horizontal, limpa e contínua**.
+A navbar principal deve ser **horizontal, limpa e contínua**. **Este é o padrão da interface do NEXUS** — o template shadcn-dashboard **não** se aplica aqui (só ao protótipo gerado, §12; decisão do autor, 2026-11-03).
 
 ### NÃO usar
 - uma caixa cinza para cada grupo;
@@ -371,8 +381,8 @@ A navbar principal deve ser **horizontal, limpa e contínua**.
 
 ### USAR
 Marca NEXUS à esquerda; itens principais ao centro; à direita: **Novo processo | Busca | Notificações | Usuário**.
-Itens principais (implementado): **Visão geral | Demandas | Calendário | Soluções | Fila**. Busca (Ctrl K), **Ajuda** (tour guiado), notificações, **Nova demanda** e menu do usuário (modo escuro, sair) à direita. Indicadores, ADM e Configurações: ainda não implementados.
-Os itens visíveis dependem do perfil (cliente não vê Solicitações/Validações/ADM). Toda rota deve ter acesso pela navegação do perfil que a usa.
+Itens principais (implementado): **Visão geral | Demandas | Calendário | Soluções | Fila** na visão da equipe (+ **Usuários** para administrador); na visão do solicitante, os mesmos destinos com rótulos próprios: **Visão geral | Demandas | Agenda | Soluções | Chamados** (ver `docs/PERFIS.md`). À direita: seletor de visão **Solicitante | Equipe** (só equipe), **Ajuda** (tour guiado), notificações, **Nova demanda** (só na visão do solicitante) e menu do usuário (papel, busca Ctrl K, modo escuro, sair). O campo de busca saiu da barra (2026-10-15): fica no atalho Ctrl K e no menu do usuário. Indicadores, ADM e Configurações: ainda não implementados.
+Os itens visíveis dependem do perfil (solicitante não vê Usuários, Atividades nem ações da equipe). Toda rota deve ter acesso pela navegação do perfil que a usa.
 
 Item atual: texto azul, fundo azul muito suave, linha inferior azul, ícone azul.
 Itens não ativos: fundo transparente, texto azul/cinza, sem borda, sem caixa individual.
@@ -395,12 +405,23 @@ Mostra o estado de cada etapa (não iniciada, em andamento, aguardando validaç�
 
 ## 12. PADRÃO VISUAL
 
-### Identidade
+### Dois padrões, cada um no seu lugar (decisão do autor, 2026-11-03)
+| O quê | Padrão | Onde |
+|---|---|---|
+| **Interface do NEXUS** (todas as telas do sistema: navbar, páginas, componentes) | **padrão próprio do NEXUS**, abaixo (identidade, paleta, navbar §10) — mantido como estava | `frontend/src/styles.css`, `shared/` |
+| **O que a IA gera para o solicitante** (protótipo de telas da aplicação dele, §5.5, e futuras telas/templates do ADM) | **template `frontend/template/shadcn-dashboard/`** (Shadcn Dashboard Free, estilo `base-lyra`) | kit `frontend/src/app/core/api/prototipo-template.ts`; guia em `frontend/template/README.md` |
+
+- **Não aplicar o template à interface do NEXUS.** Uma tentativa de 2026-11-03 (commit `e5719f7`) foi desfeita por pedido do autor (`7b6e7d0`).
+- O template é React/Tailwind e serve **só de referência**: o protótipo gerado reproduz o visual em HTML + CSS puros (sem React, sem Tailwind, sem dependência nova), pelo kit acima.
+- O protótipo usa os **tokens neutros do template** (não o azul NEXUS): ele mostra a aplicação do solicitante, não o NEXUS.
+- Toda geração de protótipo — o simulador de hoje e o prompt da IA quando o protótipo for para o Django — monta as telas **com o kit** (casca, cartão, KPIs, tabela, badge, botão, campo, molduras de janela/celular). Mudou o visual do protótipo? Mude o kit, não cada tela.
+
+### Identidade (interface do NEXUS)
 Profissional, corporativo, moderno, limpo, orientado a software, confiável, acadêmico/profissional.
 Evitar: aparência futurista, "IA genérica", neon, excesso de gradientes, sombras, cards e arredondamentos.
 A entrevista guiada deve parecer uma **conversa simples e humana**, não um formulário burocrático nem um chatbot genérico.
 
-### Paleta base
+### Paleta base (interface do NEXUS)
 - Navy: #020A1D
 - Azul principal: #0878FF
 - Fundo: #F5F8FC
@@ -485,7 +506,7 @@ Avaliação experimental (casos CT01–CT10 da proposta) é feita à parte. **N�
 - Adaptadores em `apps/ia/adapters/`: provedor real (a definir) e `fake_adapter` (resposta fixa — testes e demonstração sem internet).
 - Toda geração usa **esquema JSON**; resposta validada antes de persistir; fora do formato = falha da tarefa.
 - **Prompts versionados no banco** (PromptTemplate); cada execução grava **LogIA** (modelo, versão, prompt, parâmetros, tokens, custo, duração, artefato).
-- Cota de gerações por processo e limite de requisições por usuário (documento de arquitetura; valores *(proposta — a confirmar)*).
+- Cota de gerações por processo e limite de requisições por usuário (documento de arquitetura). Vigentes (2026-11-03, valores ainda a confirmar com o autor, §30 #20): `IA_LIMITE_POR_USUARIO=10/min`, `IA_COTA_POR_ALVO=20`/24 h, `IA_COTA_DIARIA_POR_USUARIO=40`/24 h, `IA_ENTREVISTA_MAX_RODADAS=3`, `IA_MAX_SIMULTANEOS=2`; entrada idêntica reaproveita o resultado anterior sem gastar cota (entrevista). Erros 429 trazem `codigo` (`IA_COTA_DIARIA`, `IA_RODADAS_ESGOTADAS`, `IA_COTA_ALVO`).
 - Nunca afirmar na interface que algo foi decidido pela IA.
 
 ### Privacidade (LGPD)
@@ -539,7 +560,8 @@ Antes de criar qualquer funcionalidade:
 4. verificar impacto na rastreabilidade e na máquina de estados;
 5. verificar permissões por perfil;
 6. verificar responsividade;
-7. verificar se a ação realmente funciona.
+7. verificar se a ação realmente funciona;
+8. em telas e componentes do NEXUS, seguir o padrão próprio (§10, §12) e o catálogo de componentes; em protótipo gerado (o que a IA gera para o solicitante), usar o kit do template (§12, `frontend/template/README.md`).
 
 Não criar somente aparência.
 
@@ -577,6 +599,7 @@ Testes por nível (documento de arquitetura): domínio (sem banco), serviços (b
 - Supabase foi descartado; o projeto roda em localhost.
 - Vercel não é usada no momento (projeto local); `frontend/vercel.json` é legado.
 - O MVP anterior (suporte-centrado, com localStorage) está documentado em `docs/` como histórico acadêmico. A ampliação de escopo é evolução posterior e não reescreve o histórico.
+- 2026-11-03: o template shadcn-dashboard chegou a ser aplicado à interface inteira (menu lateral, tokens, fonte Geist) e foi desfeito no mesmo dia por pedido do autor. Ele vale só para o protótipo gerado (§12); a interface manteve a navbar e o visual de 2026-10-07.
 
 ---
 
@@ -616,7 +639,7 @@ O orquestrador (sessão principal) distribui as tarefas; front e back trabalham 
 | 6 | Cenário de demonstração completo | PO + autor |
 | 7 | Estados do processo (`docs/FLUXO.md` §5) | validar com PO e back-senior; inclui: estado para requisitos em validação/documento entregue, "possível com ressalvas", INVIÁVEL pode ser reaberto?, duração do STAND_BY |
 | 8 | Remover `frontend/vercel.json` | — |
-| 9 | Perguntas da entrevista | geradas pela IA ao vivo (resposta do cliente = ação humana) · banco de perguntas validado no ADM · híbrido |
+| 9 | Perguntas da entrevista | **decidido (2026-11-03): híbrido** — IA ao vivo em rodadas (resposta do solicitante = ação humana) com o roteiro padrão fixo como queda; banco validado no ADM fica como evolução |
 | 10 | Direção dos templates de tela | ADM → protótipo · protótipo → ADM · ambos |
 | 11 | Formato do protótipo | só HTML puro (recomendado) · imagem renderizada do HTML · imagem gerada por IA |
 | 12 | Quem decide o cenário final | cliente · equipe · cliente propõe e equipe confirma |

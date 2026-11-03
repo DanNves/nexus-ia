@@ -188,7 +188,7 @@ export class AjudaComponent {
 
   abrir() {
     // Conteúdo calculado na hora: perfil atual e abas da página atual.
-    this.passos.set(passosDoTour(this.router.url, this.sessao.ehEquipe()));
+    this.passos.set(passosDoTour(this.router.url, { equipe: this.sessao.ehEquipe(), podeAlternarVisao: this.sessao.podeAlternarVisao(), admin: this.sessao.ehAdmin() }));
     this.indice.set(0);
     this.posicao.set(null);
     this.animar.set(false);

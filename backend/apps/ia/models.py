@@ -46,6 +46,8 @@ class Job(ModeloBase):
     etapa = models.CharField(max_length=120, blank=True)
     tentativas = models.PositiveSmallIntegerField(default=0)
     entrada = models.JSONField(default=dict)  # original, não anonimizado: fica só na plataforma
+    # SHA-256 da entrada canônica + versão do prompt (apps/ia/domain/reuso.py): reaproveita resultado idêntico.
+    entrada_hash = models.CharField(max_length=64, blank=True, default='')
     resultado = models.JSONField(null=True, blank=True)
     erro_tratado = models.CharField(max_length=300, blank=True)
     modelo = models.CharField(max_length=80, blank=True)
@@ -57,7 +59,13 @@ class Job(ModeloBase):
         verbose_name = 'job de IA'
         verbose_name_plural = 'jobs de IA'
         ordering = ['-criado_em']
-        indexes = [models.Index(fields=['alvo_tipo', 'alvo_id', 'criado_em'], name='ia_job_alvo_idx')]
+        indexes = [
+            models.Index(fields=['alvo_tipo', 'alvo_id', 'criado_em'], name='ia_job_alvo_idx'),
+            # reaproveitamento de resultado (mesmo usuário, tarefa, alvo e entrada)
+            models.Index(fields=['solicitante', 'tarefa', 'entrada_hash'], name='ia_job_reuso_idx'),
+            # cota diária por usuário
+            models.Index(fields=['solicitante', 'criado_em'], name='ia_job_usuario_idx'),
+        ]
 
     def __str__(self):
         return f'{self.tarefa} {self.alvo_tipo}:{self.alvo_id} [{self.estado}]'

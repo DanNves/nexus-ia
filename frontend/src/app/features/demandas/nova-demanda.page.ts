@@ -6,12 +6,21 @@ import { NexusApi, lerErro } from '../../core/api/nexus-api.service';
 import { Prioridade } from '../../core/api/models';
 import { UI } from '../../shared/ui/ui.components';
 import { ToastService } from '../../shared/ui/toast.service';
+import { RASCUNHO, RascunhoService } from '../../shared/rascunho/rascunho';
+import { dataHora } from '../../shared/labels';
 
 const TAMANHO_MAX = 200 * 1024;
 
+// Chaves do autosave: uma por etapa do formulário e outra para o arquivo anexado.
+const RASCUNHO_SOBRE = 'nova-demanda.sobre';
+const RASCUNHO_NECESSIDADE = 'nova-demanda.necessidade';
+const RASCUNHO_ANEXO = 'nova-demanda.anexo';
+
+type Anexo = { nome: string; conteudo: string };
+
 @Component({
   selector: 'nx-nova-demanda',
-  imports: [RouterLink, FormsModule, ...UI],
+  imports: [RouterLink, FormsModule, ...UI, ...RASCUNHO],
   templateUrl: './nova-demanda.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -19,11 +28,18 @@ export class NovaDemandaPage {
   private api = inject(NexusApi);
   private router = inject(Router);
   private toast = inject(ToastService);
+  private rascunhos = inject(RascunhoService);
 
   readonly etapa = signal<1 | 2>(1);
   readonly erros = signal<Record<string, string[]>>({});
   readonly enviando = signal(false);
-  readonly arquivo = signal<{ nome: string; conteudo: string } | null>(null);
+  readonly arquivo = signal<Anexo | null>(this.rascunhos.ler<Anexo>(RASCUNHO_ANEXO)?.valor ?? null);
+
+  readonly RASCUNHO_SOBRE = RASCUNHO_SOBRE;
+  readonly RASCUNHO_NECESSIDADE = RASCUNHO_NECESSIDADE;
+
+  /** Quando o rascunho recuperado foi salvo (mostra o aviso com a opção de descartar). */
+  readonly recuperado = signal<Date | null>(this.rascunhoMaisRecente());
 
   form = { nome: '', descricao: '', prioridade: 'MEDIA' as Prioridade, necessidade: '' };
 
@@ -32,6 +48,24 @@ export class NovaDemandaPage {
     { valor: 'MEDIA', rotulo: 'Importante', texto: 'Gostaria de começar em breve' },
     { valor: 'ALTA', rotulo: 'Urgente', texto: 'Está atrapalhando o trabalho hoje' },
   ];
+
+  readonly dataHora = (d: Date) => dataHora(d.toISOString());
+
+  private rascunhoMaisRecente(): Date | null {
+    const datas = [RASCUNHO_SOBRE, RASCUNHO_NECESSIDADE, RASCUNHO_ANEXO]
+      .map((k) => this.rascunhos.ler(k)?.salvoEm.getTime() ?? 0)
+      .filter(Boolean);
+    return datas.length ? new Date(Math.max(...datas)) : null;
+  }
+
+  descartarRascunho() {
+    [RASCUNHO_SOBRE, RASCUNHO_NECESSIDADE, RASCUNHO_ANEXO].forEach((k) => this.rascunhos.descartar(k));
+    this.form = { nome: '', descricao: '', prioridade: 'MEDIA', necessidade: '' };
+    this.arquivo.set(null);
+    this.erros.set({});
+    this.etapa.set(1);
+    this.recuperado.set(null);
+  }
 
   avancar() {
     const erros: Record<string, string[]> = {};
@@ -58,9 +92,15 @@ export class NovaDemandaPage {
       if (conteudo.length < 10) { this.erros.set({ arquivo: ['O arquivo está vazio.'] }); return; }
       this.erros.set({});
       this.arquivo.set({ nome: f.name, conteudo });
+      this.rascunhos.salvar(RASCUNHO_ANEXO, { nome: f.name, conteudo });
     };
     leitor.onerror = () => this.erros.set({ arquivo: ['Não foi possível ler o arquivo.'] });
     leitor.readAsText(f, 'utf-8');
+  }
+
+  removerArquivo() {
+    this.arquivo.set(null);
+    this.rascunhos.descartar(RASCUNHO_ANEXO);
   }
 
   criar() {
@@ -76,6 +116,7 @@ export class NovaDemandaPage {
       .pipe(switchMap((d) => (arq ? this.api.anexarFonte(d.id, { titulo: arq.nome, conteudo: arq.conteudo }) : of(d))))
       .subscribe({
         next: (d) => {
+          [RASCUNHO_SOBRE, RASCUNHO_NECESSIDADE, RASCUNHO_ANEXO].forEach((k) => this.rascunhos.descartar(k));
           this.toast.ok(`Demanda ${d.codigo} criada. Agora algumas perguntas rápidas.`);
           void this.router.navigate(['/demandas', d.id, 'levantamento']);
         },

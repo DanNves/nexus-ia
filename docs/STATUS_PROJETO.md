@@ -1,10 +1,18 @@
 # NEXUS — Status do projeto
 
-Data: 2026-10-15
+Data: 2026-11-03
 
 ## Fase atual: backend iniciado + mock híbrido
 
-Autenticação e IA já são **reais** no Django. O restante do domínio (demandas, atividades, calendário, soluções, chamados, cenário, protótipo e entrevista) continua no interceptor `core/api/mock-backend.interceptor.ts`, que repassa ao Django as rotas reais (`/api/v1/auth/*`, `/api/v1/me`, `/api/v1/ia/*`, `/api/v1/jobs/:id`). Contrato em `claude/front/contratos.md`.
+Autenticação e IA já são **reais** no Django (a IA também sugere as perguntas da entrevista). O restante do domínio (demandas, atividades, calendário, soluções, chamados, cenário e protótipo) continua no interceptor `core/api/mock-backend.interceptor.ts`, que repassa ao Django as rotas reais (`/api/v1/auth/*`, `/api/v1/me`, `/api/v1/ia/*`, `/api/v1/jobs/:id`). Contrato em `claude/front/contratos.md`.
+
+### Entregue em 2026-11-03
+- **Template do protótipo gerado:** `frontend/template/shadcn-dashboard/` (referência React; guia em `frontend/template/README.md`). Vale **só** para as telas que a IA (hoje, o simulador) gera para o solicitante: o kit `frontend/src/app/core/api/prototipo-template.ts` monta as telas de web, desktop, mobile, rotina agendada e API no visual do template, sem scripts e no iframe com sandbox. A interface do NEXUS continua com o padrão próprio (navbar horizontal). O template chegou a ser aplicado à interface inteira (`e5719f7`) e isso foi desfeito (`7b6e7d0`).
+- **Papéis separados:** Solicitante, Equipe responsável e Administrador (`docs/PERFIS.md`), na interface atual: seletor **Solicitante | Equipe**, papel no menu do usuário, rótulos da navbar por visão e textos das telas e do tour.
+- **Entrevista com IA:** tarefa `entrevista` (rodadas de até 5 perguntas, máximo 3 por demanda, opções ligadas aos sinais do cenário), prompt v3 avaliado em 5/5 casos AV-ENT (avaliação técnica, não resultado do TCC); roteiro padrão como queda.
+- **Cenário por sinais:** catálogo e pesos em `backend/apps/cenario/domain/sinais.py` (espelhado no mock até haver API).
+- **Limite de uso:** reaproveitamento de entrada idêntica sem gastar cota, cota diária por usuário (40), rodadas por demanda, erros 429 com código e cota no `/api/v1/ia/status`.
+- Verificação: 200 testes do backend, `check`/`makemigrations --check` limpos; `npm run check` e `npm run build` ok; entrevista testada na tela com o adaptador fake (inclusive queda do backend no meio). Pendente: QA com o Gemini real e com cota esgotada.
 
 ### Entregue em 2026-10-15
 - **Backend (`backend/`):** settings por ambiente com `.env` (nova `SECRET_KEY`); `core` (modelo-base UUID, auditoria append-only, erros sempre em JSON `{mensagem, campos}` em português claro); `contas` (usuário com perfil CLIENTE/EQUIPE, cadastro público que cria sempre CLIENTE, login por usuário ou e-mail, JWT de 15 min com refresh rotativo em cookie HttpOnly e revogação no logout, checagem de origem e limites de tentativas, `seed_demo`); `ia` (porta `LLMProvider`; adaptadores `gemini`, `openai_compat` e `fake`; cadeia de modelos de reserva; anonimização LGPD antes do envio; esquema JSON validado; prompts versionados no banco; Job em thread com contrato 202 + polling; LogIA por tentativa; cota por alvo e limite por usuário; comandos `ia_testar` e `ia_avaliar`).

@@ -14,8 +14,16 @@
     <li><span>3</span> Perguntas rápidas</li>
   </ol>
 
+  @if (recuperado(); as quando) {
+    <div class="faixa faixa-neutra" role="status">
+      <nx-icon name="refresh" />
+      <div class="lista-texto"><strong>Continuamos de onde você parou</strong><span class="mudo">Rascunho salvo em {{ dataHora(quando) }}.</span></div>
+      <button type="button" class="btn btn-secundario" (click)="descartarRascunho()">Começar do zero</button>
+    </div>
+  }
+
   @if (etapa() === 1) {
-    <form class="form painel" (ngSubmit)="avancar()" novalidate>
+    <form class="form painel" (ngSubmit)="avancar()" novalidate [nxRascunho]="RASCUNHO_SOBRE" #r1="nxRascunho">
       <label class="campo">
         <span>Nome</span>
         <input class="input" name="nome" [(ngModel)]="form.nome" maxlength="80" placeholder="Ex.: Agendamento online de consultas" [class.invalido]="erros()['nome']" autofocus />
@@ -39,12 +47,13 @@
         </div>
       </fieldset>
       <div class="form-acoes">
+        <nx-salvo [em]="r1.salvoEm()" dica="O que você digitar fica salvo automaticamente." />
         <a routerLink="/demandas" class="btn btn-secundario">Cancelar</a>
         <button type="submit" class="btn btn-primario">Continuar</button>
       </div>
     </form>
   } @else {
-    <form class="form painel" (ngSubmit)="criar()" novalidate>
+    <form class="form painel" (ngSubmit)="criar()" novalidate [nxRascunho]="RASCUNHO_NECESSIDADE" #r2="nxRascunho">
       <label class="campo">
         <span>Descreva o problema ou o que você precisa</span>
         <textarea class="input" name="necessidade" rows="6" [(ngModel)]="form.necessidade" maxlength="4000"
@@ -58,7 +67,7 @@
           <div class="anexo">
             <nx-icon name="file" />
             <div class="lista-texto"><strong>{{ a.nome }}</strong><span class="mudo">{{ a.conteudo.length }} caracteres</span></div>
-            <button type="button" class="btn-icone" (click)="arquivo.set(null)" aria-label="Remover arquivo"><nx-icon name="close" [size]="16" /></button>
+            <button type="button" class="btn-icone" (click)="removerArquivo()" aria-label="Remover arquivo"><nx-icon name="close" [size]="16" /></button>
           </div>
         } @else {
           <label class="soltar">
@@ -76,6 +85,7 @@
       </div>
 
       <div class="form-acoes">
+        <nx-salvo [em]="r2.salvoEm()" dica="O que você digitar fica salvo automaticamente." />
         <button type="button" class="btn btn-secundario" (click)="etapa.set(1)">Voltar</button>
         <button type="submit" class="btn btn-primario" [disabled]="enviando()">{{ enviando() ? 'Criando…' : 'Criar e começar perguntas' }}</button>
       </div>

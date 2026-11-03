@@ -8,7 +8,7 @@ import { Router } from '@angular/router';
 import { Observable, catchError, finalize, firstValueFrom, map, of, shareReplay, tap } from 'rxjs';
 import { Perfil } from '../api/models';
 
-export interface Usuario { id: string; usuario: string; nome: string; email: string; organizacao: string; perfil: Perfil }
+export interface Usuario { id: string; usuario: string; nome: string; email: string; organizacao: string; perfil: Perfil; admin: boolean }
 export interface DadosRegistro { nome: string; usuario: string; email: string; organizacao?: string; senha: string; confirmacao: string }
 export interface Sessao { access: string; usuario: Usuario }
 

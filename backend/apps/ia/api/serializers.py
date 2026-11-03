@@ -1,6 +1,7 @@
 """Serializers da IA. Campos explícitos, nomes em camelCase (contrato em claude/front/contratos.md, 2026-10-15)."""
 import json
 
+from django.conf import settings
 from rest_framework import serializers
 
 from apps.ia.domain.tarefas import TAREFAS
@@ -113,9 +114,53 @@ class EntradaSugestaoSerializer(serializers.Serializer):
     sugestoesRejeitadas = _lista(SugestaoRejeitadaSerializer(), 5, allow_empty=True, required=False, default=list)
 
 
+# ---------- entrada da tarefa `entrevista` (claude/front/contratos.md, 2026-11-03) ----------
+
+MAX_RESPOSTAS_ENTREVISTA = 40
+
+
+class DemandaEntrevistaSerializer(serializers.Serializer):
+    codigo = _texto(30)
+    nome = _texto(200)
+    descricao = _texto(4000, allow_blank=True)
+    necessidade = _lista(_texto(LIMITE_NECESSIDADE, allow_blank=True), 20, allow_empty=True)
+
+    def validate_necessidade(self, valor):
+        if sum(len(t) for t in valor) > LIMITE_NECESSIDADE:
+            raise serializers.ValidationError(f'A necessidade pode ter no máximo {LIMITE_NECESSIDADE} caracteres no total.')
+        return valor
+
+
+class RespostaAnteriorSerializer(serializers.Serializer):
+    """Uma pergunta já respondida. `respostas` são os rótulos escolhidos (vazia quando só "Outro"/"Não sei")."""
+    id = _texto(40, required=False, allow_blank=True)
+    pergunta = _texto(300)
+    respostas = _lista(_texto(200), 10, allow_empty=True)
+    outro = _texto(300, required=False, allow_blank=True)
+    naoSei = serializers.BooleanField(required=False, default=False)
+
+
+class EntradaEntrevistaSerializer(serializers.Serializer):
+    demanda = DemandaEntrevistaSerializer()
+    respostas = _lista(RespostaAnteriorSerializer(), MAX_RESPOSTAS_ENTREVISTA, allow_empty=True, required=False,
+                       default=list)
+    rodada = serializers.IntegerField(min_value=1)
+
+    def validate_rodada(self, valor):
+        maxima = settings.IA_ENTREVISTA_MAX_RODADAS
+        if valor > maxima:
+            raise serializers.ValidationError(f'A entrevista tem no máximo {maxima} rodadas de perguntas.')
+        return valor
+
+    def validate(self, dados):
+        # A IA precisa saber se esta é a última rodada; o valor vem do servidor, nunca do navegador.
+        return {**dados, 'rodadaMaxima': settings.IA_ENTREVISTA_MAX_RODADAS}
+
+
 ENTRADA_POR_TAREFA = {
     'requisitos': EntradaRequisitosSerializer,
     'sugestao_suporte': EntradaSugestaoSerializer,
+    'entrevista': EntradaEntrevistaSerializer,
 }
 
 
@@ -126,7 +171,8 @@ def tamanho_entrada(entrada: dict) -> int:
 # ---------- saída ----------
 
 class JobSerializer(serializers.ModelSerializer):
-    """`resultado` e `modelo` só quando CONCLUIDO; `erro` só quando FALHOU."""
+    """`resultado` e `modelo` só quando CONCLUIDO; `erro` só quando FALHOU; `reaproveitado: true` só quando a
+    resposta é um job anterior com a mesma entrada (concluído ou ainda em andamento; sem nova chamada ao modelo)."""
 
     class Meta:
         model = Job
@@ -140,4 +186,6 @@ class JobSerializer(serializers.ModelSerializer):
             dados['modelo'] = job.modelo
         elif job.estado == Job.Estado.FALHOU:
             dados['erro'] = job.erro_tratado
+        if getattr(job, 'reaproveitado', False):
+            dados['reaproveitado'] = True
         return dados

@@ -6,14 +6,16 @@ from datetime import timedelta
 
 from django.conf import settings
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 
 from apps.contas.services.contas import eh_equipe
 from apps.core.excecoes import ErroNegocio
 from apps.core.services import auditoria
 from apps.ia.domain.prazos import prazo_expiracao
+from apps.ia.domain.reuso import JANELA_REUSO_HORAS, hash_entrada
 from apps.ia.domain.tarefas import PERCENTUAL_FASES, Tarefa, obter_tarefa
-from apps.ia.models import Job
+from apps.ia.models import Job, PromptTemplate
 from apps.ia.services import executor
 from apps.ia.services.geracao import MSG_GENERICA, FalhaGeracao, gerar, timeout_da_tarefa
 
@@ -21,6 +23,11 @@ logger = logging.getLogger(__name__)
 
 MSG_INTERROMPIDO = 'A geração foi interrompida. Tente de novo.'
 ATIVOS = (Job.Estado.PENDENTE, Job.Estado.EM_EXECUCAO)
+
+# Códigos dos 429 de cota (campo `codigo` do corpo do erro). O 429 do limite por minuto (throttle) não tem código.
+COTA_DIARIA = 'IA_COTA_DIARIA'
+RODADAS_ESGOTADAS = 'IA_RODADAS_ESGOTADAS'
+COTA_ALVO = 'IA_COTA_ALVO'
 
 
 def exigir_tarefa(chave: str) -> Tarefa:
@@ -35,22 +42,83 @@ def verificar_acesso(usuario, tarefa: Tarefa) -> None:
         raise ErroNegocio('Somente a equipe responsável pode pedir esta geração.', status=403)
 
 
+def _janela():
+    return timezone.now() - timedelta(hours=JANELA_REUSO_HORAS)
+
+
+def usadas_hoje(usuario) -> int:
+    """Jobs criados pelo usuário nas últimas 24 h (todas as tarefas e estados). Reaproveitamento não cria job."""
+    return Job.objects.filter(solicitante=usuario, criado_em__gte=_janela()).count()
+
+
+def cota_do_usuario(usuario) -> dict:
+    """Resumo para `GET /api/v1/ia/status` (o front mostra e decide cair no roteiro padrão)."""
+    return {'usadasHoje': usadas_hoje(usuario), 'limiteDiario': settings.IA_COTA_DIARIA_POR_USUARIO,
+            'entrevistaMaxRodadas': settings.IA_ENTREVISTA_MAX_RODADAS}
+
+
+def _limite_jobs_por_alvo(tarefa: Tarefa) -> int | None:
+    """Teto próprio da tarefa por alvo em 24 h, além da cota geral do alvo. Entrevista: rodadas + 1 nova tentativa."""
+    if tarefa.chave == 'entrevista':
+        return settings.IA_ENTREVISTA_MAX_RODADAS + 1
+    return None
+
+
+def _reaproveitavel(usuario, tarefa: Tarefa, alvo_tipo: str, alvo_id: str, entrada_hash: str) -> Job | None:
+    """Job do mesmo usuário/tarefa/alvo/entrada: CONCLUIDO nas últimas 24 h ou ainda em andamento (dentro do prazo
+    de expiração, para não devolver um job que a consulta vai declarar interrompido). FALHOU nunca é reaproveitado."""
+    if not tarefa.reutilizar_resultado:
+        return None
+    mesmos = Job.objects.filter(solicitante=usuario, tarefa=tarefa.chave, alvo_tipo=alvo_tipo, alvo_id=alvo_id,
+                                entrada_hash=entrada_hash)
+    ativo_desde = timezone.now() - timedelta(seconds=prazo_expiracao(timeout_da_tarefa(tarefa)))
+    return (mesmos.filter(Q(estado=Job.Estado.CONCLUIDO, criado_em__gte=_janela())
+                          | Q(estado__in=ATIVOS, criado_em__gte=ativo_desde))
+            .order_by('-criado_em').first())
+
+
+def _exigir_cota(usuario, tarefa: Tarefa, alvo_tipo: str, alvo_id: str) -> None:
+    """Ordem: cota diária do usuário → rodadas da tarefa no alvo → cota geral do alvo. Cada uma com o seu código."""
+    desde = _janela()
+    if usadas_hoje(usuario) >= settings.IA_COTA_DIARIA_POR_USUARIO:
+        raise ErroNegocio(f'Você já usou as {settings.IA_COTA_DIARIA_POR_USUARIO} gerações com IA disponíveis nas '
+                          'últimas 24 horas. Tente de novo amanhã.', status=429, codigo=COTA_DIARIA)
+    limite = _limite_jobs_por_alvo(tarefa)
+    if limite is not None and Job.objects.filter(tarefa=tarefa.chave, alvo_tipo=alvo_tipo, alvo_id=alvo_id,
+                                                 criado_em__gte=desde).count() >= limite:
+        raise ErroNegocio('As rodadas de perguntas com IA desta demanda acabaram por hoje. '
+                          'A entrevista continua com as perguntas padrão.', status=429, codigo=RODADAS_ESGOTADAS)
+    if Job.objects.filter(alvo_tipo=alvo_tipo, alvo_id=alvo_id, criado_em__gte=desde).count() >= settings.IA_COTA_POR_ALVO:
+        raise ErroNegocio(f'Este registro já teve {settings.IA_COTA_POR_ALVO} gerações nas últimas 24 horas. '
+                          'Tente de novo mais tarde.', status=429, codigo=COTA_ALVO)
+
+
 def solicitar_geracao(usuario, tarefa: str, alvo_tipo: str, alvo_id: str, entrada: dict) -> Job:
-    """Cria o job e dispara a execução. A entrada já chega validada pelo serializer da tarefa."""
+    """Cria o job e dispara a execução. A entrada já chega validada pelo serializer da tarefa.
+
+    Se a tarefa reaproveita resultado e o mesmo usuário já tem um job com a mesma entrada para o mesmo alvo
+    (CONCLUIDO nas últimas 24 h, ou ainda em andamento), devolve esse job (`reaproveitado=True`) sem chamar o
+    modelo e sem contar cota.
+    """
     definicao = exigir_tarefa(tarefa)
     verificar_acesso(usuario, definicao)
     if alvo_tipo != definicao.alvo_tipo:
         raise ErroNegocio('Tipo de registro inválido para esta tarefa.', status=400,
                           campos={'alvoTipo': [f'Para esta tarefa use "{definicao.alvo_tipo}".']})
 
+    prompt = PromptTemplate.objects.filter(chave=definicao.chave_prompt, ativo=True).values_list('versao', flat=True)
+    entrada_hash = hash_entrada(entrada, prompt.first())
+    anterior = _reaproveitavel(usuario, definicao, alvo_tipo, alvo_id, entrada_hash)
+    if anterior is not None:
+        auditoria.registrar(ator=usuario, acao='IA_RESULTADO_REAPROVEITADO', entidade_tipo=alvo_tipo,
+                            entidade_id=alvo_id, dados={'job': str(anterior.id), 'tarefa': tarefa})
+        anterior.reaproveitado = True
+        return anterior
+
     with transaction.atomic():
-        desde = timezone.now() - timedelta(hours=24)
-        usados = Job.objects.filter(alvo_tipo=alvo_tipo, alvo_id=alvo_id, criado_em__gte=desde).count()
-        if usados >= settings.IA_COTA_POR_ALVO:
-            raise ErroNegocio(f'Este registro já teve {settings.IA_COTA_POR_ALVO} gerações nas últimas 24 horas. '
-                              'Tente de novo mais tarde.', status=429)
+        _exigir_cota(usuario, definicao, alvo_tipo, alvo_id)
         job = Job.objects.create(tarefa=tarefa, alvo_tipo=alvo_tipo, alvo_id=alvo_id, entrada=entrada,
-                                 solicitante=usuario, etapa='Na fila')
+                                 entrada_hash=entrada_hash, solicitante=usuario, etapa='Na fila')
         auditoria.registrar(ator=usuario, acao='IA_GERACAO_SOLICITADA', entidade_tipo=alvo_tipo, entidade_id=alvo_id,
                             dados={'job': str(job.id), 'tarefa': tarefa})
         if not settings.IA_EXECUCAO_SINCRONA:

@@ -22,8 +22,11 @@ LIMITE_REPETICAO_TITULO = 0.5
 LIMITE_REPETICAO_CAUSA = 0.5
 
 
-def _sem_acento(texto: str) -> str:
+def sem_acento(texto: str) -> str:
     return ''.join(c for c in unicodedata.normalize('NFD', texto) if unicodedata.category(c) != 'Mn')
+
+
+_sem_acento = sem_acento  # nome antigo, mantido para quem já importava
 
 
 def palavras(texto: str) -> frozenset[str]:

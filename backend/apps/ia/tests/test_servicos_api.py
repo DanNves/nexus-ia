@@ -143,7 +143,8 @@ class ApiTests(TestCase):
         self.api.force_authenticate(self.cliente)
         r = self.api.get('/api/v1/ia/status')
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.json(), {'provedor': 'fake', 'modelo': 'nexus-fake-1', 'modelosReserva': [], 'real': False})
+        self.assertEqual(r.json(), {'provedor': 'fake', 'modelo': 'nexus-fake-1', 'modelosReserva': [], 'real': False,
+                                    'cota': {'usadasHoje': 0, 'limiteDiario': 40, 'entrevistaMaxRodadas': 3}})
 
     def test_sem_token_401(self):
         self.assertEqual(self.api.get('/api/v1/ia/status').status_code, 401)

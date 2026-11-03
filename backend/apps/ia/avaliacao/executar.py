@@ -25,6 +25,7 @@ class ResultadoCaso:
     aprovados: list[str] = field(default_factory=list)
     falhas: list[str] = field(default_factory=list)
     saida: dict | None = None
+    saida_bruta: dict | None = None  # antes do pós-processamento
 
     @property
     def passou(self) -> bool:
@@ -45,8 +46,10 @@ def avaliar_caso(caso: CasoAvaliacao, provedor: LLMProvider | None = None) -> Re
     resultado.executou = True
     resultado.duracao_s = time.monotonic() - inicio
     resultado.modelo, resultado.tentativas, resultado.saida = geracao.resultado.modelo, geracao.tentativas, geracao.dados
+    resultado.saida_bruta = geracao.dados_brutos if geracao.dados_brutos is not None else geracao.dados
     for criterio in caso.criterios(prompt.schema_json):
-        motivo = criterio.verificar(caso.entrada, geracao.dados)
+        alvo = resultado.saida_bruta if criterio.sobre_bruta else geracao.dados
+        motivo = criterio.verificar(caso.entrada, alvo)
         if motivo:
             resultado.falhas.append(f'{criterio.nome}: {motivo}')
         else:

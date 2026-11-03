@@ -33,7 +33,7 @@ class RegistroTests(APITestCase):
 
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
         self.assertEqual(set(resp.data), {'access', 'usuario'})
-        self.assertEqual(set(resp.data['usuario']), {'id', 'usuario', 'nome', 'email', 'organizacao', 'perfil'})
+        self.assertEqual(set(resp.data['usuario']), {'id', 'usuario', 'nome', 'email', 'organizacao', 'perfil', 'admin'})
         self.assertEqual(resp.data['usuario']['perfil'], 'CLIENTE')
         self.assertEqual(resp.data['usuario']['email'], 'marina@exemplo.com')
         self.assertNotIn('refresh', resp.data)
@@ -252,7 +252,7 @@ class MeTests(APITestCase):
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertEqual(resp.data, {
             'id': str(usuario.id), 'usuario': 'marina', 'nome': 'Marina Costa', 'email': 'marina@exemplo.com',
-            'organizacao': 'Equipe NEXUS', 'perfil': 'EQUIPE',
+            'organizacao': 'Equipe NEXUS', 'perfil': 'EQUIPE', 'admin': False,
         })
 
 

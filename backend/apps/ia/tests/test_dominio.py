@@ -93,8 +93,12 @@ class EsquemaTests(SimpleTestCase):
 
 class TarefasTests(SimpleTestCase):
     def test_catalogo(self):
-        self.assertEqual(set(TAREFAS), {'requisitos', 'sugestao_suporte'})
-        self.assertTrue(all(t.exige_equipe and len(t.etapas) == 4 for t in TAREFAS.values()))
+        self.assertEqual(set(TAREFAS), {'requisitos', 'sugestao_suporte', 'entrevista'})
+        self.assertTrue(all(len(t.etapas) == 4 for t in TAREFAS.values()))
+        # Só a entrevista pode ser pedida pelo cliente (é ele quem responde); as demais exigem a equipe.
+        self.assertEqual({t.chave for t in TAREFAS.values() if not t.exige_equipe}, {'entrevista'})
+        # Reaproveitar resultado só onde repetir o pedido é acidental (recarregar a página).
+        self.assertEqual({t.chave for t in TAREFAS.values() if t.reutilizar_resultado}, {'entrevista'})
         self.assertIsNone(obter_tarefa('inexistente'))
 
     def test_sugestao_nao_cita_conhecimento_inventado(self):

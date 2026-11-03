@@ -83,6 +83,13 @@ export class FilaPage {
   linha(meu?: Chamado) {
     const f = this.fila();
     if (!f) return [];
+    if (!this.sessao.ehEquipe()) {
+      // Cliente: a API só manda os chamados dele e os totais; os outros viram blocos sem dados.
+      return [
+        ...Array.from({ length: f.totalEmAtendimento }, (_, i) => ({ id: `a${i}`, tipo: 'atendimento' as const, meu: false, rotulo: 'Em atendimento' })),
+        ...Array.from({ length: f.totalNaFila }, (_, i) => ({ id: `f${i + 1}`, tipo: 'fila' as const, meu: i + 1 === meu?.posicao, rotulo: `${i + 1}º na fila` })),
+      ];
+    }
     return [
       ...f.emAtendimento.map((c) => ({ id: c.id, tipo: 'atendimento' as const, meu: c.id === meu?.id, rotulo: 'Em atendimento' })),
       ...f.naFila.map((c) => ({ id: c.id, tipo: 'fila' as const, meu: c.id === meu?.id, rotulo: `${c.posicao}º na fila` })),

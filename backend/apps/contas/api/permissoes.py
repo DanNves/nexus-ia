@@ -8,6 +8,7 @@ A recusa é 403 e NÃO mexe no cookie: um site de terceiros não consegue força
 from django.conf import settings
 from rest_framework.permissions import BasePermission
 
+from apps.contas.domain.perfis import Perfil
 from apps.core.excecoes import ErroNegocio
 
 MENSAGEM_ORIGEM_RECUSADA = 'Requisição de origem não permitida.'
@@ -22,6 +23,16 @@ def origem_confiavel(request) -> bool:
     if origem is not None and origem.strip().rstrip('/') not in settings.AUTH_ORIGENS_PERMITIDAS:
         return False
     return True
+
+
+class EhAdministrador(BasePermission):
+    """Gestão de usuários: só administrador ativo da equipe (is_staff + perfil EQUIPE)."""
+
+    message = 'Só administradores podem gerenciar usuários.'
+
+    def has_permission(self, request, view):
+        u = request.user
+        return bool(u and u.is_authenticated and u.is_active and u.is_staff and getattr(u, 'perfil', None) == Perfil.EQUIPE)
 
 
 class OrigemConfiavel(BasePermission):
