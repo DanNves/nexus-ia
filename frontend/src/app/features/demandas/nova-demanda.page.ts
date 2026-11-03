@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { of, switchMap } from 'rxjs';
 import { NexusApi, lerErro } from '../../core/api/nexus-api.service';
 import { Prioridade } from '../../core/api/models';
+import { SessionService } from '../../core/session.service';
 import { UI } from '../../shared/ui/ui.components';
 import { ToastService } from '../../shared/ui/toast.service';
 import { RASCUNHO, RascunhoService } from '../../shared/rascunho/rascunho';
@@ -25,6 +26,7 @@ type Anexo = { nome: string; conteudo: string };
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class NovaDemandaPage {
+  readonly sessao = inject(SessionService);
   private api = inject(NexusApi);
   private router = inject(Router);
   private toast = inject(ToastService);

@@ -16,11 +16,11 @@ import { ESTADO_CHAMADO, IMPACTO_CURTO, PRIORIDADE, dataHora, duracao, relativo 
   templateUrl: './chamado-detalhe.page.html',
   // Só desta tela: a sugestão rejeitada fica recolhida e riscada até a nova análise chegar.
   styles: [`
-    .sugestao-rejeitada { border: 1px solid var(--borda); border-radius: var(--r-1); background: var(--fundo-2); }
+    .sugestao-rejeitada { border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--muted-2); }
     .sugestao-rejeitada summary { display: flex; align-items: flex-start; gap: 8px; padding: 10px 12px; cursor: pointer; color: var(--tom-vermelho-tx); }
     .sugestao-rejeitada summary nx-icon { flex: none; margin-top: 2px; }
-    .sugestao-rejeitada-corpo { display: flex; flex-direction: column; gap: 6px; padding: 0 12px 12px; color: var(--texto-2); }
-    .sugestao-rejeitada-corpo del { text-decoration-color: var(--texto-fraco); }
+    .sugestao-rejeitada-corpo { display: flex; flex-direction: column; gap: 6px; padding: 0 12px 12px; color: var(--muted-foreground); }
+    .sugestao-rejeitada-corpo del { text-decoration-color: var(--faint); }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

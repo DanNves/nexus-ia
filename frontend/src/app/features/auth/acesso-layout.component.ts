@@ -23,7 +23,7 @@ import { AcessoArteComponent } from './acesso-arte.component';
       grid-template-columns: minmax(0, 1.08fr) minmax(440px, 1fr);
       align-items: start;
       min-height: 100dvh;
-      background: var(--superficie);
+      background: var(--card);
     }
     .lado {
       min-height: 100dvh;
@@ -32,7 +32,7 @@ import { AcessoArteComponent } from './acesso-arte.component';
       padding: 40px 48px 24px;
     }
     .miolo { width: 100%; max-width: 392px; margin: auto; padding: 24px 0; }
-    .rodape { text-align: center; font-size: 12px; color: var(--texto-2); }
+    .rodape { text-align: center; font-size: 12px; color: var(--muted-foreground); }
 
     @media (max-width: 1120px) {
       .acesso { grid-template-columns: minmax(0, 1fr) minmax(420px, 1fr); }

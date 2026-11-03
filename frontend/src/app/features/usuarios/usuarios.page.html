@@ -1,8 +1,8 @@
 <div class="pagina">
   <header class="pagina-topo">
     <div>
-      <h1>Usuários</h1>
-      <p class="mudo">Quem acessa o NEXUS e o que cada pessoa pode fazer. Clientes veem só os próprios pedidos; a equipe avalia e valida; administradores também gerenciam esta lista.</p>
+      <h1>{{ texto.titulo }}</h1>
+      <p class="mudo">{{ texto.subtitulo }}</p>
     </div>
     <button type="button" class="btn btn-primario" (click)="abrirNovo()"><nx-icon name="plus" [size]="16" /> Novo usuário</button>
   </header>
@@ -15,7 +15,7 @@
     <dl class="numeros numeros-compactos">
       <div><dt>Ativos</dt><dd>{{ numeros().total }}</dd></div>
       <div><dt>Equipe</dt><dd>{{ numeros().equipe }}</dd></div>
-      <div><dt>Clientes</dt><dd>{{ numeros().clientes }}</dd></div>
+      <div><dt>{{ ROTULO_PERFIL.CLIENTE }}s</dt><dd>{{ numeros().clientes }}</dd></div>
       <div><dt>Administradores</dt><dd>{{ numeros().admins }}</dd></div>
     </dl>
 
@@ -51,7 +51,7 @@
                 </td>
                 <td>
                   <span class="acesso">
-                    <nx-badge [tom]="u.perfil === 'EQUIPE' ? 'roxo' : 'azul'">{{ u.perfil === 'EQUIPE' ? 'Equipe' : 'Cliente' }}</nx-badge>
+                    <nx-badge [tom]="u.perfil === 'EQUIPE' ? 'roxo' : 'azul'">{{ u.perfil === 'EQUIPE' ? ROTULO_PERFIL.EQUIPE : ROTULO_PERFIL.CLIENTE }}</nx-badge>
                     @if (u.admin) { <nx-badge tom="laranja">Administrador</nx-badge> }
                     @if (!u.ativo) { <nx-badge>Inativo</nx-badge> }
                   </span>
@@ -99,7 +99,7 @@
       <div class="opcoes-cartao opcoes-2">
         <label class="opcao" [class.marcada]="novo.perfil === 'CLIENTE'">
           <input type="radio" name="perfil" value="CLIENTE" [ngModel]="novo.perfil" (ngModelChange)="perfilNovo($event)" />
-          <strong>Cliente</strong><span class="mudo">Abre demandas e chamados e vê só os próprios.</span>
+          <strong>{{ ROTULO_PERFIL.CLIENTE }}</strong><span class="mudo">Pede soluções, abre demandas e chamados e vê só os próprios.</span>
         </label>
         <label class="opcao" [class.marcada]="novo.perfil === 'EQUIPE'">
           <input type="radio" name="perfil" value="EQUIPE" [ngModel]="novo.perfil" (ngModelChange)="perfilNovo($event)" />
@@ -146,7 +146,7 @@
         <legend>Acesso</legend>
         @if (souEu()) { <p class="aviso-dados"><nx-icon name="shield" [size]="14" /> Você não pode mudar o seu próprio perfil nem se desativar.</p> }
         <div class="segmentado" role="radiogroup" aria-label="Perfil">
-          <label [class.marcada]="edicao.perfil === 'CLIENTE'"><input type="radio" name="perfil" value="CLIENTE" [ngModel]="edicao.perfil" (ngModelChange)="perfilEdicao($event)" /> Cliente</label>
+          <label [class.marcada]="edicao.perfil === 'CLIENTE'"><input type="radio" name="perfil" value="CLIENTE" [ngModel]="edicao.perfil" (ngModelChange)="perfilEdicao($event)" /> {{ ROTULO_PERFIL.CLIENTE }}</label>
           <label [class.marcada]="edicao.perfil === 'EQUIPE'"><input type="radio" name="perfil" value="EQUIPE" [ngModel]="edicao.perfil" (ngModelChange)="perfilEdicao($event)" /> Equipe</label>
         </div>
         <label class="checar" [class.desabilitado]="edicao.perfil !== 'EQUIPE'">

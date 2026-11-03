@@ -1,6 +1,7 @@
 import { Injectable, computed, inject, linkedSignal } from '@angular/core';
 import { Perfil } from './api/models';
 import { AuthService, Usuario } from './auth/auth.service';
+import { ChavePagina, papelDe, textoPagina } from '../shared/perfis';
 
 // Os usuários semeados no Django ocupam as pessoas da demonstração; os demais usam o próprio id.
 const PESSOA_SEMEADA: Record<string, string> = { usuario: 'p1', equipeadmin: 'p2' };
@@ -23,9 +24,10 @@ function lerVisao(usuarioId: string): Perfil | null {
 
 // Perfil e identificação de quem está logado, derivados do AuthService (usuário vindo do Django).
 //
-// PERFIL REAL x VISÃO: quem é da equipe escolhe ver o NEXUS como cliente ou como equipe (seletor no topo).
-// `perfil()` é a VISÃO ativa: tudo na tela (menu, abas, ações, mock) segue ela. Cliente só tem a visão de cliente.
-// Ver como cliente só REDUZ o que aparece; as permissões reais continuam no Django (perfil e admin do usuário).
+// PERFIL REAL x VISÃO: quem é da equipe escolhe ver o NEXUS como solicitante ou como equipe (seletor no cabeçalho).
+// `perfil()` é a VISÃO ativa: tudo na tela (menu, abas, ações, mock) segue ela. Solicitante (CLIENTE) só tem a visão de solicitante.
+// Rótulos e menu por visão: shared/perfis.ts.
+// Ver como solicitante só REDUZ o que aparece; as permissões reais continuam no Django (perfil e admin do usuário).
 // As páginas usam `effect(() => this.sessao.perfil(); ...)` para recarregar quando o usuário ou a visão muda.
 @Injectable({ providedIn: 'root' })
 export class SessionService {
@@ -47,7 +49,7 @@ export class SessionService {
   });
   readonly perfil = this.visao.asReadonly();
 
-  /** Só quem é da equipe alterna entre a visão de cliente e a da equipe. */
+  /** Só quem é da equipe alterna entre a visão de solicitante e a da equipe. */
   readonly podeAlternarVisao = computed(() => this.auth.usuario()?.perfil === 'EQUIPE');
 
   /** Administrador (gerencia usuários). A tela de usuários aparece só na visão da equipe. */
@@ -59,8 +61,7 @@ export class SessionService {
   private readonly identificacao = computed(() => {
     const u = this.auth.usuario();
     if (!u) return { nome: '', papel: '' };
-    const papel = u.perfil === 'EQUIPE' ? (u.admin ? 'Equipe · administrador' : 'Equipe') : `Cliente${u.organizacao ? ' · ' + u.organizacao : ''}`;
-    return { nome: u.nome, papel };
+    return { nome: u.nome, papel: papelDe(u) };
   });
 
   /** Id de quem está logado nos registros: compara com solicitanteId para saber se a demanda/o chamado é seu. */
@@ -75,6 +76,11 @@ export class SessionService {
 
   ehEquipe() {
     return this.perfil() === 'EQUIPE';
+  }
+
+  /** Título e subtítulo da página na visão ativa (fonte: shared/perfis.ts). */
+  pagina(chave: ChavePagina) {
+    return textoPagina(chave, this.perfil());
   }
 
   /** Troca a visão (só equipe). A escolha fica lembrada neste navegador para o usuário. */

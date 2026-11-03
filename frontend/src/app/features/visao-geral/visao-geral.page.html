@@ -2,9 +2,7 @@
   <header class="pagina-topo">
     <div>
       <h1>{{ saudacao() }}, {{ primeiroNome() }}</h1>
-      <p class="mudo">
-        {{ sessao.ehEquipe() ? 'Painel da equipe: o que entrou, o que espera validação e como está o atendimento.' : 'Seu painel: o andamento dos seus pedidos e chamados.' }}
-      </p>
+      <p class="mudo">{{ sessao.pagina('visao-geral').subtitulo }}</p>
     </div>
     <button type="button" class="btn btn-secundario btn-p" (click)="carregar()" aria-label="Atualizar painel"><nx-icon name="refresh" [size]="15" /> Atualizar</button>
   </header>
@@ -68,7 +66,7 @@
       <section class="painel cartao">
         <header class="cartao-topo">
           <h2>{{ sessao.ehEquipe() ? 'Chamados de suporte' : 'Seus chamados' }}</h2>
-          <a routerLink="/fila" class="link">Ver fila</a>
+          <a routerLink="/fila" class="link">{{ sessao.ehEquipe() ? 'Ver fila' : 'Ver meus chamados' }}</a>
         </header>
         @if (total(chamados()); as t) {
           <p class="destaque"><strong>{{ t }}</strong> <span class="mudo">chamados no total</span></p>
@@ -153,7 +151,7 @@
         <section class="painel cartao">
           <header class="cartao-topo">
             <h2>Próximos compromissos</h2>
-            <a routerLink="/calendario" class="link">Calendário</a>
+            <a routerLink="/calendario" class="link">{{ sessao.pagina('calendario').titulo }}</a>
           </header>
           @if (d.proximosEventos.length) {
             <ul class="agenda">
@@ -194,7 +192,7 @@
             }
           </ul>
         } @else {
-          <nx-vazio icone="demand" titulo="Nenhuma demanda ainda" [texto]="sessao.ehEquipe() ? 'As demandas dos clientes aparecem aqui quando forem abertas.' : 'Conte o que você precisa e o NEXUS guia o resto.'">
+          <nx-vazio icone="demand" titulo="Nenhuma demanda ainda" [texto]="sessao.ehEquipe() ? 'As demandas dos solicitantes aparecem aqui quando forem abertas.' : 'Conte o que você precisa e o NEXUS guia o resto.'">
             @if (!sessao.ehEquipe()) { <a routerLink="/demandas/nova" class="btn btn-primario"><nx-icon name="plus" [size]="16" /> Nova demanda</a> }
           </nx-vazio>
         }
@@ -204,7 +202,7 @@
         <section class="painel cartao">
           <header class="cartao-topo">
             <h2>Próximos compromissos</h2>
-            <a routerLink="/calendario" class="link">Calendário</a>
+            <a routerLink="/calendario" class="link">{{ sessao.pagina('calendario').titulo }}</a>
           </header>
           @if (d.proximosEventos.length) {
             <ul class="agenda">

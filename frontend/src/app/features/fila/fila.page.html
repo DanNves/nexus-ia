@@ -1,10 +1,8 @@
 <div class="pagina">
   <header class="pagina-topo">
     <div>
-      <h1>Fila de atendimento</h1>
-      <p class="mudo">
-        {{ sessao.ehEquipe() ? 'Chamados por ordem de atendimento: primeiro o impacto, depois a hora de abertura.' : 'Acompanhe onde seu chamado está e quanto falta para ser atendido.' }}
-      </p>
+      <h1>{{ sessao.pagina('fila').titulo }}</h1>
+      <p class="mudo">{{ sessao.pagina('fila').subtitulo }}</p>
     </div>
     <div class="topo-botoes">
       @if (sessao.ehEquipe()) {
@@ -19,7 +17,7 @@
     <p class="atualizado mudo" aria-live="polite"><span class="pulso" aria-hidden="true"></span> Atualiza sozinha. Última vez {{ relativo(atualizadoEm()) }}.</p>
 
     @if (!sessao.ehEquipe()) {
-      <!-- ============ CLIENTE ============ -->
+      <!-- ============ SOLICITANTE ============ -->
       @for (c of meusNaFila(); track c.id) {
         <section class="posicao" [attr.aria-label]="'Posição do chamado ' + c.codigo">
           <div class="posicao-numero">
@@ -87,10 +85,12 @@
       </div>
     } @else {
       <!-- ============ EQUIPE ============ -->
-      <dl class="numeros">
-        <div><dt>Na fila</dt><dd>{{ f.naFila.length }}</dd></div>
-        <div><dt>Em atendimento</dt><dd>{{ f.emAtendimento.length }}</dd></div>
-        <div><dt>Tempo médio de atendimento</dt><dd>{{ duracao(f.tempoMedioMin) }}</dd></div>
+      <!-- Tickets do template (views/apps/tickets): números no topo e tabela de chamados. -->
+      <dl class="kpis">
+        <div class="kpi" data-tom="laranja"><dt class="kpi-topo"><nx-icon name="queue" [size]="16" /> Na fila</dt><dd class="kpi-valor">{{ f.naFila.length }}</dd></div>
+        <div class="kpi" data-tom="azul"><dt class="kpi-topo"><nx-icon name="users" [size]="16" /> Em atendimento</dt><dd class="kpi-valor">{{ f.emAtendimento.length }}</dd></div>
+        <div class="kpi"><dt class="kpi-topo"><nx-icon name="clock" [size]="16" /> Tempo médio de atendimento</dt><dd class="kpi-valor">{{ duracao(f.tempoMedioMin) }}</dd></div>
+        <div class="kpi" data-tom="verde"><dt class="kpi-topo"><nx-icon name="spark" [size]="16" /> Sugestões para validar</dt><dd class="kpi-valor">{{ sugestoesPendentes() }}</dd></div>
       </dl>
 
       <ol class="linha-fila linha-fila-larga" aria-label="Fila">
@@ -101,20 +101,33 @@
         <section class="secao coluna">
           <h2>Aguardando</h2>
           @if (f.naFila.length) {
-            <ol class="fila-lista">
-              @for (c of f.naFila; track c.id) {
-                <li class="fila-item">
-                  <span class="fila-pos">{{ c.posicao }}º</span>
-                  <div class="lista-texto">
-                    <a [routerLink]="['/fila', c.id]" class="tabela-titulo">{{ c.titulo }}</a>
-                    <span class="mudo">{{ c.codigo }}, {{ nomeSolucao(c.solucaoId) }}, aberto {{ relativo(c.abertoEm) }}</span>
-                  </div>
-                  <nx-badge [tom]="PRIORIDADE[c.prioridade].tom">{{ PRIORIDADE[c.prioridade].rotulo }}</nx-badge>
-                  <span class="mudo fila-espera">{{ duracao(c.esperaEstimadaMin ?? 0) }}</span>
-                  <button type="button" class="btn btn-secundario btn-p" (click)="atender(c)">Atender</button>
-                </li>
-              }
-            </ol>
+            <div class="tabela-wrap">
+              <table class="tabela">
+                <thead>
+                  <tr>
+                    <th scope="col" class="col-num">Posição</th>
+                    <th scope="col">Chamado</th>
+                    <th scope="col">Impacto</th>
+                    <th scope="col" class="col-opc col-num">Espera</th>
+                    <th scope="col" class="col-acao"><span class="so-leitor">Ação</span></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (c of f.naFila; track c.id) {
+                    <tr>
+                      <td class="col-num"><span class="fila-pos">{{ c.posicao }}º</span></td>
+                      <td>
+                        <a [routerLink]="['/fila', c.id]" class="tabela-titulo">{{ c.titulo }}</a>
+                        <span class="mudo tabela-sub">{{ c.codigo }}, {{ nomeSolucao(c.solucaoId) }}, aberto {{ relativo(c.abertoEm) }}</span>
+                      </td>
+                      <td><nx-badge [tom]="PRIORIDADE[c.prioridade].tom">{{ PRIORIDADE[c.prioridade].rotulo }}</nx-badge></td>
+                      <td class="col-opc col-num mudo">{{ duracao(c.esperaEstimadaMin ?? 0) }}</td>
+                      <td class="col-acao"><button type="button" class="btn btn-secundario btn-p" (click)="atender(c)">Atender</button></td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
           } @else {
             <nx-vazio icone="check-circle" titulo="Fila vazia" texto="Nenhum chamado aguardando." />
           }

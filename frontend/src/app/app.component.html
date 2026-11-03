@@ -1,138 +1,197 @@
+<!--
+  Casca do template oficial (frontend/template/shadcn-dashboard/src/layouts/full/FullLayout.tsx):
+  menu lateral (Sidebar variant="inset", collapsible="icon") + área contornada (SidebarInset) com cabeçalho e conteúdo.
+  Rotas públicas (/entrar, /criar-conta) mostram só o conteúdo.
+-->
 @if (mostrarTopo()) {
-<a class="pular" href="#conteudo">Pular para o conteúdo</a>
+  <a class="pular" href="#conteudo">Pular para o conteúdo</a>
+}
 
-<header class="topo" [attr.data-visao]="sessao.perfil()">
-  <div class="topo-inner">
-    <a routerLink="/visao-geral" class="marca" aria-label="NEXUS, ir para a visão geral">
-      <img src="nexus-logo.svg" alt="" width="22" height="22" />
-      <span>NEXUS</span>
-    </a>
-
-    <nav class="nav" aria-label="Principal">
-      @for (item of nav(); track item.link) {
-        <a [routerLink]="item.link" routerLinkActive="ativo" class="nav-item">
-          <nx-icon [name]="item.icone" [size]="17" />
-          {{ item.rotulo }}
-        </a>
-      }
-    </nav>
-
-    <div class="topo-acoes">
-      <!-- Só a equipe alterna: ver o NEXUS como um cliente vê ou como a equipe trabalha. -->
-      @if (sessao.podeAlternarVisao()) {
-        <div class="visao" role="radiogroup" aria-label="Ver o NEXUS como" data-tour="visao">
-          <button type="button" role="radio" class="visao-opcao" [class.ativo]="!sessao.ehEquipe()" [attr.aria-checked]="!sessao.ehEquipe()" (click)="trocarVisao('CLIENTE')" title="Ver como cliente">
-            <nx-icon name="user" [size]="15" /><span>Cliente</span>
-          </button>
-          <button type="button" role="radio" class="visao-opcao" [class.ativo]="sessao.ehEquipe()" [attr.aria-checked]="sessao.ehEquipe()" (click)="trocarVisao('EQUIPE')" title="Ver como equipe">
-            <nx-icon name="users" [size]="15" /><span>Equipe</span>
-          </button>
+<div class="casca" [class.com-menu]="mostrarTopo()" [class.recolhida]="icones()" [attr.data-visao]="sessao.perfil()">
+  @if (mostrarTopo()) {
+    <!-- ============ Menu lateral ============ -->
+    <div #sidebar id="menu-lateral" class="sidebar" [class.aberta]="gavetaAberta()"
+      [attr.role]="mobile() && gavetaAberta() ? 'dialog' : null" [attr.aria-modal]="mobile() && gavetaAberta() ? 'true' : null"
+      [attr.aria-label]="mobile() ? 'Menu' : null" (keydown)="teclasGaveta($event)">
+      <div class="sidebar-inner">
+        <div class="sidebar-topo">
+          <a routerLink="/visao-geral" class="marca" aria-label="NEXUS, ir para a visão geral">
+            <img src="nexus-logo.svg" alt="" width="22" height="22" />
+            <span class="marca-nome">NEXUS</span>
+          </a>
+          <span class="badge sidebar-visao" [attr.data-tom]="sessao.ehEquipe() ? 'roxo' : 'cinza'">{{ rotuloVisao[sessao.perfil()] }}</span>
+          @if (mobile()) {
+            <button type="button" class="btn-icone sidebar-fechar" (click)="fecharGaveta(true)" aria-label="Fechar menu"><nx-icon name="close" /></button>
+          }
         </div>
-      }
 
-      <nx-ajuda />
-
-      <div class="menu-ancora">
-        <button type="button" class="btn-icone" (click)="alternarNotificacoes()" [attr.aria-expanded]="painelNotificacoes()" aria-label="Notificações">
-          <nx-icon name="bell" />
-          @if (naoLidas()) { <span class="ponto" aria-hidden="true"></span> }
-        </button>
-        @if (painelNotificacoes()) {
-          <div class="menu menu-notificacoes" role="menu">
-            <p class="menu-titulo">Notificações</p>
-            @for (n of notificacoes(); track n.id) {
-              <a class="notificacao" [class.nova]="!n.lida" [routerLink]="n.link">
-                <span>{{ n.texto }}</span>
-                <small>{{ relativo(n.quando) }}</small>
-              </a>
-            } @empty {
-              <p class="mudo menu-vazio">Nada novo por aqui.</p>
-            }
-          </div>
-        }
-      </div>
-
-      <!-- Abrir demanda é coisa de cliente: na visão da equipe o botão some. -->
-      @if (!sessao.ehEquipe()) {
-        <a routerLink="/demandas/nova" class="btn btn-primario btn-nova">
-          <nx-icon name="plus" [size]="16" />
-          <span>Nova demanda</span>
-        </a>
-      }
-
-      <div class="menu-ancora">
-        <button type="button" class="usuario" (click)="alternarUsuario()" [attr.aria-expanded]="menuUsuario()" aria-label="Menu do usuário">
-          <nx-avatar [nome]="sessao.usuario.nome" [tamanho]="30" />
-        </button>
-        @if (menuUsuario()) {
-          <div class="menu menu-usuario" role="menu">
-            <div class="menu-perfil">
-              <strong>{{ sessao.usuario.nome }}</strong>
-              @if (auth.usuario(); as u) { <span class="mudo">{{ u.email }}</span> }
-              <span class="menu-papel">{{ sessao.usuario.papel }}</span>
-              @if (sessao.podeAlternarVisao()) {
-                <span class="mudo">Vendo agora como {{ sessao.ehEquipe() ? 'equipe' : 'cliente' }}</span>
+        <nav class="sidebar-nav" aria-label="Principal">
+          @for (secao of menu(); track secao.titulo ?? 'topo') {
+            <div class="sidebar-secao">
+              @if (secao.titulo) {
+                <p class="sidebar-titulo"><span class="sidebar-titulo-texto">{{ secao.titulo }}</span></p>
               }
+              <ul>
+                @for (item of secao.itens; track item.id) {
+                  <li>
+                    <a class="sidebar-item" [routerLink]="item.link" [queryParams]="item.query ?? null"
+                      [class.ativo]="ativo() === item.id" [attr.aria-current]="ativo() === item.id ? 'page' : null"
+                      [attr.title]="icones() ? item.rotulo : null" [attr.data-tour]="'menu-' + item.id">
+                      <nx-icon [name]="item.icone" [size]="16" />
+                      <span class="sidebar-rotulo">{{ item.rotulo }}</span>
+                    </a>
+                  </li>
+                }
+              </ul>
             </div>
-            <button type="button" class="menu-opcao" (click)="abrirBusca()">
-              <nx-icon name="search" [size]="16" /> Buscar <kbd class="menu-atalho">Ctrl K</kbd>
-            </button>
-            <button type="button" class="switch" role="switch" [attr.aria-checked]="tema.escuro()" (click)="tema.alternar()">
-              <nx-icon [name]="tema.escuro() ? 'moon' : 'sun'" [size]="16" /> Modo escuro
-              <span class="switch-trilho" aria-hidden="true"></span>
-            </button>
-            @if (sessao.ehEquipe()) {
-              <hr />
-              <p class="menu-nota"><nx-icon name="flask" [size]="14" /> Os dados de demonstração ficam só neste navegador.</p>
-              <button type="button" class="menu-opcao" (click)="restaurar()">
-                <nx-icon name="refresh" [size]="16" /> Restaurar dados de demonstração
-              </button>
-            }
-            <hr />
-            <button type="button" class="menu-opcao" (click)="sair()">
-              <nx-icon name="logout" [size]="16" /> Sair
-            </button>
+          }
+        </nav>
+
+        <!-- Rodapé com quem está logado, como o NavUser do template. -->
+        <div class="sidebar-rodape">
+          <div class="sidebar-usuario" [attr.title]="icones() ? sessao.usuario.nome + ' · ' + sessao.usuario.papel : null">
+            <nx-avatar [nome]="sessao.usuario.nome" [tamanho]="32" />
+            <span class="sidebar-usuario-texto">
+              <strong>{{ sessao.usuario.nome }}</strong>
+              <span>{{ sessao.usuario.papel }}</span>
+            </span>
           </div>
-        }
+        </div>
       </div>
-
-      <button type="button" class="btn-icone so-mobile" (click)="menuMobile.set(!menuMobile())" [attr.aria-expanded]="menuMobile()" aria-label="Abrir menu">
-        <nx-icon [name]="menuMobile() ? 'close' : 'menu'" />
-      </button>
     </div>
-  </div>
 
-  @if (menuMobile()) {
-    <nav class="nav-mobile" aria-label="Principal">
-      @for (item of nav(); track item.link) {
-        <a [routerLink]="item.link" routerLinkActive="ativo" class="nav-mobile-item">
-          <nx-icon [name]="item.icone" />
-          {{ item.rotulo }}
-        </a>
-      }
-      @if (!sessao.ehEquipe()) {
-        <a routerLink="/demandas/nova" class="btn btn-primario">
-          <nx-icon name="plus" [size]="16" /> Nova demanda
-        </a>
-      }
-    </nav>
+    @if (mobile() && gavetaAberta()) {
+      <div class="gaveta-veu" (click)="fecharGaveta(true)" aria-hidden="true"></div>
+    }
   }
-</header>
 
-}
+  <div class="inset">
+    @if (mostrarTopo()) {
+      <!-- ============ Cabeçalho ============ -->
+      <header class="cabecalho">
+        <div class="cabecalho-inicio">
+          <button #alternar type="button" class="btn-icone" data-tour="alternar-menu" (click)="alternarMenu()"
+            aria-controls="menu-lateral" [attr.aria-expanded]="mobile() ? gavetaAberta() : !recolhida()"
+            [attr.aria-label]="mobile() ? (gavetaAberta() ? 'Fechar menu' : 'Abrir menu') : recolhida() ? 'Expandir menu lateral' : 'Recolher menu lateral'">
+            <nx-icon name="panel-left" />
+          </button>
+          <a routerLink="/visao-geral" class="marca marca-cabecalho" aria-label="NEXUS, ir para a visão geral">
+            <img src="nexus-logo.svg" alt="" width="20" height="20" />
+          </a>
+          <span class="cabecalho-sep" aria-hidden="true"></span>
+          @if (trilha(); as t) {
+            <nav class="trilha-topo" aria-label="Você está em">
+              <ol>
+                @if (t.secao) { <li class="mudo">{{ t.secao }}</li> }
+                @if (t.pai) { <li><a [routerLink]="t.pai.link" [queryParams]="t.pai.query ?? null" class="link-sutil">{{ t.pai.rotulo }}</a></li> }
+                <li aria-current="page"><strong>{{ t.atual }}</strong></li>
+              </ol>
+            </nav>
+          }
+        </div>
 
-<main id="conteudo" [class.conteudo]="mostrarTopo()">
-  <router-outlet />
-</main>
+        <div class="cabecalho-acoes">
+          <button type="button" class="cabecalho-busca" (click)="abrirBusca()" aria-label="Buscar (Ctrl K)" aria-keyshortcuts="Control+K">
+            <nx-icon name="search" [size]="15" />
+            <span class="cabecalho-busca-texto">Buscar…</span>
+            <kbd>Ctrl K</kbd>
+          </button>
 
-@if (mostrarTopo()) {
-  <footer class="rodape-demo">
-    <p class="rodape-demo-inner">
-      <nx-icon name="flask" [size]="14" />
-      <span><strong>Ambiente de demonstração.</strong> Demandas, chamados, calendário e soluções ficam guardados só neste navegador. A entrevista, o tipo de solução e o protótipo saem de um simulador; requisitos e sugestões de suporte vêm da IA.</span>
-    </p>
-  </footer>
-}
+          <!-- Só a equipe alterna: ver o NEXUS como um solicitante vê ou como a equipe trabalha. -->
+          @if (sessao.podeAlternarVisao()) {
+            <div class="visao" role="radiogroup" aria-label="Ver o NEXUS como" data-tour="visao">
+              <button type="button" role="radio" class="visao-opcao" [class.ativo]="!sessao.ehEquipe()" [attr.aria-checked]="!sessao.ehEquipe()" (click)="trocarVisao('CLIENTE')" [attr.title]="'Ver como ' + rotuloVisao.CLIENTE.toLowerCase()">
+                <nx-icon name="user" [size]="14" /><span>{{ rotuloVisao.CLIENTE }}</span>
+              </button>
+              <button type="button" role="radio" class="visao-opcao" [class.ativo]="sessao.ehEquipe()" [attr.aria-checked]="sessao.ehEquipe()" (click)="trocarVisao('EQUIPE')" title="Ver como equipe">
+                <nx-icon name="users" [size]="14" /><span>{{ rotuloVisao.EQUIPE }}</span>
+              </button>
+            </div>
+          }
+
+          <nx-ajuda />
+
+          <div class="menu-ancora">
+            <button type="button" class="btn-icone" (click)="alternarNotificacoes()" [attr.aria-expanded]="painelNotificacoes()" aria-label="Notificações">
+              <nx-icon name="bell" />
+              @if (naoLidas()) { <span class="ponto" aria-hidden="true"></span> }
+            </button>
+            @if (painelNotificacoes()) {
+              <div class="menu menu-notificacoes" role="menu">
+                <p class="menu-titulo">Notificações</p>
+                @for (n of notificacoes(); track n.id) {
+                  <a class="notificacao" [class.nova]="!n.lida" [routerLink]="n.link">
+                    <span>{{ n.texto }}</span>
+                    <small>{{ relativo(n.quando) }}</small>
+                  </a>
+                } @empty {
+                  <p class="mudo menu-vazio">Nada novo por aqui.</p>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Abrir demanda é coisa de quem pede a solução: na visão da equipe o botão some. -->
+          @if (!sessao.ehEquipe()) {
+            <a routerLink="/demandas/nova" class="btn btn-primario btn-nova">
+              <nx-icon name="plus" [size]="15" />
+              <span>Nova demanda</span>
+            </a>
+          }
+
+          <div class="menu-ancora">
+            <button type="button" class="usuario" (click)="alternarUsuario()" [attr.aria-expanded]="menuUsuario()" aria-label="Menu do usuário">
+              <nx-avatar [nome]="sessao.usuario.nome" [tamanho]="28" />
+            </button>
+            @if (menuUsuario()) {
+              <div class="menu menu-usuario" role="menu">
+                <div class="menu-perfil">
+                  <strong>{{ sessao.usuario.nome }}</strong>
+                  @if (auth.usuario(); as u) { <span class="mudo">{{ u.email }}</span> }
+                  <span class="menu-papel">{{ sessao.usuario.papel }}</span>
+                  @if (sessao.podeAlternarVisao()) {
+                    <span class="mudo">Vendo agora como {{ sessao.ehEquipe() ? 'equipe' : 'solicitante' }}</span>
+                  }
+                </div>
+                <button type="button" class="menu-opcao" (click)="abrirBusca()">
+                  <nx-icon name="search" [size]="16" /> Buscar <kbd class="menu-atalho">Ctrl K</kbd>
+                </button>
+                <button type="button" class="switch" role="switch" [attr.aria-checked]="tema.escuro()" (click)="tema.alternar()">
+                  <nx-icon [name]="tema.escuro() ? 'moon' : 'sun'" [size]="16" /> Modo escuro
+                  <span class="switch-trilho" aria-hidden="true"></span>
+                </button>
+                @if (sessao.ehEquipe()) {
+                  <hr />
+                  <p class="menu-nota"><nx-icon name="flask" [size]="14" /> Os dados de demonstração ficam só neste navegador.</p>
+                  <button type="button" class="menu-opcao" (click)="restaurar()">
+                    <nx-icon name="refresh" [size]="16" /> Restaurar dados de demonstração
+                  </button>
+                }
+                <hr />
+                <button type="button" class="menu-opcao" (click)="sair()">
+                  <nx-icon name="logout" [size]="16" /> Sair
+                </button>
+              </div>
+            }
+          </div>
+        </div>
+      </header>
+    }
+
+    <main id="conteudo" [class.conteudo]="mostrarTopo()">
+      <router-outlet />
+    </main>
+
+    @if (mostrarTopo()) {
+      <footer class="rodape-demo">
+        <p class="rodape-demo-inner">
+          <nx-icon name="flask" [size]="14" />
+          <span><strong>Ambiente de demonstração.</strong> Demandas, chamados, calendário e soluções ficam guardados só neste navegador. A entrevista, o tipo de solução e o protótipo saem de um simulador; requisitos e sugestões de suporte vêm da IA.</span>
+        </p>
+      </footer>
+    }
+  </div>
+</div>
 
 <nx-dialog titulo="Buscar" [aberto]="buscaAberta()" (fechou)="buscaAberta.set(false)">
   <div class="busca">

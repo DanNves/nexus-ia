@@ -23,8 +23,8 @@ const FILTROS: { id: Filtro; rotulo: string }[] = [
     <div class="pagina">
       <header class="pagina-topo">
         <div>
-          <h1>Soluções</h1>
-          <p class="mudo">O que já foi entregue e as versões publicadas. Aparecem aqui as que você solicitou e aquelas em que alguém colocou o seu e-mail como observador.</p>
+          <h1>{{ sessao.pagina('solucoes').titulo }}</h1>
+          <p class="mudo">{{ sessao.pagina('solucoes').subtitulo }}</p>
         </div>
       </header>
 
@@ -87,7 +87,7 @@ const FILTROS: { id: Filtro; rotulo: string }[] = [
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SolucoesPage {
-  private sessao = inject(SessionService);
+  readonly sessao = inject(SessionService);
   private auth = inject(AuthService);
   private api = inject(NexusApi);
   readonly solucoes = signal<Solucao[] | null>(null);

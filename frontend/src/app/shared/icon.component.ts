@@ -16,6 +16,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
         @case ('plus') { <path d="M12 5v14M5 12h14"/> }
         @case ('search') { <circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/> }
         @case ('bell') { <path d="M6 8a6 6 0 1 1 12 0c0 7 3 8 3 8H3s3-1 3-8"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/> }
+        @case ('panel-left') { <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/> }
         @case ('menu') { <path d="M4 6h16M4 12h16M4 18h16"/> }
         @case ('close') { <path d="M18 6 6 18M6 6l12 12"/> }
         @case ('chevron-down') { <path d="m6 9 6 6 6-6"/> }
