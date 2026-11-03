@@ -5,7 +5,7 @@
 > Versão 2 (2026-10-07): escopo ampliado para o ciclo completo — do levantamento guiado da necessidade até o suporte pós-entrega.
 > Arquitetura de referência: `docs/Nexus_Arquitetura.pdf` (resumo em `docs/ARQUITETURA.md`). Este arquivo registra as adaptações vigentes.
 
-> **ESTADO ATUAL (2026-10-15): BACKEND PARCIAL + MOCK HÍBRIDO.** Autenticação (JWT) e IA (Gemini, via porta `LLMProvider`) são **reais** no Django; demandas, chamados, cenário, protótipo e entrevista continuam respondidos por `core/api/mock-backend.interceptor.ts`, que repassa ao Django as rotas reais. Ver §31 e `claude/front/contratos.md`.
+> **ESTADO ATUAL (2026-11-03): BACKEND PARCIAL + MOCK HÍBRIDO.** Autenticação (JWT) e IA (Gemini, via porta `LLMProvider`) são **reais** no Django; a IA gera requisitos, sugestão de suporte e as **perguntas da entrevista** (em rodadas, com cota). Demandas, chamados, cenário (pontuado por sinais, espelho de `apps/cenario/domain/sinais.py`) e protótipo continuam respondidos por `core/api/mock-backend.interceptor.ts`, que repassa ao Django as rotas reais. Interface segue o template oficial (§12) e os papéis de `docs/PERFIS.md`. Ver §31 e `claude/front/contratos.md`.
 
 ---
 
@@ -143,6 +143,12 @@ O conteúdo original fica na plataforma; o que vai para a IA é a versão anonim
 **Decidido (autor):**
 - **Inúmeras** perguntas **simples e fáceis**, para entender exatamente o que se encaixa na solução.
 - Normalmente **3 ou mais opções** (1, 2, 3…) **ou "Outro"**.
+
+**Implementado (2026-11-03, pedido do autor: "perguntas mais precisas, respeitando o limite de uso"):**
+- a IA sugere as perguntas **em rodadas** (até 5 por chamada, no máximo 3 rodadas por demanda — `IA_ENTREVISTA_MAX_RODADAS`), lendo a necessidade e as respostas anteriores: não pergunta o que já foi dito, aprofunda "Não sei"/"Outro" e diz quando a informação já basta;
+- cada opção traz os **sinais** do catálogo (`backend/apps/cenario/domain/sinais.py`); o cenário é pontuado por regra a partir deles;
+- a interface acrescenta "Outro" e "Não sei"; perguntas da IA aparecem como sugestão (modelo indicado);
+- se a IA falhar ou a cota acabar, a entrevista continua pelo **roteiro padrão** fixo (sem rótulo de IA).
 
 **Detalhamento *(proposta — a confirmar)*:**
 - uma pergunta por vez, em linguagem não técnica;
@@ -494,7 +500,7 @@ Avaliação experimental (casos CT01–CT10 da proposta) é feita à parte. **N�
 - Adaptadores em `apps/ia/adapters/`: provedor real (a definir) e `fake_adapter` (resposta fixa — testes e demonstração sem internet).
 - Toda geração usa **esquema JSON**; resposta validada antes de persistir; fora do formato = falha da tarefa.
 - **Prompts versionados no banco** (PromptTemplate); cada execução grava **LogIA** (modelo, versão, prompt, parâmetros, tokens, custo, duração, artefato).
-- Cota de gerações por processo e limite de requisições por usuário (documento de arquitetura; valores *(proposta — a confirmar)*).
+- Cota de gerações por processo e limite de requisições por usuário (documento de arquitetura). Vigentes (2026-11-03, valores ainda a confirmar com o autor, §30 #20): `IA_LIMITE_POR_USUARIO=10/min`, `IA_COTA_POR_ALVO=20`/24 h, `IA_COTA_DIARIA_POR_USUARIO=40`/24 h, `IA_ENTREVISTA_MAX_RODADAS=3`, `IA_MAX_SIMULTANEOS=2`; entrada idêntica reaproveita o resultado anterior sem gastar cota (entrevista). Erros 429 trazem `codigo` (`IA_COTA_DIARIA`, `IA_RODADAS_ESGOTADAS`, `IA_COTA_ALVO`).
 - Nunca afirmar na interface que algo foi decidido pela IA.
 
 ### Privacidade (LGPD)
@@ -626,7 +632,7 @@ O orquestrador (sessão principal) distribui as tarefas; front e back trabalham 
 | 6 | Cenário de demonstração completo | PO + autor |
 | 7 | Estados do processo (`docs/FLUXO.md` §5) | validar com PO e back-senior; inclui: estado para requisitos em validação/documento entregue, "possível com ressalvas", INVIÁVEL pode ser reaberto?, duração do STAND_BY |
 | 8 | Remover `frontend/vercel.json` | — |
-| 9 | Perguntas da entrevista | geradas pela IA ao vivo (resposta do cliente = ação humana) · banco de perguntas validado no ADM · híbrido |
+| 9 | Perguntas da entrevista | **decidido (2026-11-03): híbrido** — IA ao vivo em rodadas (resposta do solicitante = ação humana) com o roteiro padrão fixo como queda; banco validado no ADM fica como evolução |
 | 10 | Direção dos templates de tela | ADM → protótipo · protótipo → ADM · ambos |
 | 11 | Formato do protótipo | só HTML puro (recomendado) · imagem renderizada do HTML · imagem gerada por IA |
 | 12 | Quem decide o cenário final | cliente · equipe · cliente propõe e equipe confirma |

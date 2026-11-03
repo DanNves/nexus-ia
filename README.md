@@ -74,7 +74,7 @@ A IA **nunca decide sozinha**. Ela sugere requisitos, possíveis causas e proced
 
 O NEXUS tem duas visões. Quem é da equipe alterna entre elas no topo da tela (**Cliente | Equipe**); na visão da equipe aparece uma linha roxa no topo.
 
-| | 👤 Cliente | 👥 Equipe | 🛡️ Administrador |
+| | 👤 Solicitante | 👥 Equipe responsável | 🛡️ Administrador |
 |---|---|---|---|
 | **Painel** | Andamento dos próprios pedidos e chamados | Solicitações, validações pendentes, atendimento e indicadores | Igual à equipe |
 | **Demandas** | Abre demanda, responde a entrevista guiada, vê o tipo de solução e o protótipo, decide entre stand-by ou enviar | Avalia viabilidade, marca reunião, define metodologia e datas, valida requisitos | Igual à equipe |
@@ -87,7 +87,7 @@ O NEXUS tem duas visões. Quem é da equipe alterna entre elas no topo da tela (
 
 | | Recurso | Como funciona |
 |---|---|---|
-| 💬 | **Entrevista guiada** | Perguntas simples, uma por vez, com 3 ou mais opções e "Outro". As próximas perguntas se adaptam às respostas |
+| 💬 | **Entrevista guiada** | A IA sugere as perguntas em rodadas (até 5 por vez, no máximo 3 rodadas), sem repetir o que a necessidade já diz; 3 ou mais opções, "Outro" e "Não sei". Sem IA ou sem cota, segue pelo roteiro padrão |
 | 🧭 | **Tipo de solução** | Cada resposta gera sinais ("uso no celular", "precisa funcionar offline"); uma regra determinística pontua web, desktop, mobile, rotina agendada e API |
 | 🖼️ | **Protótipo seguro** | Telas em HTML puro, sem scripts, exibidas num `iframe` isolado (`sandbox`) |
 | 🗂️ | **Etapas claras** | Uma barra única mostra as etapas da demanda (1 a 5), o que já foi feito e o que falta |
@@ -208,9 +208,10 @@ Abra **http://localhost:4200** e entre com `EquipeAdmin` / `123` (equipe) ou `Us
 | Parte | Situação |
 |---|---|
 | Login, cadastro, perfis e gestão de usuários | ✅ **Real** no Django |
-| IA (requisitos e sugestão de suporte) | ✅ **Real** (Gemini), com anonimização e validação humana |
-| Demandas, entrevista, tipo de solução, protótipo, calendário, soluções e chamados | 🧪 **Simulado** no navegador, com o mesmo contrato da API (em migração para o Django) |
-| Testes do backend | ✅ 162 testes automatizados passando |
+| IA (perguntas da entrevista, requisitos e sugestão de suporte) | ✅ **Real** (Gemini), com anonimização, validação humana, cota diária e reaproveitamento de resultados |
+| Demandas, tipo de solução, protótipo, calendário, soluções e chamados | 🧪 **Simulado** no navegador, com o mesmo contrato da API (em migração para o Django) |
+| Interface | 🎨 Segue o template oficial [`frontend/template/`](frontend/template/README.md) (shadcn-dashboard): menu lateral por perfil ([`docs/PERFIS.md`](docs/PERFIS.md)) |
+| Testes do backend | ✅ 200 testes automatizados passando |
 
 > Os dados de demonstração são **fictícios** e não representam resultados experimentais do TCC.
 
