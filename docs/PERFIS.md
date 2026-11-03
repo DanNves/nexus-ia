@@ -17,7 +17,7 @@
 
 ## 2. Visão ativa
 
-Quem é da equipe alterna no cabeçalho entre **Solicitante** e **Equipe**:
+Quem é da equipe alterna na navbar entre **Solicitante** e **Equipe**:
 - **Visão Solicitante:** vê o NEXUS exatamente como um solicitante vê e pode abrir as próprias demandas (útil para demandas internas e para demonstrar).
 - **Visão Equipe:** fila de trabalho, validações e atendimento.
 
@@ -46,16 +46,18 @@ Trocar de visão só **reduz** o que aparece; as permissões reais continuam no 
 
 ## 4. Navegação por papel
 
-Menu lateral do template oficial (`CLAUDE.md` §10), definido em `frontend/src/app/shared/perfis.ts`:
+Navbar horizontal do NEXUS (`CLAUDE.md` §10), definida em `frontend/src/app/app.component.ts` (`nav`):
 
-| Seção | Solicitante | Equipe responsável |
+| Destino | Solicitante | Equipe responsável |
 |---|---|---|
-| — | Visão geral | Visão geral |
-| Meus pedidos / Projetos | Minhas demandas · Nova demanda | Demandas · Atividades · Calendário |
-| Acompanhamento / Pós-entrega | Agenda · Minhas soluções · Meus chamados | Soluções · Fila de atendimento |
-| Administração | — | Usuários (só administrador) |
+| `/visao-geral` | Visão geral | Visão geral |
+| `/demandas` | Demandas (só as dele) · botão **Nova demanda** à direita | Demandas (todas; aba Atividades) |
+| `/calendario` | Agenda | Calendário |
+| `/solucoes` | Soluções (as que solicitou ou observa) | Soluções |
+| `/fila` | Chamados (os dele e a posição na fila) | Fila (atendimento) |
+| `/usuarios` | — | Usuários (só administrador) |
 
-As rotas são as mesmas para os dois papéis (`/demandas`, `/fila`…); o título, os textos e as ações mudam conforme a visão.
+As rotas são as mesmas para os dois papéis; o rótulo, os textos e as ações mudam conforme a visão. O papel aparece no menu do usuário: **Solicitante · organização**, **Equipe responsável** ou **Administrador** (`core/session.service.ts`).
 
 ## 5. Visibilidade dos dados (permissão por objeto)
 

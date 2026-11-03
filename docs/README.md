@@ -7,7 +7,7 @@
 | [`../CLAUDE.md`](../CLAUDE.md) | Especificação mestra: escopo, regras, fluxo, padrão visual, decisões em aberto |
 | [`FLUXO.md`](FLUXO.md) | Fluxo funcional ponta a ponta, entrevista guiada, cenários, estados, perfis |
 | [`PERFIS.md`](PERFIS.md) | Papéis (Solicitante, Equipe responsável, Administrador): o que cada um faz, vê e decide |
-| [`../frontend/template/README.md`](../frontend/template/README.md) | Template visual oficial (shadcn-dashboard) e como usá-lo no Angular |
+| [`../frontend/template/README.md`](../frontend/template/README.md) | Template do protótipo gerado (shadcn-dashboard): só para as telas que a IA gera, não para a interface do NEXUS |
 | [`ARQUITETURA.md`](ARQUITETURA.md) | Arquitetura de software (resumo do PDF + adaptações vigentes) |
 | [`MODELO_DADOS.md`](MODELO_DADOS.md) | Modelo de dados proposto por módulo |
 | [`STATUS_PROJETO.md`](STATUS_PROJETO.md) | Fase atual, decisões tomadas, pendências |

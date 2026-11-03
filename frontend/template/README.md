@@ -1,43 +1,63 @@
-# Template visual oficial do NEXUS
+# Template do protótipo gerado
 
-`shadcn-dashboard/` é o **template de referência da interface** (Shadcn Dashboard Free, licença MIT, React 19 + Vite + Tailwind v4 + Base UI, estilo shadcn `base-lyra`).
-Decisão do autor (2026-11-03): **toda tela ou componente novo do NEXUS segue este template** — layout, espaçamentos, tipografia, cores, estados e padrões de componente.
+`shadcn-dashboard/` é o **template de referência das telas que a IA gera para o solicitante** (Shadcn Dashboard Free, licença MIT, React 19 + Vite + Tailwind v4 + Base UI, estilo shadcn `base-lyra`).
 
-O NEXUS **continua em Angular** (`frontend/src`). O template **não é compilado nem importado**: ele é a fonte visual que o Angular reproduz em CSS próprio (sem React, sem Tailwind, sem dependência nova).
+Decisão do autor (2026-11-03):
 
-## Como usar
+| Vale para | Não vale para |
+|---|---|
+| **Protótipo gerado** (`CLAUDE.md` §5.5): as telas de como ficaria a aplicação do solicitante, mostradas na aba Protótipo da demanda | **Interface do NEXUS** (navbar, páginas, componentes, tela de acesso). Ela mantém o padrão próprio (`CLAUDE.md` §10 e §12, `frontend/src/styles.css`) |
+| Futuras telas/templates gerados que forem para o ADM (§30 #10) | Qualquer outra tela do sistema |
 
-1. Antes de criar ou alterar uma tela, procure no template a tela ou o componente equivalente (tabela abaixo).
-2. Reproduza no Angular a **estrutura** (hierarquia de elementos) e o **visual** (tokens de `src/css/globals.css` e classes de `src/css/styles/style-lyra.css`), usando os componentes oficiais de `frontend/src/app/shared/` e as classes globais de `frontend/src/styles.css`.
-3. Se o componente ainda não existe no Angular, crie **um** componente oficial em `shared/` a partir do equivalente do template (CLAUDE.md §12: um componente por tipo) e registre-o em `claude/front/padroes.md`.
-4. Não copie conteúdo de demonstração do template (produtos, blog, fotos, textos em inglês). Só o visual e a estrutura.
+Histórico: no mesmo dia o template chegou a ser aplicado à interface inteira (commit `e5719f7`). Isso foi desfeito (`7b6e7d0`), porque o pedido era usá-lo só no que a IA gera.
 
-Para ver o template rodando (opcional): `cd frontend/template/shadcn-dashboard && npm install && npm run dev` → http://localhost:5173.
+## Como o template entra no protótipo
+
+O template **não é compilado nem importado**. É a fonte visual que o kit do protótipo reproduz em HTML + CSS puros:
+
+**`frontend/src/app/core/api/prototipo-template.ts`**
+
+| Função do kit | O que monta | Equivalente no template |
+|---|---|---|
+| `documento(corpo)` | página completa (vai para o `srcdoc` do iframe), com os tokens e o CSS | `src/css/globals.css` (`:root`) + `src/css/styles/style-lyra.css` |
+| `casca({ marca, secao, menu, ativo, conteudo })` | menu lateral (marca, seção, itens com ícone, usuário no rodapé) + área contornada com cabeçalho (trilha, busca, notificações) | `src/layouts/full/FullLayout.tsx`, `vertical/sidebar/*`, `vertical/header/*`, `NavUser.tsx` |
+| `janela(titulo, corpo)` | moldura de janela de computador (cenário desktop) | — (moldura do NEXUS) |
+| `celular({ marca, abas, ativa, conteudo })` | moldura de celular com cabeçalho e barra de abas (cenário mobile) | — (moldura do NEXUS, com os componentes do template) |
+| `cabecalhoPagina(titulo, descricao, acoes)` | título da página, descrição e ações | cabeçalho das views (`src/views/*`) |
+| `cartao({ titulo, descricao, corpo, rodape })` | cartão lyra (sem raio, anel de 1px) | `.cn-card*` |
+| `kpis([...])` | indicadores em blocos encostados | `src/views/dashboards/` |
+| `tabela(colunas, linhas)` | tabela | `.cn-table`, `src/components/ui/table.tsx` |
+| `badge(texto, variante)` | selo: `default`, `secondary`, `outline`, `sucesso`, `aviso`, `destrutivo` | `.cn-badge-variant-*` |
+| `botao(texto, variante, { icone, pequeno })` | botão: `default`, `outline`, `secondary`, `ghost` | `.cn-button-variant-*`, `-size-sm` |
+| `campo(rotulo, exemplo, alto)` | rótulo + campo de entrada (ou área de texto) | `.cn-field`, `.cn-input` |
+| `icone(nome)` | ícone SVG no traço do Lucide (lista fechada em `ICONES`) | `lucide-react` |
+| `esc(texto)` | escapa texto vindo do usuário | — |
+
+Quem usa o kit hoje: `gerarPrototipo()` em `frontend/src/app/core/api/mock-ia.ts` (simulador), com telas para web, desktop, mobile, rotina agendada (job) e API.
+
+## Regras
+
+1. **Toda tela de protótipo é montada com o kit.** Não escreva CSS solto numa tela. Se o visual precisa mudar, mude o kit.
+2. **Cores neutras do template, sem o azul NEXUS.** O protótipo mostra a aplicação do solicitante, não o NEXUS. A primária é a quase preta do shadcn; sucesso, aviso e erro vêm dos tokens do template.
+3. **Segurança (`CLAUDE.md` §19):** nada de `<script>`, `on*=`, `javascript:` nem recurso externo. Texto do usuário entra sempre por `esc()`. O resultado é exibido em `<nx-prototipo>`, um iframe com `sandbox` vazio.
+4. **Fonte:** pilha `Geist, ui-sans-serif, system-ui…`. O iframe sem origem não carrega arquivos de fonte, então na prática aparece a fonte do sistema. É intencional: nada de rede dentro do protótipo.
+5. **Conteúdo:** em português, com dados fictícios genéricos. Não copiar conteúdo de demonstração do template (produtos, blog, fotos, textos em inglês).
+6. **Selo de IA:** fica **fora** do iframe, na tela do NEXUS ("Gerado por… · ainda não validado", `CLAUDE.md` §3).
+7. **Quando o protótipo for para o Django** (módulo `prototipo` + tarefa de IA): portar o kit para o backend, para que o sistema monte o HTML. A IA devolve só a **estrutura** das telas em JSON (telas, itens de menu, cartões, tabelas, campos), validada por esquema, e o sistema monta o HTML com o kit e sanitiza. A IA não escreve HTML livre.
 
 ## Onde olhar no template
 
 | Precisa de… | Arquivo no template |
 |---|---|
-| Tokens (cores, raio, fontes, modo escuro) | `src/css/globals.css` (`:root` e `.dark`) |
+| Tokens (cores, raio, fontes) | `src/css/globals.css` (`:root`) |
 | Visual de cada componente (`cn-button`, `cn-card`, `cn-badge`…) | `src/css/styles/style-lyra.css` |
-| Casca da aplicação (sidebar + cabeçalho + conteúdo) | `src/layouts/full/FullLayout.tsx`, `vertical/sidebar/*`, `vertical/header/*` |
-| Itens e seções do menu lateral | `src/layouts/full/vertical/sidebar/sidebaritems.ts`, `nav-items/`, `nav-collapse/`, `NavUser.tsx` |
-| Painel com indicadores e gráficos | `src/views/dashboards/`, `src/components/dashboards/` |
-| Tabelas (busca, filtro, paginação) | `src/components/tables/`, `src/components/ui/table.tsx` |
-| Formulários e campos | `src/components/form/`, `src/components/ui/{field,input,select,textarea,checkbox,radio-group,switch}.tsx` |
-| Lista + detalhe de chamados (equivale à Fila) | `src/views/apps/tickets/`, `src/components/apps/tickets/` |
-| Diálogo, gaveta, menu suspenso, abas, avisos | `src/components/ui/{dialog,sheet,drawer,dropdown-menu,tabs,sonner}.tsx` |
-| Telas de acesso (entrar, criar conta) e erro 404 | `src/views/auth/` |
-| Perfil do usuário | `src/views/pages/user-profile/`, `src/components/user-profile/` |
-| Ícones | `lucide` (o Angular usa `shared/icon.component.ts`, com traços no estilo Lucide) |
+| Casca (sidebar + cabeçalho + conteúdo) | `src/layouts/full/FullLayout.tsx`, `vertical/sidebar/*`, `vertical/header/*` |
+| Painéis com indicadores | `src/views/dashboards/`, `src/components/dashboards/` |
+| Tabelas | `src/components/tables/`, `src/components/ui/table.tsx` |
+| Formulários | `src/components/form/`, `src/components/ui/{field,input,select,textarea}.tsx` |
+| Lista + detalhe (ex.: chamados) | `src/views/apps/tickets/` |
 
-## Adaptações do NEXUS sobre o template
-
-- **Cor primária:** o template usa primária neutra (quase preta). O NEXUS mantém o **azul `#0878FF`** como `--primary`, e verde/laranja/roxo de `CLAUDE.md` §12 como sucesso/atenção/visão da equipe. Superfícies, bordas, texto e raio seguem o template.
-- **Fonte:** Geist (arquivos em `frontend/public/fonts/`, copiados de `shadcn-dashboard/public/fonts/`).
-- **Idioma:** tudo em português do Brasil.
-- **Selos de IA:** todo conteúdo gerado continua marcado como sugestão e com quem valida (CLAUDE.md §3), mesmo que o template não tenha esse padrão.
-- **Tela de acesso:** mantém a arte própria decidida em 2026-10-15; campos e botões seguem o template.
+Para ver o template rodando (opcional): `cd frontend/template/shadcn-dashboard && npm install && npm run dev` → http://localhost:5173.
 
 ## Arquivos que não valem para o NEXUS
 

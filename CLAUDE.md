@@ -5,7 +5,7 @@
 > Versão 2 (2026-10-07): escopo ampliado para o ciclo completo — do levantamento guiado da necessidade até o suporte pós-entrega.
 > Arquitetura de referência: `docs/Nexus_Arquitetura.pdf` (resumo em `docs/ARQUITETURA.md`). Este arquivo registra as adaptações vigentes.
 
-> **ESTADO ATUAL (2026-11-03): BACKEND PARCIAL + MOCK HÍBRIDO.** Autenticação (JWT) e IA (Gemini, via porta `LLMProvider`) são **reais** no Django; a IA gera requisitos, sugestão de suporte e as **perguntas da entrevista** (em rodadas, com cota). Demandas, chamados, cenário (pontuado por sinais, espelho de `apps/cenario/domain/sinais.py`) e protótipo continuam respondidos por `core/api/mock-backend.interceptor.ts`, que repassa ao Django as rotas reais. Interface segue o template oficial (§12) e os papéis de `docs/PERFIS.md`. Ver §31 e `claude/front/contratos.md`.
+> **ESTADO ATUAL (2026-11-03): BACKEND PARCIAL + MOCK HÍBRIDO.** Autenticação (JWT) e IA (Gemini, via porta `LLMProvider`) são **reais** no Django; a IA gera requisitos, sugestão de suporte e as **perguntas da entrevista** (em rodadas, com cota). Demandas, chamados, cenário (pontuado por sinais, espelho de `apps/cenario/domain/sinais.py`) e protótipo continuam respondidos por `core/api/mock-backend.interceptor.ts`, que repassa ao Django as rotas reais. A interface do NEXUS mantém o padrão próprio (navbar, §10); o template shadcn-dashboard vale só para o protótipo gerado (§12). Papéis em `docs/PERFIS.md`. Ver §31 e `claude/front/contratos.md`.
 
 ---
 
@@ -177,6 +177,8 @@ A partir dos sinais, o sistema recomenda o tipo de solução: **aplicação web,
 - direção dos templates: (a) ADM mantém catálogo → sistema seleciona e adapta; (b) telas geradas → são inseridas no ADM como template; (c) ambos;
 - formato: só HTML puro · imagem renderizada a partir do HTML · imagem gerada por IA.
 
+**Visual (decidido, 2026-11-03):** as telas geradas seguem o template `frontend/template/shadcn-dashboard/`, montadas pelo kit `frontend/src/app/core/api/prototipo-template.ts` (§12). Só o protótipo usa esse template; a interface do NEXUS não.
+
 **Regras de segurança (decididas):** HTML sem scripts, sanitizado, renderizado em `iframe sandbox` (§19). Versionado.
 **Detalhamento *(proposta — a confirmar)*:** comentários por tela.
 
@@ -291,7 +293,7 @@ Regra de fronteira: um módulo **nunca importa models de outro**; usa serviços 
 nexus-ia/
 ├── frontend/   Angular (standalone, Signals, Router, TypeScript strict)
 │   ├── src/app/{core, shared, features/<modulo>}   ← implementado (2026-10-07)
-│   └── template/shadcn-dashboard/                   ← template visual oficial (React, só referência; §12)
+│   └── template/shadcn-dashboard/                   ← template do PROTÓTIPO gerado (React, só referência; §5.5, §12)
 ├── backend/    Django
 │   ├── config/settings/{base,dev}.py               ← implementado (2026-10-15), mais test.py
 │   ├── apps/<modulo>/{api, services, domain, models.py, repositories.py, tasks.py, tests}
@@ -335,7 +337,7 @@ Front faz polling com intervalo crescente (implementado: começa em ~1 s, ×1,4,
 **                             página não encontrada
 ```
 
-Perfil: vem do usuário logado (JWT). **Papéis (2026-11-03, `docs/PERFIS.md`):** **Solicitante** (código `CLIENTE`), **Equipe responsável** (`EQUIPE`) e **Administrador** (`EQUIPE` + `is_staff`, vê o item Usuários); rótulos, menu e títulos por visão em `frontend/src/app/shared/perfis.ts`. **Visão:** quem é da equipe alterna no cabeçalho entre **Solicitante** (vê exatamente o que um solicitante vê, pode abrir demandas) e **Equipe** (linha roxa no topo; sem "Nova demanda"). Solicitante só tem a própria visão. Usuários de demonstração: `EquipeAdmin` (Equipe responsável) e `Usuario` (Solicitante), senha `123`, só em desenvolvimento. O botão **Ajuda** no topo abre o tour guiado aba por aba (`shared/ajuda/`).
+Perfil: vem do usuário logado (JWT). **Papéis (2026-11-03, `docs/PERFIS.md`):** **Solicitante** (código `CLIENTE`), **Equipe responsável** (`EQUIPE`) e **Administrador** (`EQUIPE` + `is_staff`, vê o item Usuários); rótulos da navbar e do papel em `app.component.ts` e `core/session.service.ts`. **Visão:** quem é da equipe alterna na navbar entre **Solicitante** (vê exatamente o que um solicitante vê, pode abrir demandas) e **Equipe** (linha roxa no topo; sem "Nova demanda"). Solicitante só tem a própria visão. Usuários de demonstração: `EquipeAdmin` (Equipe responsável) e `Usuario` (Solicitante), senha `123`, só em desenvolvimento. O botão **Ajuda** no topo abre o tour guiado aba por aba (`shared/ajuda/`).
 
 Proposta original do novo escopo (referência para itens ainda não implementados, como validações, indicadores e ADM):
 
@@ -367,27 +369,27 @@ Regra permanente: cada rota abre uma tela real; nunca criar link visual sem rota
 
 ## 10. NAVEGAÇÃO — CONTRATO VISUAL
 
-**Vigente (2026-11-03): casca do template oficial** (§12) — `frontend/template/shadcn-dashboard/src/layouts/full/`. Substitui a navbar horizontal de 2026-10-07.
+A navbar principal deve ser **horizontal, limpa e contínua**. **Este é o padrão da interface do NEXUS** — o template shadcn-dashboard **não** se aplica aqui (só ao protótipo gerado, §12; decisão do autor, 2026-11-03).
 
-### Estrutura
-- **Menu lateral (sidebar)** à esquerda: marca NEXUS no topo; itens agrupados em **seções com título**, conforme o perfil ativo; no rodapé, o usuário (avatar, nome e papel), como o `NavUser` do template. Recolhe para só ícones no desktop.
-- **Cabeçalho** no topo da área de conteúdo: botão de recolher o menu, título/trilha da página, **Buscar (Ctrl K)**, seletor de visão **Solicitante | Equipe** (só equipe), **Ajuda** (tour), notificações, **Nova demanda** (só na visão do solicitante) e menu do usuário (modo escuro, sair).
-- **Conteúdo** dentro da área contornada do template (`SidebarInset`).
+### NÃO usar
+- uma caixa cinza para cada grupo;
+- cada item parecendo um botão;
+- vários cartões encaixados;
+- excesso de bordas;
+- aparência de template administrativo genérico;
+- menus que parecem abas independentes sem hierarquia.
 
-### Itens por perfil (ver `docs/PERFIS.md`)
-| Seção | Solicitante | Equipe responsável |
-|---|---|---|
-| — | Visão geral | Visão geral |
-| Meus pedidos / Projetos | Minhas demandas, Nova demanda | Demandas, Atividades, Calendário |
-| Acompanhamento / Pós-entrega | Agenda, Minhas soluções, Meus chamados | Soluções, Fila de atendimento |
-| Administração | — | Usuários (só administrador) |
+### USAR
+Marca NEXUS à esquerda; itens principais ao centro; à direita: **Novo processo | Busca | Notificações | Usuário**.
+Itens principais (implementado): **Visão geral | Demandas | Calendário | Soluções | Fila** na visão da equipe (+ **Usuários** para administrador); na visão do solicitante, os mesmos destinos com rótulos próprios: **Visão geral | Demandas | Agenda | Soluções | Chamados** (ver `docs/PERFIS.md`). À direita: seletor de visão **Solicitante | Equipe** (só equipe), **Ajuda** (tour guiado), notificações, **Nova demanda** (só na visão do solicitante) e menu do usuário (papel, busca Ctrl K, modo escuro, sair). O campo de busca saiu da barra (2026-10-15): fica no atalho Ctrl K e no menu do usuário. Indicadores, ADM e Configurações: ainda não implementados.
+Os itens visíveis dependem do perfil (solicitante não vê Usuários, Atividades nem ações da equipe). Toda rota deve ter acesso pela navegação do perfil que a usa.
 
-Os itens visíveis dependem do perfil ativo; toda rota tem acesso pela navegação do perfil que a usa. Indicadores, ADM e Configurações: ainda não implementados.
-
-Item atual: como o item ativo do template (fundo de destaque suave, texto e ícone na cor primária). Itens não ativos: transparentes, sem borda, sem caixa individual.
+Item atual: texto azul, fundo azul muito suave, linha inferior azul, ícone azul.
+Itens não ativos: fundo transparente, texto azul/cinza, sem borda, sem caixa individual.
+Separadores verticais muito discretos são aceitáveis.
 
 ### Mobile
-O menu lateral vira gaveta (sheet do template) aberta pelo botão do cabeçalho; mesmas seções; opções grandes para toque; rota ativa destacada.
+Esconder a navegação horizontal; botão de menu; painel organizado por seções; opções grandes para toque; rota ativa destacada.
 
 ---
 
@@ -403,19 +405,23 @@ Mostra o estado de cada etapa (não iniciada, em andamento, aguardando validaç�
 
 ## 12. PADRÃO VISUAL
 
-### Template oficial (decisão do autor, 2026-11-03)
-**Toda tela, componente ou página gerada para o NEXUS segue o template `frontend/template/shadcn-dashboard/`** (Shadcn Dashboard Free, estilo shadcn `base-lyra`). Guia de uso e equivalências em `frontend/template/README.md`.
-- O template é React/Tailwind e serve **só de referência**: o Angular reproduz a estrutura e o visual em CSS próprio, sem React, sem Tailwind e sem dependência nova.
-- Antes de criar uma tela, procurar a equivalente no template e partir dela; se faltar um componente, criar **um** oficial em `shared/` a partir do template.
-- Tokens: superfícies, bordas, texto, raio, fonte (Geist) e modo escuro do template; cor primária = azul NEXUS (abaixo).
-- Os agentes de front e o protótipo gerado (§5.5) seguem o mesmo template.
+### Dois padrões, cada um no seu lugar (decisão do autor, 2026-11-03)
+| O quê | Padrão | Onde |
+|---|---|---|
+| **Interface do NEXUS** (todas as telas do sistema: navbar, páginas, componentes) | **padrão próprio do NEXUS**, abaixo (identidade, paleta, navbar §10) — mantido como estava | `frontend/src/styles.css`, `shared/` |
+| **O que a IA gera para o solicitante** (protótipo de telas da aplicação dele, §5.5, e futuras telas/templates do ADM) | **template `frontend/template/shadcn-dashboard/`** (Shadcn Dashboard Free, estilo `base-lyra`) | kit `frontend/src/app/core/api/prototipo-template.ts`; guia em `frontend/template/README.md` |
 
-### Identidade
+- **Não aplicar o template à interface do NEXUS.** Uma tentativa de 2026-11-03 (commit `e5719f7`) foi desfeita por pedido do autor (`7b6e7d0`).
+- O template é React/Tailwind e serve **só de referência**: o protótipo gerado reproduz o visual em HTML + CSS puros (sem React, sem Tailwind, sem dependência nova), pelo kit acima.
+- O protótipo usa os **tokens neutros do template** (não o azul NEXUS): ele mostra a aplicação do solicitante, não o NEXUS.
+- Toda geração de protótipo — o simulador de hoje e o prompt da IA quando o protótipo for para o Django — monta as telas **com o kit** (casca, cartão, KPIs, tabela, badge, botão, campo, molduras de janela/celular). Mudou o visual do protótipo? Mude o kit, não cada tela.
+
+### Identidade (interface do NEXUS)
 Profissional, corporativo, moderno, limpo, orientado a software, confiável, acadêmico/profissional.
 Evitar: aparência futurista, "IA genérica", neon, excesso de gradientes, sombras, cards e arredondamentos.
 A entrevista guiada deve parecer uma **conversa simples e humana**, não um formulário burocrático nem um chatbot genérico.
 
-### Paleta base (cores de marca aplicadas sobre os tokens do template)
+### Paleta base (interface do NEXUS)
 - Navy: #020A1D
 - Azul principal: #0878FF
 - Fundo: #F5F8FC
@@ -555,7 +561,7 @@ Antes de criar qualquer funcionalidade:
 5. verificar permissões por perfil;
 6. verificar responsividade;
 7. verificar se a ação realmente funciona;
-8. em telas e componentes, partir da tela/componente equivalente do template oficial (§12, `frontend/template/README.md`).
+8. em telas e componentes do NEXUS, seguir o padrão próprio (§10, §12) e o catálogo de componentes; em protótipo gerado (o que a IA gera para o solicitante), usar o kit do template (§12, `frontend/template/README.md`).
 
 Não criar somente aparência.
 
@@ -593,6 +599,7 @@ Testes por nível (documento de arquitetura): domínio (sem banco), serviços (b
 - Supabase foi descartado; o projeto roda em localhost.
 - Vercel não é usada no momento (projeto local); `frontend/vercel.json` é legado.
 - O MVP anterior (suporte-centrado, com localStorage) está documentado em `docs/` como histórico acadêmico. A ampliação de escopo é evolução posterior e não reescreve o histórico.
+- 2026-11-03: o template shadcn-dashboard chegou a ser aplicado à interface inteira (menu lateral, tokens, fonte Geist) e foi desfeito no mesmo dia por pedido do autor. Ele vale só para o protótipo gerado (§12); a interface manteve a navbar e o visual de 2026-10-07.
 
 ---
 

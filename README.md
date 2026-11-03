@@ -210,7 +210,7 @@ Abra **http://localhost:4200** e entre com `EquipeAdmin` / `123` (equipe) ou `Us
 | Login, cadastro, perfis e gestão de usuários | ✅ **Real** no Django |
 | IA (perguntas da entrevista, requisitos e sugestão de suporte) | ✅ **Real** (Gemini), com anonimização, validação humana, cota diária e reaproveitamento de resultados |
 | Demandas, tipo de solução, protótipo, calendário, soluções e chamados | 🧪 **Simulado** no navegador, com o mesmo contrato da API (em migração para o Django) |
-| Interface | 🎨 Segue o template oficial [`frontend/template/`](frontend/template/README.md) (shadcn-dashboard): menu lateral por perfil ([`docs/PERFIS.md`](docs/PERFIS.md)) |
+| Interface | 🎨 Padrão próprio do NEXUS (navbar horizontal), com rótulos por papel ([`docs/PERFIS.md`](docs/PERFIS.md)). O protótipo gerado para o solicitante segue o template shadcn-dashboard ([`frontend/template/`](frontend/template/README.md)) |
 | Testes do backend | ✅ 200 testes automatizados passando |
 
 > Os dados de demonstração são **fictícios** e não representam resultados experimentais do TCC.
