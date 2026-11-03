@@ -329,7 +329,7 @@ Front faz polling com intervalo crescente (implementado: começa em ~1 s, ×1,4,
 **                             página não encontrada
 ```
 
-Perfil: vem do usuário logado (JWT). **Visão (2026-10-15):** quem é da equipe alterna no topo entre **Cliente** (vê exatamente o que um cliente vê, pode abrir demandas) e **Equipe** (linha roxa no topo; sem "Nova demanda"). Cliente só tem a visão de cliente. **Administrador** = equipe + `is_staff`; vê o item Usuários. Usuários de demonstração: `EquipeAdmin` (Equipe responsável) e `Usuario` (Cliente), senha `123`, só em desenvolvimento. O botão **Ajuda** no topo abre o tour guiado aba por aba (`shared/ajuda/`).
+Perfil: vem do usuário logado (JWT). **Papéis (2026-11-03, `docs/PERFIS.md`):** **Solicitante** (código `CLIENTE`), **Equipe responsável** (`EQUIPE`) e **Administrador** (`EQUIPE` + `is_staff`, vê o item Usuários); rótulos, menu e títulos por visão em `frontend/src/app/shared/perfis.ts`. **Visão:** quem é da equipe alterna no cabeçalho entre **Solicitante** (vê exatamente o que um solicitante vê, pode abrir demandas) e **Equipe** (linha roxa no topo; sem "Nova demanda"). Solicitante só tem a própria visão. Usuários de demonstração: `EquipeAdmin` (Equipe responsável) e `Usuario` (Solicitante), senha `123`, só em desenvolvimento. O botão **Ajuda** no topo abre o tour guiado aba por aba (`shared/ajuda/`).
 
 Proposta original do novo escopo (referência para itens ainda não implementados, como validações, indicadores e ADM):
 
